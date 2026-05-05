@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sgm"
+name = "sigma-finance"
 version = "0.1.0"
 description = "Sigma CLI finance tracker"
 readme = "README.md"

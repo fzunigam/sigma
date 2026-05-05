@@ -4,7 +4,7 @@ Sigma is a CLI-first personal finance tracker focused on fast transaction loggin
 
 ## Quickstart
 ```bash
-pip install sgm
+pip install sigma-finance
 sgm start
 sgm income cash 100000 "Salary"
 sgm expense cash 12000 "Groceries"
