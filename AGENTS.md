@@ -13,5 +13,10 @@ Sigma is a CLI-first personal finance tracker focused on fast transaction loggin
 - Decision log: `docs/decisions/`
 - Implementation plans: `docs/plans/`
 
+## Commands
+- Install dev setup: `python3.12 -m pip install -e ".[dev]"`
+- Run tests: `python3.12 -m pytest -q`
+- Run lint: `python3.12 -m ruff check .`
+
 ## Changelog
 Keep `CHANGELOG.md` up to date. Add entries under `[Unreleased]` for every meaningful change using: Added, Changed, Deprecated, Removed, Fixed, Security.

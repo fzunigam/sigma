@@ -6,7 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- Initial approved design document for the Sigma CLI finance tracker.
-- Project context scaffold with AGENTS guidance, architecture summary, conventions index, and initial ADR.
-- Initial repository metadata: README and MIT license.
-- Detailed v1 implementation plan for task-by-task execution.
+- Bootstrapped the Python package (`pyproject.toml`, `src` layout, CLI entrypoint `sgm`) with dev tooling (`pytest`, `ruff`).
+- Implemented core domain models and invariants for accounts, movements, CLP amounts, and domain-specific validation errors.
+- Added render application workflow that computes income/expense/net snapshots and tracks processed movement IDs.
+- Added SQLite schema initialization plus repositories for accounts, movements, transfers, and render history.
+- Implemented Typer CLI command groups for `account`, `movement`, `transfer`, `render`, and `report`, including a global `--db` override.
+- Added default configuration for local data storage at `~/.local/share/sgm/sigma.db`.
+- Added automated test suites split into unit, integration, and smoke coverage for domain logic, repositories, and CLI workflows.
+- Added repository conventions documentation for Python coding and testing practices (`docs/conventions/python.md`, `docs/conventions/testing.md`).
+
+### Changed
+- Expanded contributor-facing docs with concrete development commands, testing approach, and versioning/changelog workflow guidance.
+- Updated agent guidance to include current project-specific test and lint command usage.
