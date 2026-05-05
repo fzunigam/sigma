@@ -51,6 +51,14 @@ python3.12 -m ruff check .
 - For each release, move relevant `[Unreleased]` entries into a versioned section (`## [x.y.z] - YYYY-MM-DD`) and reset `[Unreleased]`.
 - Keep runtime version metadata aligned by bumping both `pyproject.toml` and `src/sgm/__init__.py`.
 
+### Release checklist (concise)
+1. Set the same release version in `pyproject.toml` and `src/sgm/__init__.py`.
+2. Move completed `[Unreleased]` entries into `## [x.y.z] - YYYY-MM-DD` and reset `[Unreleased]` to an empty scaffold.
+3. Run checks:
+   - `python3.12 -m pytest -q`
+   - `python3.12 -m ruff check .`
+   - `PYTHONPATH=src python3.12 -m typer sgm.cli run --help` (or `sgm --help` if installed)
+
 ## Documentation
 - Design: `docs/plans/2026-05-05-sigma-cli-finance-tracker-design.md`
 - Architecture: `docs/architecture.md`

@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- _No changes yet._
+
+### Changed
+- _No changes yet._
+
+### Deprecated
+- _No changes yet._
+
+### Removed
+- _No changes yet._
+
+### Fixed
+- _No changes yet._
+
+### Security
+- _No changes yet._
+
+## [0.1.0] - 2026-05-05
+
+### Added
 - Bootstrapped the Python package (`pyproject.toml`, `src` layout, CLI entrypoint `sgm`) with dev tooling (`pytest`, `ruff`).
 - Implemented core domain models and invariants for accounts, movements, CLP amounts, and domain-specific validation errors.
 - Added render application workflow that computes income/expense/net snapshots and tracks processed movement IDs.
