@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS render_history (
 
 
 def init_db(db_path: Path) -> sqlite3.Connection:
+    db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row

@@ -9,6 +9,7 @@ from sgm.application.render import MarkedMovement, render_marked_movements
 from sgm.domain.accounts import Account, AccountType
 from sgm.domain.errors import DomainValidationError, NoMarkedMovementsError
 from sgm.domain.movements import Movement, MovementType
+from sgm.infrastructure.config import default_db_path
 from sgm.infrastructure.db import init_db
 from sgm.infrastructure.repositories import (
     AccountRepository,
@@ -28,7 +29,7 @@ report_app = typer.Typer(help="Reporting commands")
 
 def _db_path_from_context(ctx: typer.Context) -> Path:
     root_obj = (ctx.find_root().obj or {}) if ctx is not None else {}
-    db_path = root_obj.get("db_path", Path("sigma.db"))
+    db_path = root_obj.get("db_path", default_db_path())
     return Path(db_path)
 
 
@@ -46,7 +47,7 @@ def _fail(message: str, code: int = 1) -> None:
 def main(
     ctx: typer.Context,
     db: Path = typer.Option(
-        Path("sigma.db"),
+        default_db_path(),
         "--db",
         help="Path to SQLite database file.",
         dir_okay=False,
