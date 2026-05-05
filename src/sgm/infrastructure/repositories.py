@@ -76,6 +76,45 @@ class MovementRepository:
             for row in cursor.fetchall()
         ]
 
+    def unmark_many(self, movement_ids: list[str]) -> None:
+        if not movement_ids:
+            return
+
+        placeholders = ", ".join("?" for _ in movement_ids)
+        self._connection.execute(
+            f"UPDATE movements SET marked = 0 WHERE id IN ({placeholders})",
+            movement_ids,
+        )
+        self._connection.commit()
+
+
+class TransferRepository:
+    def __init__(self, connection: sqlite3.Connection) -> None:
+        self._connection = connection
+
+    def add(
+        self,
+        transfer_id: str,
+        source_account_id: str,
+        target_account_id: str,
+        amount: int,
+        created_at: datetime,
+    ) -> None:
+        self._connection.execute(
+            """
+            INSERT INTO transfers (id, source_account_id, target_account_id, amount, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                transfer_id,
+                source_account_id,
+                target_account_id,
+                amount,
+                created_at.isoformat(),
+            ),
+        )
+        self._connection.commit()
+
 
 class RenderHistoryRepository:
     def __init__(self, connection: sqlite3.Connection) -> None:
