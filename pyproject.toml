@@ -6,16 +6,29 @@ build-backend = "setuptools.build_meta"
 name = "sgm"
 version = "0.1.0"
 description = "Sigma CLI finance tracker"
+readme = "README.md"
 requires-python = ">=3.12"
+license = { text = "MIT" }
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Environment :: Console",
+]
 dependencies = [
   "typer>=0.12.3",
   "rich>=13.7.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/fzunigam/sigma"
+Issues = "https://github.com/fzunigam/sigma/issues"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.2.0",
   "ruff>=0.4.0",
+  "build>=1.2.2",
+  "twine>=6.1.0",
 ]
 
 [project.scripts]

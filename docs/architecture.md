@@ -27,3 +27,7 @@ Sigma v1 uses a layered monolith:
 - Manual rendering only (no scheduler in v1).
 - No Telegram implementation yet (roadmap item).
 - No multi-currency, categories, or tags in v1.
+
+## Release and repository automation
+- GitHub Actions CI runs lint and tests on pushes/pull requests.
+- Tagged releases (`v*`) build and publish packages to PyPI with Trusted Publishing.
