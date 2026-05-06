@@ -1,5 +1,5 @@
-from rich.console import Console
-from rich.table import Table
+from rich.console import Console # type: ignore
+from rich.table import Table # type: ignore
 
 from sgm import __version__
 
@@ -40,7 +40,7 @@ def print_help() -> None:
     console.print()
     
     # Print the version and description
-    console.print(f"  track your money, easy way")
+    console.print("  track your money, easy way")
     console.print()
     
     # Print the About section
@@ -64,16 +64,6 @@ def print_help() -> None:
     table.add_column("Description")
     
     table.add_row("start", "First-run setup and preferences")
-    table.add_row("income", "Add marked income")
-    table.add_row("expense", "Add marked expense")
-    table.add_row("pending", "Show marked movements waiting for render")
-    table.add_row("render", "Render marked movements and clear their mark")
-    table.add_row("balances", "Show account balances")
-    table.add_row("account", "Account management commands")
-    table.add_row("movement", "Movement management commands")
-    table.add_row("transfer", "Transfer management commands")
-    table.add_row("report", "Reporting commands")
     
     console.print(table)
     console.print()
-
