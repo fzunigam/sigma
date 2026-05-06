@@ -21,23 +21,12 @@ def print_banner_text() -> None:
 
 def print_startup_text() -> None:
     console = Console()
-    console.print("Let's configure [bold cyan]Sigma[/bold cyan]")
+    console.print("Welcome to [bold cyan]Sigma[/bold cyan], your CLI finance tracker!")
+    console.print("Let's configure it!")
 
 def print_sgm() -> None:
-    logo = """\
- ███████╗ ██╗  ██████╗  ███╗   ███╗  █████╗ 
- ██╔════╝ ██║ ██╔════╝  ████╗ ████║ ██╔══██╗
- ███████╗ ██║ ██║  ███╗ ██╔████╔██║ ███████║
- ╚════██║ ██║ ██║   ██║ ██║╚██╔╝██║ ██╔══██║
- ███████║ ██║ ╚██████╔╝ ██║ ╚═╝ ██║ ██║  ██║
- ╚══════╝ ╚═╝  ╚═════╝  ╚═╝     ╚═╝ ╚═╝  ╚═╝"""
-    
     console = Console()
-    
-    # Print the ASCII art
-    console.print()
-    console.print(f"[bold cyan]{logo}[/bold cyan]")
-    console.print()
+    print_banner_text()
     
     # Print the version and description
     console.print("  track your money, easy way")
@@ -64,6 +53,7 @@ def print_sgm() -> None:
     table.add_column("Description")
     
     table.add_row("start", "First-run setup and preferences")
+    table.add_row("update", "Update sgm to the latest version")
     
     console.print(table)
     console.print()
@@ -78,5 +68,6 @@ def print_help() -> None:
     console.print()
     console.print("[bold cyan]---commands:[/bold cyan]")
     console.print("  start       First-run setup and preferences")
+    console.print("  update      Update sgm to the latest version")
     console.print("  version     Show the version and exit")
     console.print()
