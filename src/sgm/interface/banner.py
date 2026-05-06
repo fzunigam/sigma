@@ -23,7 +23,7 @@ def print_startup_text() -> None:
     console = Console()
     console.print("Let's configure [bold cyan]Sigma[/bold cyan]")
 
-def print_help() -> None:
+def print_sgm() -> None:
     logo = """\
  ███████╗ ██╗  ██████╗  ███╗   ███╗  █████╗ 
  ██╔════╝ ██║ ██╔════╝  ████╗ ████║ ██╔══██╗
@@ -67,3 +67,13 @@ def print_help() -> None:
     
     console.print(table)
     console.print()
+
+def print_help() -> None:
+    console = Console()
+    console.print("Usage: [bold cyan]sgm[/bold cyan] [OPTIONS] COMMAND [ARGS]")
+    console.print()
+    console.print("[bold cyan]---options:[/bold cyan]")
+    console.print("  -h, --help  Show this message and exit.")
+    console.print()
+    console.print("[bold cyan]---commands:[/bold cyan]")
+    console.print("  start       First-run setup and preferences")
