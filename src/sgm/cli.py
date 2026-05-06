@@ -1,4 +1,4 @@
-import typer
+import typer # type: ignore
 
 from sgm.infrastructure.user_config import save_config
 from sgm.interface.banner import print_help, print_startup_text
