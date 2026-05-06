@@ -70,10 +70,13 @@ def print_sgm() -> None:
 
 def print_help() -> None:
     console = Console()
+    console.print()
     console.print("Usage: [bold cyan]sgm[/bold cyan] [OPTIONS] COMMAND [ARGS]")
     console.print()
     console.print("[bold cyan]---options:[/bold cyan]")
-    console.print("  -h, --help  Show this message and exit.")
+    console.print("  -h, --help  Show this message and exit")
     console.print()
     console.print("[bold cyan]---commands:[/bold cyan]")
     console.print("  start       First-run setup and preferences")
+    console.print("  version     Show the version and exit")
+    console.print()

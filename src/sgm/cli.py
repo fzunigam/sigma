@@ -37,6 +37,12 @@ def start(
         raise typer.Exit()
         
     print_startup_text()
-    name = typer.prompt("Display name", default="", show_default=False).strip()
-    save_config(display_name=name or None)
+    save_config()
     typer.echo("Configuration saved.")
+
+
+@app.command("version")
+def version() -> None:
+    """Show the version and exit."""
+    from sgm import __version__
+    typer.echo(f"sgm version v{__version__}")
