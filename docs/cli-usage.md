@@ -4,80 +4,53 @@ Sigma (`sgm`) is designed for speed and clarity. Below is the complete reference
 
 ## Quickstart
 ```bash
-pip install sigma-finance
-sgm start
-sgm income cash 100000 "Salary"
-sgm expense cash 12000 "Groceries"
-sgm pending
-sgm render
-sgm balances
+EMPTY
 ```
 
 ---
 
 ## Core Commands
 
-### `sgm start`
-First-run setup wizard. Prompts for a display name and initializes the configuration file at `~/.config/sgm/config.toml`.
+Daily-use commands for logging data and managing the rendering cycle.
 
-### `sgm income <account> <amount> "<description>"`
-Logs an income movement to a specific account. The movement is "marked" by default, meaning it will be included in the next `render` operation.
-- **Example:** `sgm income bank 50000 "Dividend"`
+| **Command** | **Arguments** | **Example** | **Description** |
+|-|-|-|-|
+| `start`| *None* | `sgm start` | First-run setup wizard. |
+| `status`| *None* | `sgm status` | Displays a **rich** table of all account balances, credit limits, and the current *marked* total pending render. |
+| `exp` | `<amount> <description> {yes\|no} [account_id]` | `sgm exp 7000 "sushi" yes cc` | Records an expense. The {yes|no} choice flags the item for the next render. `[account_id]` is optional, you can select the default account in `sgm config`|
+| `inc` | `<amount> <description> [marked]` | `sgm inc 19000 "car wash" no` | Records an income. The {yes|no} choice flags the item for the next render. `[account_id]` is optional, you can select the default account in `sgm config`|
+| `tr` | `<from> <to> <amount>` | `sgm cc cr 10000`| Executes a transfer. |
+| `render` | *None* | `sgm render` | Sums marked movements, saves the result to history, and unmarks all items. |
 
-### `sgm expense <account> <amount> "<description>"`
-Logs an expense movement from a specific account. Like income, it is "marked" by default.
-- **Example:** `sgm expense cash 3500 "Coffee"`
+## Data Management & History
 
-### `sgm pending`
-Displays a table of all "marked" movements that are waiting to be processed by a render.
+Commands to review past performance and individual logs.
 
-### `sgm render [snapshot_id]`
-Processes all marked movements, calculates the net total, and saves an immutable snapshot to the history. Once rendered, movements are "unmarked" and will not appear in `pending` again.
-- **snapshot_id:** (Optional) A custom identifier for the snapshot.
+| **Command** | **Arguments** | **Example** | **Description** |
+|-|-|-|-|
+| `log` | `[limit]` | `sgm log 25` | Lists the most recent movements. (Default: 15). | 
+| `history` | *None* | `sgm history`| Displays a table of previous render results. Shows dates and total sums.|
+| `delete` | `<id>` | `sgm delete m23` | Removes a specific movement or transfer by ID. |
+| `edit`| `<id>` | `sgm edit 7` | Interactive command to modify the amount, description, or account of an existing entry. |
 
-### `sgm balances`
-Shows a table of all account balances and the total net balance of the system.
+## Account Configuration
 
----
+Management of the underlying financial structure.
 
-## Account Management (`sgm account`)
+| **Command** | **Arguments** | **Example** | **Description** |
+|-|-|-|-|
+| `acc list` | `<account_id>` | `sgm acc list cc` | A detailed view of account metadata. |
+| `acc add` | `<account_id> <name> <type> <initial_balance>` | `sgm acc add cc "Cuenta Corriente Santander" 120000` | Add an account. |
+| `acc rename`| `<old> <new>`| `sgm acc cc cc2`| Change account identifier |
+| `acc set-limit`| `<account_id> <limit>` | `sgm acc set-limit worldmember 2000000`| Updates the rolling limit for credit cards. |
 
-### `sgm account create <id> <name> <kind> <balance>`
-Creates a new account in the system.
-- **id:** Short unique identifier (e.g., `cash`, `visa`).
-- **name:** Descriptive name (e.g., "Main Wallet").
-- **kind:** `debit` or `credit`.
-- **balance:** Initial balance in integer CLP.
+## System & Integration
 
-### `sgm account list`
-Lists all registered accounts with their ID, name, kind, and current balance.
+Meta-commands for maintenance and the Telegram bridge.
 
----
-
-## Movement Management (`sgm movement`)
-
-### `sgm movement add <id> <account_id> "<description>" <amount> <type>`
-Manually adds a movement with a specific ID.
-- **id:** Unique identifier for the movement.
-- **type:** `income` or `expense`.
-
-### `sgm movement list-marked`
-Technical view of all marked movements.
-
----
-
-## Transfer Management (`sgm transfer`)
-
-### `sgm transfer move <id> <source_account_id> <target_account_id> <amount> --created-at <iso-timestamp>`
-Records a transfer of funds between two accounts.
-- **--created-at:** Required ISO-8601 timestamp (e.g., `2026-05-05T12:00:00Z`).
-
----
-
-## Reporting (`sgm report`)
-
-### `sgm report balances`
-Alias for `sgm balances`.
-
-### `sgm report render-history`
-Displays a history of all rendered snapshots, including income total, expense total, and net for each period.
+| **Command** | **Arguments** | **Example** | **Description** |
+|-|-|-|-|
+| `bot start` | *None* | `sgm bot start` | Launches the Telegram bot setup |
+| `config` | *None* | `sgm config` | Open `sgm` settings |
+| `update`| *None* | `sgm update`| Checks GitHub for a newer version and updates if necessary.|
+| `version` | *None* | `sgm version`| Displays current version, database path, and last update check. | 
