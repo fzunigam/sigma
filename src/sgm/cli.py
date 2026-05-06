@@ -18,7 +18,7 @@ from sgm.infrastructure.repositories import (
     TransferRepository,
 )
 from sgm.infrastructure.user_config import save_config
-from sgm.interface.banner import banner_text
+from sgm.interface.banner import print_startup_text
 from sgm.interface.formatting import format_table
 
 app = typer.Typer(help="Sigma CLI finance tracker")
@@ -115,8 +115,8 @@ def _add_movement(
 def main(ctx: typer.Context) -> None:
     """Sigma CLI finance tracker."""
     if ctx.invoked_subcommand is None:
-        typer.echo(banner_text())
-        typer.echo("To start configuring type sgm start")
+        from sgm.interface.banner import print_help
+        print_help()
 
 
 @account_app.command("create")
@@ -265,12 +265,9 @@ def balances() -> None:
 
 @app.command("start")
 def start() -> None:
-    typer.echo(banner_text())
-    typer.echo("To start configuring type sgm start")
-    typer.echo("Let's configure Sigma.")
-    name = typer.prompt("Display name (optional)", default="", show_default=False).strip()
-    theme = typer.prompt("Theme", default="blue").strip() or "blue"
-    save_config(theme=theme, display_name=name or None)
+    print_startup_text()
+    name = typer.prompt("Display name", default="", show_default=False).strip()
+    save_config(display_name=name or None)
     typer.echo("Configuration saved.")
 
 

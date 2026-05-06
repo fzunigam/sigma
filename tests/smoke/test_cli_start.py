@@ -10,7 +10,7 @@ runner = CliRunner()
 def test_start_creates_user_config(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
 
-    result = runner.invoke(app, ["start"], input="\nblue\n")
+    result = runner.invoke(app, ["start"], input="\n")
 
     assert result.exit_code == 0
     assert (tmp_path / ".config" / "sgm" / "config.toml").exists()

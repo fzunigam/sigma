@@ -4,7 +4,7 @@ from sgm.cli import app
 
 
 def test_start_shows_brand_and_guidance() -> None:
-    result = CliRunner().invoke(app, ["start"], input="\nblue\n")
+    result = CliRunner().invoke(app, ["start"], input="\n")
 
-    assert "SIGMA" in result.stdout
-    assert "to start configuring type sgm start" in result.stdout.lower()
+    assert "track your money" in result.stdout
+    assert "commands" in result.stdout.lower()
