@@ -6,8 +6,8 @@ import click
 import typer # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import create_account, init_db
-from sgm.infrastructure.user_config import save_config
+from sgm.infrastructure.database import clear_db, create_account, init_db
+from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
 app = typer.Typer(
@@ -43,6 +43,10 @@ def start(
         print(f"{ctx.command.help}")
         raise typer.Exit()
         
+    if is_configured():
+        typer.echo("Sigma is already configured. If you want to change something, you can visit 'sgm config'.")
+        raise typer.Exit()
+        
     print_startup_text()
     
     init_db()
@@ -67,6 +71,33 @@ def start(
         typer.echo(f"Error: {e}", err=True)
     
     save_config()
+
+
+@app.command("restore")
+def restore(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True)
+) -> None:
+    """Delete all data and leave the database empty."""
+    if help:
+        print(f"Usage: {ctx.command_path}")
+        print(f"{ctx.command.help}")
+        raise typer.Exit()
+        
+    typer.echo("WARNING: This will delete ALL accounts, movements, transfers, and history.", err=True)
+    typer.echo("This action CANNOT be undone.", err=True)
+    
+    try:
+        confirmation = typer.prompt("Type 'RESTORE' to confirm deletion (or press Ctrl+C to cancel)")
+        if confirmation != "RESTORE":
+            typer.echo("Restore cancelled.")
+            raise typer.Exit()
+    except typer.Abort:
+        typer.echo("\nRestore cancelled.")
+        raise typer.Exit()
+        
+    clear_db()
+    typer.echo("Database restored. All data has been deleted.")
 
 
 @app.command("version")

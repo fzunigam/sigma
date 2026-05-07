@@ -88,3 +88,17 @@ def create_account(id: str, name: str, type: str, balance: int, credit_limit: in
             conn.commit()
         except sqlite3.IntegrityError:
             raise ValueError(f"Account with ID '{id}' already exists.")
+
+def clear_db(db_path: Path | None = None) -> None:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        # Delete from all tables
+        cursor.execute("DELETE FROM movement_marks")
+        cursor.execute("DELETE FROM movements")
+        cursor.execute("DELETE FROM transfers")
+        cursor.execute("DELETE FROM render_history")
+        cursor.execute("DELETE FROM accounts")
+        conn.commit()

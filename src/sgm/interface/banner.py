@@ -2,6 +2,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
+from sgm.infrastructure.database import get_db_path
 
 def print_banner_text() -> None:
     logo = """\
@@ -41,6 +42,7 @@ def print_sgm() -> None:
 
     table.add_row("docs", "github.com/fzunigam/sigma")
     table.add_row("version", f"v{__version__}")
+    table.add_row("db", str(get_db_path()))
 
     console.print(table)
     console.print()
@@ -53,6 +55,7 @@ def print_sgm() -> None:
     table.add_column("Description")
     
     table.add_row("start", "First-run setup and preferences")
+    table.add_row("restore", "Delete all data and leave the database empty")
     table.add_row("update", "Update sgm to the latest version")
     
     console.print(table)
@@ -68,6 +71,7 @@ def print_help() -> None:
     console.print()
     console.print("[bold cyan]---commands:[/bold cyan]")
     console.print("  start       First-run setup and preferences")
+    console.print("  restore     Delete all data and leave the database empty")
     console.print("  update      Update sgm to the latest version")
     console.print("  version     Show the version and exit")
     console.print()

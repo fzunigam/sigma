@@ -65,5 +65,6 @@ Meta-commands for maintenance and the Telegram bridge.
 |-|-|-|-|
 | `bot start` | *None* | `sgm bot start` | Launches the Telegram bot listener. |
 | `config` | *None* | `sgm config` | Opens the `sgm` global settings (default accounts, API tokens). |
+| `restore` | *None* | `sgm restore` | Deletes all data and leaves the database empty. Requires confirmation. |
 | `update`| *None* | `sgm update` | Checks for a newer version on GitHub and performs a self-update. |
 | `version` | *None* | `sgm version` | Displays current version, database path, and last update check. |
