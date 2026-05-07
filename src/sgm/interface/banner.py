@@ -71,6 +71,7 @@ def print_help() -> None:
     console.print()
     console.print("[bold cyan]---commands:[/bold cyan]")
     console.print("  start       First-run setup and preferences")
+    console.print("  acc add     Adds a new account with an initial balance")
     console.print("  restore     Delete all data and leave the database empty")
     console.print("  update      Update sgm to the latest version")
     console.print("  version     Show the version and exit")

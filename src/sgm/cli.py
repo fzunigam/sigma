@@ -17,6 +17,14 @@ app = typer.Typer(
     rich_markup_mode=None
 )
 
+acc_app = typer.Typer(
+    help="Account configuration",
+    add_completion=False,
+    add_help_option=False,
+    rich_markup_mode=None
+)
+app.add_typer(acc_app, name="acc")
+
 
 @app.callback(invoke_without_command=True)
 def main(
@@ -137,4 +145,28 @@ def update(
         typer.echo("Failed to update sgm. Please try running 'pip install --upgrade sigma-finance' manually.", err=True)
         if e.stderr:
             typer.echo(e.stderr, err=True)
+        raise typer.Exit(1)
+
+
+def acc_add_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <id> <name> <type> <bal>")
+        print("Adds a new account with an initial balance.")
+        raise typer.Exit()
+
+@acc_app.command("add")
+def acc_add(
+    ctx: typer.Context,
+    id: str = typer.Argument(..., help="Unique identifier for the account"),
+    name: str = typer.Argument(..., help="Display name for the account"),
+    type: str = typer.Argument(..., help="Account type ('debit' or 'credit')", click_type=click.Choice(["debit", "credit"])),
+    bal: int = typer.Argument(..., help="Initial balance (CLP)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=acc_add_help_callback)
+) -> None:
+    """Adds a new account with an initial balance."""
+    try:
+        create_account(id, name, type, bal)
+        typer.echo(f"Account '{name}' created successfully!")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
