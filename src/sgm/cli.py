@@ -2,9 +2,11 @@ import re
 import subprocess
 import sys
 
+import click
 import typer # type: ignore
 
 from sgm import __version__
+from sgm.infrastructure.database import create_account, init_db
 from sgm.infrastructure.user_config import save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -42,8 +44,29 @@ def start(
         raise typer.Exit()
         
     print_startup_text()
+    
+    init_db()
+    typer.echo("Database initialized.")
+    
+    typer.echo("\nLet's create your first account.")
+    acc_id = typer.prompt("Account ID (e.g. 'wallet', 'cc')")
+    acc_name = typer.prompt("Account Name (e.g. 'Cash', 'Credit Card')")
+    acc_type = typer.prompt("Account Type ('debit' or 'credit')", type=click.Choice(["debit", "credit"]))
+    
+    acc_balance = typer.prompt("Initial Balance (CLP)", type=int)
+    
+    acc_limit = 0
+    if acc_type == "credit":
+        acc_limit = typer.prompt("Credit Limit (CLP)", type=int, default=0)
+        
+    try:
+        create_account(acc_id, acc_name, acc_type, acc_balance, acc_limit)
+        typer.echo(f"Account '{acc_name}' created successfully!")
+        typer.echo("Configuration saved. Ready to use Sigma!")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+    
     save_config()
-    typer.echo("Configuration saved. Ready to use Sigma!")
 
 
 @app.command("version")
