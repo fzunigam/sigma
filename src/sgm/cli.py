@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -232,6 +232,37 @@ def inc(
     try:
         create_movement(amount, desc, resolved_acc_id, "income", marked)
         typer.echo(f"Recorded income of {amount} ('{desc}') in '{resolved_acc_id}'.")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+
+
+def tr_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <from> <to> <amount>")
+        print("Executes a transfer between accounts.")
+        raise typer.Exit()
+
+@app.command("tr")
+def tr(
+    ctx: typer.Context,
+    from_acc: str = typer.Argument(..., help="Source account ID"),
+    to_acc: str = typer.Argument(..., help="Destination account ID"),
+    amount: int = typer.Argument(..., help="Amount to transfer (CLP)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=tr_help_callback)
+) -> None:
+    """Executes a transfer between accounts."""
+    if amount <= 0:
+        typer.echo("Error: Amount must be positive.", err=True)
+        raise typer.Exit(1)
+        
+    if from_acc == to_acc:
+        typer.echo("Error: Source and destination accounts must be different.", err=True)
+        raise typer.Exit(1)
+        
+    try:
+        create_transfer(from_acc, to_acc, amount)
+        typer.echo(f"Transferred {amount} from '{from_acc}' to '{to_acc}'.")
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)

@@ -110,15 +110,41 @@ def init_db(db_path: Path | None = None) -> None:
                     )
                 """)
         
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS transfers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                from_account TEXT NOT NULL,
-                to_account TEXT NOT NULL,
-                amount INTEGER NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
+        cursor.execute("PRAGMA table_info(transfers)")
+        transfer_cols_info = cursor.fetchall()
+        
+        if not transfer_cols_info:
+            cursor.execute("""
+                CREATE TABLE transfers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    from_account TEXT NOT NULL,
+                    to_account TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
+        else:
+            transfer_cols = {row[1]: row[2] for row in transfer_cols_info}
+            if transfer_cols.get('id') == 'TEXT' or 'source_account_id' in transfer_cols:
+                # Deep migration from old local schema
+                cursor.execute("ALTER TABLE transfers RENAME TO old_transfers")
+                cursor.execute("""
+                    CREATE TABLE transfers (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        from_account TEXT NOT NULL,
+                        to_account TEXT NOT NULL,
+                        amount INTEGER NOT NULL,
+                        created_at TEXT NOT NULL
+                    )
+                """)
+                cursor.execute("SELECT source_account_id, target_account_id, amount, created_at FROM old_transfers")
+                for old_row in cursor.fetchall():
+                    src_id, tgt_id, amt, cat = old_row
+                    cursor.execute("""
+                        INSERT INTO transfers (from_account, to_account, amount, created_at)
+                        VALUES (?, ?, ?, ?)
+                    """, (src_id, tgt_id, amt, cat))
+                cursor.execute("DROP TABLE old_transfers")
         
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS render_history (
@@ -214,6 +240,69 @@ def get_marked_total(db_path: Path | None = None) -> int:
         """)
         row = cursor.fetchone()
         return row[0] if row and row[0] is not None else 0
+
+
+def create_transfer(from_account: str, to_account: str, amount: int, db_path: Path | None = None) -> int:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # Get from_account
+        cursor.execute("SELECT type, balance, credit_limit FROM accounts WHERE id = ?", (from_account,))
+        from_row = cursor.fetchone()
+        if not from_row:
+            raise ValueError(f"Account with ID '{from_account}' does not exist.")
+        from_type, from_balance, from_limit = from_row
+        
+        # Get to_account
+        cursor.execute("SELECT type, balance, credit_limit FROM accounts WHERE id = ?", (to_account,))
+        to_row = cursor.fetchone()
+        if not to_row:
+            raise ValueError(f"Account with ID '{to_account}' does not exist.")
+        to_type, to_balance, to_limit = to_row
+        
+        # Withdraw from from_account
+        if from_type == "debit":
+            new_from_balance = from_balance - amount
+            if new_from_balance < 0:
+                raise ValueError(f"Insufficient funds in account '{from_account}'. Available: {from_balance}, Required: {amount}")
+        elif from_type == "credit":
+            new_from_balance = from_balance + amount
+            if new_from_balance > from_limit:
+                avail = from_limit - from_balance
+                raise ValueError(f"Insufficient credit in account '{from_account}'. Available: {avail}, Required: {amount}")
+        else:
+            raise ValueError(f"Unknown account type '{from_type}'")
+            
+        # Deposit into to_account
+        if to_type == "debit":
+            new_to_balance = to_balance + amount
+        elif to_type == "credit":
+            new_to_balance = to_balance - amount
+        else:
+            raise ValueError(f"Unknown account type '{to_type}'")
+            
+        # Update balances
+        cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?", (new_from_balance, from_account))
+        cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?", (new_to_balance, to_account))
+        
+        # Insert transfer record
+        cursor.execute("""
+            INSERT INTO transfers (from_account, to_account, amount, created_at)
+            VALUES (?, ?, ?, ?)
+        """, (from_account, to_account, amount, now))
+        
+        transfer_id = cursor.lastrowid
+        if transfer_id is None:
+            raise RuntimeError("Failed to insert transfer")
+            
+        conn.commit()
+        return transfer_id
 
 
 def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
