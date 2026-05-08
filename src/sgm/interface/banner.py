@@ -55,6 +55,9 @@ def print_sgm() -> None:
     table.add_column("Description")
     
     table.add_row("start", "First-run setup and preferences")
+    table.add_row("status", "Displays balances, credit limits, and marked total")
+    table.add_row("exp", "Records an expense")
+    table.add_row("inc", "Records an income")
     table.add_row("acc add", "Adds a new account with an initial balance")
     table.add_row("acc list", "Detailed view of account metadata")
     table.add_row("restore", "Delete all data and leave the database empty")
@@ -74,6 +77,8 @@ def print_help() -> None:
     console.print("[bold cyan]---commands:[/bold cyan]")
     console.print("  start       First-run setup and preferences")
     console.print("  status      Displays balances, credit limits, and marked total")
+    console.print("  exp         Records an expense")
+    console.print("  inc         Records an income")
     console.print("  acc add     Adds a new account with an initial balance")
     console.print("  acc list    Detailed view of account metadata")
     console.print("  acc set-limit Updates the rolling credit limit")

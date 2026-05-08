@@ -34,24 +34,81 @@ def init_db(db_path: Path | None = None) -> None:
             if 'credit_limit' not in account_cols:
                 cursor.execute("ALTER TABLE accounts ADD COLUMN credit_limit INTEGER DEFAULT 0")
         
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS movements (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                amount INTEGER NOT NULL,
-                description TEXT NOT NULL,
-                account_id TEXT NOT NULL,
-                type TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
+        cursor.execute("PRAGMA table_info(movements)")
+        movement_cols_info = cursor.fetchall()
         
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS movement_marks (
-                movement_id INTEGER PRIMARY KEY,
-                marked INTEGER NOT NULL,
-                FOREIGN KEY(movement_id) REFERENCES movements(id)
-            )
-        """)
+        # If the table doesn't exist yet, create it fresh
+        if not movement_cols_info:
+            cursor.execute("""
+                CREATE TABLE movements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    amount INTEGER NOT NULL,
+                    description TEXT NOT NULL,
+                    account_id TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE movement_marks (
+                    movement_id INTEGER PRIMARY KEY,
+                    marked INTEGER NOT NULL,
+                    FOREIGN KEY(movement_id) REFERENCES movements(id)
+                )
+            """)
+        else:
+            movement_cols = {row[1]: row[2] for row in movement_cols_info}
+            if movement_cols.get('id') == 'TEXT':
+                # Deep migration from old local schema
+                cursor.execute("ALTER TABLE movements RENAME TO old_movements")
+                cursor.execute("DROP TABLE IF EXISTS movement_marks")
+                
+                cursor.execute("""
+                    CREATE TABLE movements (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        amount INTEGER NOT NULL,
+                        description TEXT NOT NULL,
+                        account_id TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        created_at TEXT NOT NULL
+                    )
+                """)
+                cursor.execute("""
+                    CREATE TABLE movement_marks (
+                        movement_id INTEGER PRIMARY KEY,
+                        marked INTEGER NOT NULL,
+                        FOREIGN KEY(movement_id) REFERENCES movements(id)
+                    )
+                """)
+                
+                # Copy data over
+                cursor.execute("SELECT id, description, amount, type, account_id, marked, created_at FROM old_movements")
+                for old_row in cursor.fetchall():
+                    old_id, desc, amt, mtype, acc_id, marked, cat = old_row
+                    cursor.execute("""
+                        INSERT INTO movements (amount, description, account_id, type, created_at)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (amt, desc, acc_id, mtype, cat))
+                    new_id = cursor.lastrowid
+                    cursor.execute("""
+                        INSERT INTO movement_marks (movement_id, marked)
+                        VALUES (?, ?)
+                    """, (new_id, marked))
+                
+                cursor.execute("DROP TABLE old_movements")
+            else:
+                if 'created_at' not in movement_cols:
+                    from datetime import datetime, timezone
+                    now = datetime.now(timezone.utc).isoformat()
+                    cursor.execute(f"ALTER TABLE movements ADD COLUMN created_at TEXT NOT NULL DEFAULT '{now}'")
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS movement_marks (
+                        movement_id INTEGER PRIMARY KEY,
+                        marked INTEGER NOT NULL,
+                        FOREIGN KEY(movement_id) REFERENCES movements(id)
+                    )
+                """)
         
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS transfers (
@@ -157,3 +214,64 @@ def get_marked_total(db_path: Path | None = None) -> int:
         """)
         row = cursor.fetchone()
         return row[0] if row and row[0] is not None else 0
+
+
+def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT type, balance, credit_limit FROM accounts WHERE id = ?", (account_id,))
+        acc_row = cursor.fetchone()
+        if not acc_row:
+            raise ValueError(f"Account with ID '{account_id}' does not exist.")
+            
+        acc_type, balance, credit_limit = acc_row
+        
+        if type == "expense":
+            if acc_type == "debit":
+                new_balance = balance - amount
+                if new_balance < 0:
+                    raise ValueError(f"Insufficient funds in account '{account_id}'. Available: {balance}, Required: {amount}")
+            elif acc_type == "credit":
+                new_balance = balance + amount
+                if new_balance > credit_limit:
+                    avail = credit_limit - balance
+                    raise ValueError(f"Insufficient credit in account '{account_id}'. Available: {avail}, Required: {amount}")
+            else:
+                raise ValueError(f"Unknown account type '{acc_type}'")
+        elif type == "income":
+            if acc_type == "debit":
+                new_balance = balance + amount
+            elif acc_type == "credit":
+                new_balance = balance - amount
+            else:
+                raise ValueError(f"Unknown account type '{acc_type}'")
+        else:
+            raise ValueError(f"Unknown movement type '{type}'")
+            
+        cursor.execute("""
+            UPDATE accounts SET balance = ? WHERE id = ?
+        """, (new_balance, account_id))
+            
+        cursor.execute("""
+            INSERT INTO movements (amount, description, account_id, type, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (amount, description, account_id, type, now))
+        
+        movement_id = cursor.lastrowid
+        if movement_id is None:
+            raise RuntimeError("Failed to insert movement")
+            
+        cursor.execute("""
+            INSERT INTO movement_marks (movement_id, marked)
+            VALUES (?, ?)
+        """, (movement_id, 1 if marked else 0))
+        
+        conn.commit()
+        return movement_id

@@ -16,7 +16,7 @@ Adopt a layered monolith in Python 3.12 with SQLite, Typer, and Rich:
 - Infrastructure layer for persistence and external concerns.
 - CLI interface layer for commands and presentation.
 
-Amounts are stored as integer CLP pesos, rendering is manual in v1, and movement accounting remains independent from explicit account balances.
+Amounts are stored as integer CLP pesos, rendering is manual in v1, and movements directly update account balances, ensuring transactions cannot proceed without sufficient funds.
 
 ## Consequences
 - Faster delivery with clear boundaries and low operational complexity.

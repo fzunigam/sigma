@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -37,6 +37,9 @@ def main(
     if help:
         print_help()
         raise typer.Exit()
+        
+    if is_configured():
+        init_db()
         
     if ctx.invoked_subcommand is None:
         print_sgm()
@@ -156,6 +159,82 @@ def restore(
 def version() -> None:
     """Show the version and exit."""
     typer.echo(f"sgm version v{__version__}")
+
+
+def _resolve_account(acc_id: str | None) -> str:
+    if acc_id is not None:
+        return acc_id
+    accounts = get_accounts()
+    if not accounts:
+        typer.echo("Error: No accounts exist. Use 'sgm acc add' first.", err=True)
+        raise typer.Exit(1)
+    if len(accounts) == 1:
+        return accounts[0]["id"]
+    
+    typer.echo("Error: Multiple accounts exist. You must specify the account ID.", err=True)
+    raise typer.Exit(1)
+
+
+def exp_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id]")
+        print("Records an expense. The <mark> choice (yes/no) flags the item for the next render.")
+        raise typer.Exit()
+
+@app.command("exp")
+def exp(
+    ctx: typer.Context,
+    amount: int = typer.Argument(..., help="Amount of the expense (CLP)"),
+    desc: str = typer.Argument(..., help="Description of the expense"),
+    mark: str = typer.Argument(..., help="Flag for next render ('yes' or 'no')", click_type=click.Choice(["yes", "no"])),
+    acc_id: str | None = typer.Argument(None, help="Account ID (optional if only 1 account exists)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=exp_help_callback)
+) -> None:
+    """Records an expense."""
+    if amount <= 0:
+        typer.echo("Error: Amount must be positive.", err=True)
+        raise typer.Exit(1)
+        
+    resolved_acc_id = _resolve_account(acc_id)
+    marked = mark == "yes"
+    
+    try:
+        create_movement(amount, desc, resolved_acc_id, "expense", marked)
+        typer.echo(f"Recorded expense of {amount} ('{desc}') in '{resolved_acc_id}'.")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+
+
+def inc_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id]")
+        print("Records an income. The <mark> choice (yes/no) flags the item for the next render.")
+        raise typer.Exit()
+
+@app.command("inc")
+def inc(
+    ctx: typer.Context,
+    amount: int = typer.Argument(..., help="Amount of the income (CLP)"),
+    desc: str = typer.Argument(..., help="Description of the income"),
+    mark: str = typer.Argument(..., help="Flag for next render ('yes' or 'no')", click_type=click.Choice(["yes", "no"])),
+    acc_id: str | None = typer.Argument(None, help="Account ID (optional if only 1 account exists)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=inc_help_callback)
+) -> None:
+    """Records an income."""
+    if amount <= 0:
+        typer.echo("Error: Amount must be positive.", err=True)
+        raise typer.Exit(1)
+        
+    resolved_acc_id = _resolve_account(acc_id)
+    marked = mark == "yes"
+    
+    try:
+        create_movement(amount, desc, resolved_acc_id, "income", marked)
+        typer.echo(f"Recorded income of {amount} ('{desc}') in '{resolved_acc_id}'.")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command("update")

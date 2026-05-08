@@ -53,8 +53,9 @@ Amounts are stored as integer CLP pesos only.
 Transfers are independent transactions that immediately update source and destination balances.
 
 ## Behavioral Rules
-- Debit/Credit balances are managed by explicit account or transfer/payment commands.
-- Income/expense movements do not alter balances in v1.
+- Debit/Credit balances are managed by explicit account, transfer/payment, and movement commands.
+- Income/expense movements immediately alter account balances.
+- Transactions (expenses) cannot be completed if there are insufficient funds or credit available.
 - Rendering is manual command execution only in v1.
 - CLI assumes a single local user (no auth layer in v1).
 

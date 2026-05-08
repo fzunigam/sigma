@@ -16,7 +16,7 @@ Sigma v1 uses a layered monolith:
 - Core records are immutable where possible (movements, transfers, render history).
 
 ## Core Flow
-1. User logs movements, which are marked by default.
+1. User logs movements, which update the account balance and are marked by default.
 2. User runs `sgm render run` manually.
 3. The app computes net (`income - expense`) for marked movements.
 4. The app persists a render snapshot in `render_history` and unmarks processed movements.
