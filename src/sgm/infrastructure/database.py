@@ -187,6 +187,36 @@ def clear_db(db_path: Path | None = None) -> None:
         conn.commit()
 
 
+def rename_account(old_id: str, new_id: str, db_path: Path | None = None) -> None:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # Check if old_id exists
+        cursor.execute("SELECT id FROM accounts WHERE id = ?", (old_id,))
+        if not cursor.fetchone():
+            raise ValueError(f"Account with ID '{old_id}' does not exist.")
+            
+        # Check if new_id exists
+        cursor.execute("SELECT id FROM accounts WHERE id = ?", (new_id,))
+        if cursor.fetchone():
+            raise ValueError(f"Account with ID '{new_id}' already exists.")
+            
+        # Update accounts
+        cursor.execute("UPDATE accounts SET id = ? WHERE id = ?", (new_id, old_id))
+        
+        # Update movements
+        cursor.execute("UPDATE movements SET account_id = ? WHERE account_id = ?", (new_id, old_id))
+        
+        # Update transfers
+        cursor.execute("UPDATE transfers SET from_account = ? WHERE from_account = ?", (new_id, old_id))
+        cursor.execute("UPDATE transfers SET to_account = ? WHERE to_account = ?", (new_id, old_id))
+        
+        conn.commit()
+
+
 def get_accounts(db_path: Path | None = None) -> list[dict]:
     if db_path is None:
         db_path = get_db_path()

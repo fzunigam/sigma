@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -321,6 +321,32 @@ def acc_add(
     try:
         create_account(id, name, type, bal)
         typer.echo(f"Account '{name}' created successfully!")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+
+
+def acc_rename_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <old_id> <new_id>")
+        print("Updates the unique identifier for an account.")
+        raise typer.Exit()
+
+@acc_app.command("rename")
+def acc_rename(
+    ctx: typer.Context,
+    old_id: str = typer.Argument(..., help="Current unique identifier for the account"),
+    new_id: str = typer.Argument(..., help="New unique identifier for the account"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=acc_rename_help_callback)
+) -> None:
+    """Updates the unique identifier for an account."""
+    if old_id == new_id:
+        typer.echo("Error: New ID must be different from the old ID.", err=True)
+        raise typer.Exit(1)
+        
+    try:
+        rename_account(old_id, new_id)
+        typer.echo(f"Account '{old_id}' renamed to '{new_id}' successfully!")
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)

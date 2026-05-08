@@ -44,7 +44,6 @@ Commands to review past performance and individual logs.
 | `log` | `[limit]` | `sgm log 25` | Lists the most recent movements. (Default: 15). | 
 | `history` | *None* | `sgm history` | Displays a table of previous render results with dates and total sums. |
 | `delete` | `<id>` | `sgm delete 23` | Permanently removes a movement or transfer by ID. |
-| `edit`| `<id>` | `sgm edit 7` | Interactive command to modify amount, description, or account for an entry. |
 
 ## Account Configuration
 
