@@ -139,3 +139,21 @@ def update_credit_limit(id: str, limit: int, db_path: Path | None = None) -> Non
             WHERE id = ?
         """, (limit, id))
         conn.commit()
+
+
+def get_marked_total(db_path: Path | None = None) -> int:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(CASE WHEN m.type = 'income' THEN m.amount ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN m.type = 'expense' THEN m.amount ELSE 0 END), 0)
+            FROM movements m
+            JOIN movement_marks mm ON m.id = mm.movement_id
+            WHERE mm.marked = 1
+        """)
+        row = cursor.fetchone()
+        return row[0] if row and row[0] is not None else 0

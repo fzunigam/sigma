@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -81,6 +81,48 @@ def start(
         typer.echo(f"Error: {e}", err=True)
     
     save_config()
+
+
+@app.command("status")
+def status(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True)
+) -> None:
+    """Displays a rich table of balances, credit limits, and the current marked total."""
+    if help:
+        print(f"Usage: {ctx.command_path}")
+        print(f"{ctx.command.help}")
+        raise typer.Exit()
+        
+    console = Console()
+    accounts = get_accounts()
+    marked_total = get_marked_total()
+    
+    if not accounts:
+        typer.echo("No accounts found. Use 'sgm acc add' to create one.")
+        raise typer.Exit()
+        
+    table = Table(title="Account Status")
+    table.add_column("Account", style="cyan bold")
+    table.add_column("Type")
+    table.add_column("Balance", justify="right")
+    table.add_column("Available Credit", justify="right")
+    
+    for acc in accounts:
+        avail_credit = ""
+        if acc["type"] == "credit":
+            avail = acc["credit_limit"] - acc["balance"]
+            avail_credit = str(avail)
+        table.add_row(
+            acc["name"],
+            acc["type"],
+            str(acc["balance"]),
+            avail_credit
+        )
+        
+    console.print(table)
+    console.print()
+    console.print(f"Marked total for next render: [bold {'green' if marked_total >= 0 else 'red'}]{marked_total}[/]")
 
 
 @app.command("restore")
