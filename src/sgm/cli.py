@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -266,6 +266,59 @@ def tr(
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
+
+def log_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} [limit]")
+        print("Lists the most recent movements. (Default: 15).")
+        raise typer.Exit()
+
+@app.command("log")
+def log_cmd(
+    ctx: typer.Context,
+    limit: int = typer.Argument(15, help="Number of records to show"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=log_help_callback)
+) -> None:
+    """Lists the most recent movements."""
+    console = Console()
+    records = get_recent_logs(limit)
+    
+    if not records:
+        typer.echo("No recent movements found.")
+        raise typer.Exit()
+        
+    table = Table(title=f"Recent Logs (last {min(limit, len(records))})")
+    table.add_column("ID", style="cyan")
+    table.add_column("Date", style="dim")
+    table.add_column("Type")
+    table.add_column("Account")
+    table.add_column("Amount", justify="right")
+    table.add_column("Description")
+    
+    for rec in records:
+        type_str = rec["type"]
+        if type_str == "income":
+            type_fmt = "[green]income[/]"
+        elif type_str == "expense":
+            type_fmt = "[red]expense[/]"
+        elif type_str == "transfer":
+            type_fmt = "[blue]transfer[/]"
+        else:
+            type_fmt = type_str
+            
+        date_str = rec["created_at"][:16].replace("T", " ")
+        
+        table.add_row(
+            rec["unique_id"],
+            date_str,
+            type_fmt,
+            rec["account_id"],
+            str(rec["amount"]),
+            rec["description"]
+        )
+        
+    console.print(table)
 
 
 @app.command("update")

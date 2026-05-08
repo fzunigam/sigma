@@ -335,6 +335,41 @@ def create_transfer(from_account: str, to_account: str, amount: int, db_path: Pa
         return transfer_id
 
 
+def get_recent_logs(limit: int = 15, db_path: Path | None = None) -> list[dict]:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                'm-' || id AS unique_id,
+                type,
+                amount,
+                description,
+                account_id,
+                created_at
+            FROM movements
+            
+            UNION ALL
+            
+            SELECT 
+                't-' || id AS unique_id,
+                'transfer' AS type,
+                amount,
+                from_account || ' -> ' || to_account AS description,
+                '' AS account_id,
+                created_at
+            FROM transfers
+            
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,))
+        
+        return [dict(row) for row in cursor.fetchall()]
+
 def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
     if db_path is None:
         db_path = get_db_path()

@@ -9,11 +9,11 @@ from sgm.infrastructure.database import init_db
 runner = CliRunner()
 
 @pytest.fixture
-def clean_db(tmp_path) -> Generator[None, None, None]:
+def clean_db(tmp_path, monkeypatch) -> Generator[None, None, None]:
     db_path = tmp_path / "test.db"
     
     import sgm.infrastructure.database
-    sgm.infrastructure.database.get_db_path = lambda: db_path
+    monkeypatch.setattr(sgm.infrastructure.database, "get_db_path", lambda: db_path)
     
     init_db(db_path)
     
