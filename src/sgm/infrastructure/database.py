@@ -102,3 +102,40 @@ def clear_db(db_path: Path | None = None) -> None:
         cursor.execute("DELETE FROM render_history")
         cursor.execute("DELETE FROM accounts")
         conn.commit()
+
+
+def get_accounts(db_path: Path | None = None) -> list[dict]:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, type, balance, credit_limit FROM accounts ORDER BY id")
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def get_account(id: str, db_path: Path | None = None) -> dict | None:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, type, balance, credit_limit FROM accounts WHERE id = ?", (id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def update_credit_limit(id: str, limit: int, db_path: Path | None = None) -> None:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE accounts 
+            SET credit_limit = ?
+            WHERE id = ?
+        """, (limit, id))
+        conn.commit()

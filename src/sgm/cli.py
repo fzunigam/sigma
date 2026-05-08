@@ -4,9 +4,11 @@ import sys
 
 import click
 import typer # type: ignore
+from rich.console import Console # type: ignore
+from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -170,3 +172,81 @@ def acc_add(
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
+
+def acc_list_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} [acc_id]")
+        print("Detailed view of account metadata. Lists all accounts if [acc_id] is omitted.")
+        raise typer.Exit()
+
+@acc_app.command("list")
+def acc_list(
+    ctx: typer.Context,
+    acc_id: str | None = typer.Argument(None, help="Unique identifier for the account"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=acc_list_help_callback)
+) -> None:
+    """Detailed view of account metadata. Lists all accounts if [acc_id] is omitted."""
+    console = Console()
+    
+    if acc_id:
+        acc = get_account(acc_id)
+        if not acc:
+            typer.echo(f"Error: Account with ID '{acc_id}' not found.", err=True)
+            raise typer.Exit(1)
+        
+        table = Table(title=f"Account Details: {acc_id}")
+        table.add_column("Property", style="cyan bold")
+        table.add_column("Value")
+        for key, value in acc.items():
+            table.add_row(key, str(value))
+        console.print(table)
+    else:
+        accounts = get_accounts()
+        if not accounts:
+            typer.echo("No accounts found. Use 'sgm acc add' to create one.")
+            raise typer.Exit()
+            
+        table = Table(title="All Accounts")
+        table.add_column("ID", style="cyan bold")
+        table.add_column("Name")
+        table.add_column("Type")
+        table.add_column("Balance", justify="right")
+        table.add_column("Credit Limit", justify="right")
+        
+        for acc in accounts:
+            table.add_row(
+                acc["id"],
+                acc["name"],
+                acc["type"],
+                str(acc["balance"]),
+                str(acc["credit_limit"])
+            )
+        console.print(table)
+
+
+def acc_set_limit_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <acc_id> <limit>")
+        print("Updates the rolling credit limit (Credit accounts only).")
+        raise typer.Exit()
+
+@acc_app.command("set-limit")
+def acc_set_limit(
+    ctx: typer.Context,
+    acc_id: str = typer.Argument(..., help="Unique identifier for the account"),
+    limit: int = typer.Argument(..., help="New credit limit (CLP)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=acc_set_limit_help_callback)
+) -> None:
+    """Updates the rolling credit limit (Credit accounts only)."""
+    acc = get_account(acc_id)
+    if not acc:
+        typer.echo(f"Error: Account with ID '{acc_id}' not found.", err=True)
+        raise typer.Exit(1)
+        
+    if acc["type"] != "credit":
+        typer.echo(f"Error: Account '{acc_id}' is a debit account. Only credit accounts can have a credit limit.", err=True)
+        raise typer.Exit(1)
+        
+    update_credit_limit(acc_id, limit)
+    typer.echo(f"Credit limit for '{acc_id}' updated to {limit} successfully!")
