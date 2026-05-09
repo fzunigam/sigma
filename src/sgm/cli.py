@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -266,6 +266,26 @@ def tr(
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
+
+
+def render_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path}")
+        print("Sums all marked movements, logs the result to history, and unmarks all items.")
+        raise typer.Exit()
+
+@app.command("render")
+def render_cmd(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=render_help_callback)
+) -> None:
+    """Sums all marked movements, logs the result to history, and unmarks all items."""
+    net_amount, count = execute_render()
+    if count == 0:
+        typer.echo("No marked movements to render.")
+    else:
+        typer.echo(f"Rendered {count} movements.")
+        typer.echo(f"Net amount logged: {net_amount}")
 
 
 def log_help_callback(ctx: typer.Context, value: bool) -> None:

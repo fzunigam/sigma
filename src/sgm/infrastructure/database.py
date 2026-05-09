@@ -146,14 +146,47 @@ def init_db(db_path: Path | None = None) -> None:
                     """, (src_id, tgt_id, amt, cat))
                 cursor.execute("DROP TABLE old_transfers")
         
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS render_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                net_amount INTEGER NOT NULL,
-                rendered_at TEXT NOT NULL
-            )
-        """)
+        cursor.execute("PRAGMA table_info(render_history)")
+        render_cols_info = cursor.fetchall()
         
+        if not render_cols_info:
+            cursor.execute("""
+                CREATE TABLE render_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    net_amount INTEGER NOT NULL,
+                    rendered_at TEXT NOT NULL
+                )
+            """)
+        else:
+            render_cols = {row[1]: row[2] for row in render_cols_info}
+            if 'id' not in render_cols or render_cols.get('id') == 'TEXT' or 'income_total' in render_cols:
+                # Deep migration for old local schema
+                cursor.execute("ALTER TABLE render_history RENAME TO old_render_history")
+                cursor.execute("""
+                    CREATE TABLE render_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        net_amount INTEGER NOT NULL,
+                        rendered_at TEXT NOT NULL
+                    )
+                """)
+                if 'net' in render_cols:
+                    cursor.execute("SELECT net, rendered_at FROM old_render_history")
+                    for old_row in cursor.fetchall():
+                        cursor.execute("""
+                            INSERT INTO render_history (net_amount, rendered_at)
+                            VALUES (?, ?)
+                        """, (old_row[0], old_row[1]))
+                elif 'rendered_at' in render_cols:
+                    cursor.execute("SELECT rendered_at FROM old_render_history")
+                    for old_row in cursor.fetchall():
+                        cursor.execute("""
+                            INSERT INTO render_history (net_amount, rendered_at)
+                            VALUES (?, ?)
+                        """, (0, old_row[0]))
+                cursor.execute("DROP TABLE old_render_history")
+            elif 'net_amount' not in render_cols:
+                cursor.execute("ALTER TABLE render_history ADD COLUMN net_amount INTEGER NOT NULL DEFAULT 0")
+
         conn.commit()
 
 
@@ -270,6 +303,54 @@ def get_marked_total(db_path: Path | None = None) -> int:
         """)
         row = cursor.fetchone()
         return row[0] if row and row[0] is not None else 0
+
+
+def execute_render(db_path: Path | None = None) -> tuple[int, int]:
+    """
+    Sums marked movements, inserts into render_history, and unmarks them.
+    Returns (net_amount, count_of_movements_rendered).
+    """
+    if db_path is None:
+        db_path = get_db_path()
+        
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # 1. Calculate the net amount and count marked movements
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(CASE WHEN m.type = 'income' THEN m.amount ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN m.type = 'expense' THEN m.amount ELSE 0 END), 0),
+                COUNT(m.id)
+            FROM movements m
+            JOIN movement_marks mm ON m.id = mm.movement_id
+            WHERE mm.marked = 1
+        """)
+        row = cursor.fetchone()
+        net_amount = row[0] if row and row[0] is not None else 0
+        count = row[1] if row and row[1] is not None else 0
+        
+        if count == 0:
+            return 0, 0
+            
+        # 2. Insert snapshot into render_history
+        cursor.execute("""
+            INSERT INTO render_history (net_amount, rendered_at)
+            VALUES (?, ?)
+        """, (net_amount, now))
+        
+        # 3. Unmark processed movements
+        cursor.execute("""
+            UPDATE movement_marks
+            SET marked = 0
+            WHERE marked = 1
+        """)
+        
+        conn.commit()
+        return net_amount, count
 
 
 def create_transfer(from_account: str, to_account: str, amount: int, db_path: Path | None = None) -> int:

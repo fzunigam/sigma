@@ -81,6 +81,7 @@ def print_help() -> None:
     console.print("  exp         Records an expense")
     console.print("  inc         Records an income")
     console.print("  tr          Executes a transfer between accounts")
+    console.print("  render      Sums marked movements and logs history")
     console.print("  acc add     Adds a new account with an initial balance")
     console.print("  acc list    Detailed view of account metadata")
     console.print("  acc set-limit Updates the rolling credit limit")
