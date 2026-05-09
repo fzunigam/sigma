@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -336,6 +336,44 @@ def log_cmd(
             rec["account_id"],
             str(rec["amount"]),
             rec["description"]
+        )
+        
+    console.print(table)
+
+
+def history_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path}")
+        print("Displays a table of previous render results with dates and total sums.")
+        raise typer.Exit()
+
+@app.command("history")
+def history_cmd(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=history_help_callback)
+) -> None:
+    """Displays a table of previous render results with dates and total sums."""
+    console = Console()
+    history = get_render_history()
+    
+    if not history:
+        typer.echo("No render history found.")
+        raise typer.Exit()
+        
+    table = Table(title="Render History")
+    table.add_column("ID", style="cyan")
+    table.add_column("Date", style="dim")
+    table.add_column("Net Amount", justify="right")
+    
+    for entry in history:
+        date_str = entry["rendered_at"][:10]
+        net = entry["net_amount"]
+        net_fmt = f"[bold {'green' if net >= 0 else 'red'}]{net}[/]"
+        
+        table.add_row(
+            str(entry["id"]),
+            date_str,
+            net_fmt
         )
         
     console.print(table)

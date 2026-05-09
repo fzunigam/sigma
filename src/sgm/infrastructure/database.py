@@ -451,6 +451,25 @@ def get_recent_logs(limit: int = 15, db_path: Path | None = None) -> list[dict]:
         
         return [dict(row) for row in cursor.fetchall()]
 
+
+def get_render_history(limit: int = 15, db_path: Path | None = None) -> list[dict]:
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, net_amount, rendered_at
+            FROM render_history
+            ORDER BY rendered_at DESC
+            LIMIT ?
+        """, (limit,))
+        
+        return [dict(row) for row in cursor.fetchall()]
+
+
 def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
     if db_path is None:
         db_path = get_db_path()
