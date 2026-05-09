@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record
 from sgm.infrastructure.user_config import is_configured, save_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -377,6 +377,27 @@ def history_cmd(
         )
         
     console.print(table)
+
+
+def delete_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <id>")
+        print("Permanently removes a movement or transfer by ID.")
+        raise typer.Exit()
+
+@app.command("delete")
+def delete_cmd(
+    ctx: typer.Context,
+    unique_id: str = typer.Argument(..., help="Unique ID of the record to delete (e.g. m-1, t-1)"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=delete_help_callback)
+) -> None:
+    """Permanently removes a movement or transfer by ID."""
+    try:
+        delete_record(unique_id)
+        typer.echo(f"Deleted record '{unique_id}'.")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command("update")

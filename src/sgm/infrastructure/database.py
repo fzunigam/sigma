@@ -529,3 +529,104 @@ def create_movement(amount: int, description: str, account_id: str, type: str, m
         
         conn.commit()
         return movement_id
+
+
+def delete_record(unique_id: str, db_path: Path | None = None) -> None:
+    if db_path is None:
+        db_path = get_db_path()
+
+    if unique_id.startswith("m-"):
+        record_id = unique_id[2:]
+        _delete_movement(record_id, db_path)
+    elif unique_id.startswith("t-"):
+        record_id = unique_id[2:]
+        _delete_transfer(record_id, db_path)
+    else:
+        raise ValueError("Invalid ID format. Must start with 'm-' for movements or 't-' for transfers.")
+
+
+def _delete_movement(movement_id: str, db_path: Path) -> None:
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # 1. Get movement details
+        cursor.execute("""
+            SELECT m.amount, m.type, m.account_id, a.type as acc_type, a.balance
+            FROM movements m
+            JOIN accounts a ON m.account_id = a.id
+            WHERE m.id = ?
+        """, (movement_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise ValueError(f"Record 'm-{movement_id}' not found.")
+            
+        amount, m_type, acc_id, acc_type, current_balance = row
+        
+        # 2. Calculate reversed balance
+        # Expense: debit (bal - amt) -> bal + amt; credit (bal + amt) -> bal - amt
+        # Income: debit (bal + amt) -> bal - amt; credit (bal - amt) -> bal + amt
+        if m_type == "expense":
+            if acc_type == "debit":
+                new_balance = current_balance + amount
+            else: # credit
+                new_balance = current_balance - amount
+        else: # income
+            if acc_type == "debit":
+                new_balance = current_balance - amount
+            else: # credit
+                new_balance = current_balance + amount
+                
+        # 3. Update account balance
+        cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?", (new_balance, acc_id))
+        
+        # 4. Delete movement and marks
+        cursor.execute("DELETE FROM movement_marks WHERE movement_id = ?", (movement_id,))
+        cursor.execute("DELETE FROM movements WHERE id = ?", (movement_id,))
+        
+        conn.commit()
+
+
+def _delete_transfer(transfer_id: str, db_path: Path) -> None:
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # 1. Get transfer details
+        cursor.execute("""
+            SELECT t.amount, t.from_account, t.to_account, 
+                   af.type as from_type, af.balance as from_balance,
+                   at.type as to_type, at.balance as to_balance
+            FROM transfers t
+            JOIN accounts af ON t.from_account = af.id
+            JOIN accounts at ON t.to_account = at.id
+            WHERE t.id = ?
+        """, (transfer_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise ValueError(f"Record 't-{transfer_id}' not found.")
+            
+        amount, from_acc, to_acc, from_type, from_bal, to_type, to_bal = row
+        
+        # 2. Reverse from_account withdrawal
+        # Debit: bal - amt -> bal + amt; Credit: bal + amt -> bal - amt
+        if from_type == "debit":
+            new_from_balance = from_bal + amount
+        else: # credit
+            new_from_balance = from_bal - amount
+            
+        # 3. Reverse to_account deposit
+        # Debit: bal + amt -> bal - amt; Credit: bal - amt -> bal + amt
+        if to_type == "debit":
+            new_to_balance = to_bal - amount
+        else: # credit
+            new_to_balance = to_bal + amount
+            
+        # 4. Update balances
+        cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?", (new_from_balance, from_acc))
+        cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?", (new_to_balance, to_acc))
+        
+        # 5. Delete transfer
+        cursor.execute("DELETE FROM transfers WHERE id = ?", (transfer_id,))
+        
+        conn.commit()
