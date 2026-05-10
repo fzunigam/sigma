@@ -42,7 +42,7 @@ def test_config_invalid_account(tmp_path: Path, monkeypatch) -> None:
     runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n0\n")
 
     # Run config command with an invalid account
-    result = runner.invoke(app, ["config"], input="fake\nwallet\n")
+    runner.invoke(app, ["config"], input="fake\nwallet\n")
     
     # Either the output mixed stderr or we can check the file
     config_file = tmp_path / ".config" / "sgm" / "config.toml"

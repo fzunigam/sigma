@@ -6,6 +6,9 @@ from sgm.infrastructure.database import init_db, clear_db, get_marked_total
 
 @pytest.fixture(autouse=True)
 def setup_db(tmp_path, monkeypatch):
+    # Mock HOME to use tmp_path for config
+    monkeypatch.setenv("HOME", str(tmp_path))
+    
     db_path = tmp_path / "sigma.db"
     
     from sgm.infrastructure import database
