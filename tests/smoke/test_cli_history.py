@@ -1,5 +1,4 @@
 from typing import Generator
-from datetime import datetime, timezone
 
 import pytest
 from typer.testing import CliRunner # type: ignore

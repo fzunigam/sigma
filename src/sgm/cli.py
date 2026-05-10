@@ -2,14 +2,14 @@ import re
 import subprocess
 import sys
 
-import click
+import click # type: ignore
 import typer # type: ignore
 from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
 from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record
-from sgm.infrastructure.user_config import is_configured, save_config
+from sgm.infrastructure.user_config import is_configured, save_config, load_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
 app = typer.Typer(
@@ -161,9 +161,70 @@ def version() -> None:
     typer.echo(f"sgm version v{__version__}")
 
 
-def _resolve_account(acc_id: str | None) -> str:
+def config_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path}")
+        print("Opens the sgm global settings (default accounts).")
+        raise typer.Exit()
+
+@app.command("config")
+def config_cmd(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=config_help_callback)
+) -> None:
+    """Opens the sgm global settings (default accounts)."""
+    accounts = get_accounts()
+    if not accounts:
+        typer.echo("No accounts found. Use 'sgm acc add' to create one first.")
+        raise typer.Exit()
+        
+    config_data = load_config()
+    defaults = config_data.get("defaults", {})
+    
+    current_inc = defaults.get("income_acc", "")
+    current_exp = defaults.get("expense_acc", "")
+    
+    typer.echo("Configure default accounts.")
+    
+    # Prompt for income account
+    inc_acc = typer.prompt("Default Income Account ID", default=current_inc, type=str)
+    # Validate
+    if inc_acc and not get_account(inc_acc):
+        typer.echo(f"Warning: Account '{inc_acc}' not found. Default not set.", err=True)
+        inc_acc = current_inc
+        
+    # Prompt for expense account
+    exp_acc = typer.prompt("Default Expense Account ID", default=current_exp, type=str)
+    # Validate
+    if exp_acc and not get_account(exp_acc):
+        typer.echo(f"Warning: Account '{exp_acc}' not found. Default not set.", err=True)
+        exp_acc = current_exp
+        
+    if "defaults" not in config_data:
+        config_data["defaults"] = {}
+        
+    if inc_acc:
+        config_data["defaults"]["income_acc"] = inc_acc
+    if exp_acc:
+        config_data["defaults"]["expense_acc"] = exp_acc
+        
+    save_config(config_data)
+    typer.echo("Configuration saved successfully.")
+
+
+def _resolve_account(acc_id: str | None, tx_type: str | None = None) -> str:
     if acc_id is not None:
         return acc_id
+        
+    if tx_type:
+        config_data = load_config()
+        defaults = config_data.get("defaults", {})
+        
+        if tx_type == "income" and "income_acc" in defaults:
+            return defaults["income_acc"]
+        if tx_type == "expense" and "expense_acc" in defaults:
+            return defaults["expense_acc"]
+            
     accounts = get_accounts()
     if not accounts:
         typer.echo("Error: No accounts exist. Use 'sgm acc add' first.", err=True)
@@ -195,7 +256,7 @@ def exp(
         typer.echo("Error: Amount must be positive.", err=True)
         raise typer.Exit(1)
         
-    resolved_acc_id = _resolve_account(acc_id)
+    resolved_acc_id = _resolve_account(acc_id, tx_type="expense")
     marked = mark == "yes"
     
     try:
@@ -226,7 +287,7 @@ def inc(
         typer.echo("Error: Amount must be positive.", err=True)
         raise typer.Exit(1)
         
-    resolved_acc_id = _resolve_account(acc_id)
+    resolved_acc_id = _resolve_account(acc_id, tx_type="income")
     marked = mark == "yes"
     
     try:
