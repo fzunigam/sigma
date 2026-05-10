@@ -4,13 +4,13 @@ help:
 	@echo "install test lint smoke"
 
 install:
-	python3.12 -m pip install -e ".[dev]"
+	python3 -m pip install -e ".[dev]"
 
 test:
-	python3.12 -m pytest -q
+	python3 -m pytest -q
 
 lint:
-	python3.12 -m ruff check .
+	python3 -m ruff check .
 
 smoke:
-	python3.12 -m pytest tests/smoke -q
+	python3 -m pytest tests/smoke -q
