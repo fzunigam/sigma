@@ -191,6 +191,9 @@ def init_db(db_path: Path | None = None) -> None:
 
 
 def create_account(id: str, name: str, type: str, balance: int, credit_limit: int = 0, db_path: Path | None = None) -> None:
+    if id == "deleted":
+        raise ValueError("Cannot create an account with the reserved ID 'deleted'.")
+        
     if db_path is None:
         db_path = get_db_path()
         
@@ -221,6 +224,9 @@ def clear_db(db_path: Path | None = None) -> None:
 
 
 def rename_account(old_id: str, new_id: str, db_path: Path | None = None) -> None:
+    if old_id == "deleted" or new_id == "deleted":
+        raise ValueError("Cannot rename to or from the reserved ID 'deleted'.")
+        
     if db_path is None:
         db_path = get_db_path()
         
@@ -253,13 +259,12 @@ def rename_account(old_id: str, new_id: str, db_path: Path | None = None) -> Non
 def get_accounts(db_path: Path | None = None) -> list[dict]:
     if db_path is None:
         db_path = get_db_path()
-        
+
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, type, balance, credit_limit FROM accounts ORDER BY id")
+        cursor.execute("SELECT id, name, type, balance, credit_limit FROM accounts WHERE id != 'deleted' ORDER BY id")
         return [dict(row) for row in cursor.fetchall()]
-
 
 def get_account(id: str, db_path: Path | None = None) -> dict | None:
     if db_path is None:
@@ -273,7 +278,43 @@ def get_account(id: str, db_path: Path | None = None) -> dict | None:
         return dict(row) if row else None
 
 
+def delete_account(account_id: str, db_path: Path | None = None) -> None:
+    if account_id == "deleted":
+        raise ValueError("Cannot delete the reserved 'deleted' account.")
+        
+    if db_path is None:
+        db_path = get_db_path()
+        
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM accounts WHERE id = ?", (account_id,))
+        if not cursor.fetchone():
+            raise ValueError(f"Account with ID '{account_id}' does not exist.")
+            
+        # Ensure 'deleted' account exists
+        cursor.execute("SELECT id FROM accounts WHERE id = 'deleted'")
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO accounts (id, name, type, balance, credit_limit)
+                VALUES ('deleted', 'Deleted Account', 'debit', 0, 0)
+            """)
+            
+        # Reassign movements and transfers
+        cursor.execute("UPDATE movements SET account_id = 'deleted' WHERE account_id = ?", (account_id,))
+        cursor.execute("UPDATE transfers SET from_account = 'deleted' WHERE from_account = ?", (account_id,))
+        cursor.execute("UPDATE transfers SET to_account = 'deleted' WHERE to_account = ?", (account_id,))
+        
+        # Delete the account
+        cursor.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
+        
+        conn.commit()
+
+
 def update_credit_limit(id: str, limit: int, db_path: Path | None = None) -> None:
+    if id == "deleted":
+        raise ValueError("Cannot modify the reserved 'deleted' account.")
+        
     if db_path is None:
         db_path = get_db_path()
         
@@ -354,6 +395,9 @@ def execute_render(db_path: Path | None = None) -> tuple[int, int]:
 
 
 def create_transfer(from_account: str, to_account: str, amount: int, db_path: Path | None = None) -> int:
+    if from_account == "deleted" or to_account == "deleted":
+        raise ValueError("Cannot manually transfer to or from the reserved 'deleted' account.")
+        
     if db_path is None:
         db_path = get_db_path()
         
@@ -471,6 +515,9 @@ def get_render_history(limit: int = 15, db_path: Path | None = None) -> list[dic
 
 
 def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
+    if account_id == "deleted":
+        raise ValueError("Cannot manually log movements to the reserved 'deleted' account.")
+        
     if db_path is None:
         db_path = get_db_path()
         

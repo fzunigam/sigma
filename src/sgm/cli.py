@@ -8,7 +8,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account
 from sgm.infrastructure.user_config import is_configured, save_config, load_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -544,6 +544,43 @@ def acc_rename(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
+
+def acc_delete_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} <id>")
+        print("Deletes an account and reassigns its history to a ghost account.")
+        raise typer.Exit()
+
+@acc_app.command("delete")
+def acc_delete(
+    ctx: typer.Context,
+    id: str = typer.Argument(..., help="Unique identifier for the account to delete"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=acc_delete_help_callback)
+) -> None:
+    """Deletes an account and reassigns its history to a ghost account."""
+    acc = get_account(id)
+    if not acc:
+        typer.echo(f"Error: Account with ID '{id}' not found.", err=True)
+        raise typer.Exit(1)
+        
+    typer.echo(f"WARNING: You are about to delete account '{id}'.", err=True)
+    typer.echo("Its history will be moved to a hidden 'deleted' account and the ID will be freed.", err=True)
+    
+    try:
+        confirmation = typer.prompt("Type 'DELETE' to confirm (or press Ctrl+C to cancel)")
+        if confirmation != "DELETE":
+            typer.echo("Account deletion cancelled.")
+            raise typer.Exit()
+    except typer.Abort:
+        typer.echo("\nAccount deletion cancelled.")
+        raise typer.Exit()
+        
+    try:
+        delete_account(id)
+        typer.echo(f"Account '{id}' deleted successfully.")
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
 
 def acc_list_help_callback(ctx: typer.Context, value: bool) -> None:
     if value:

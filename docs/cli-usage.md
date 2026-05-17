@@ -55,6 +55,7 @@ Management of the underlying financial structure.
 | `acc add` | `<id> <name> {debit\|credit} <bal>` | `sgm acc add cc "Santander" credit 0` | Adds a new account with an initial balance. |
 | `acc rename`| `<old_id> <new_id>`| `sgm acc rename cc bci` | Updates the unique identifier for an account. |
 | `acc set-limit`| `<acc_id> <limit>` | `sgm acc set-limit amex 2000000` | Updates the rolling credit limit (Credit accounts only). |
+| `acc delete`| `<acc_id>` | `sgm acc delete bci` | Deletes an account and moves its history to a ghost account. |
 
 ## System & Integration
 
