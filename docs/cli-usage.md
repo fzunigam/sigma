@@ -1,69 +1,168 @@
-# CLI Usage
+# Sigma CLI Usage Guide
 
-Sigma (`sgm`) is designed for speed and clarity. Below is the complete reference for all available commands.
+Sigma (`sgm`) is a fast, local-first finance tracker. This guide provides a detailed reference for every command, argument, and core concept.
+
+---
+
+## Core Concepts
+
+### 1. The Rendering Cycle
+Unlike traditional trackers, Sigma uses a **Marking & Rendering** workflow:
+- **Marking**: When you log an expense (`exp`) or income (`inc`), you decide if it's "marked" for review (`yes` or `no`). Marked items are considered "pending" until verified.
+- **Rendering**: Running `sgm render` takes all marked items, calculates their net sum, creates a historical snapshot, and "clears" the marks. This is your audit point.
+
+### 2. Smart Argument Resolution
+Sigma is designed for speed. Commands like `exp` and `inc` have optional arguments for `[acc_id]` and `[date]`.
+- **Automatic Account**: If you only have one account, you can skip `[acc_id]`.
+- **Default Accounts**: Use `sgm config` to set a default account for income/expenses.
+- **Date Detection**: If you provide a string that looks like a date (`YYYY-MM-DD`) as the 4th argument, Sigma automatically treats it as the date, even if you skipped the account ID.
+
+---
 
 ## Quickstart
 ```bash
-# 1. Initialize the system
-sgm start
-
-# 2. Add your first account
-sgm acc add wallet "Cash Wallet" debit 0
-
-# 3. Log an expense and mark it for rendering
-sgm exp 5000 "lunch" yes wallet
-
-# 4. View your status
-sgm status
-
-# 5. Render your marked movements
-sgm render
+sgm start                           # Setup your first account
+sgm acc add cc "Visa" credit 0       # Add a credit card
+sgm exp 5000 "Lunch" yes wallet     # Log an expense
+sgm status                          # See where you stand
+sgm render                          # Close the current cycle
 ```
 
 ---
 
-## Core Commands
+## Workflow Essentials
 
-Daily-use commands for logging data and managing the rendering cycle.
+### `start`
+Launches the interactive setup wizard for first-time users.
+- **Syntax**: `sgm start`
+- **Example**:
+  ```bash
+  sgm start
+  # Follow prompts to set up your primary 'wallet' or 'bank' account.
+  ```
 
-| **Command** | **Arguments** | **Example** | **Description** |
-|-|-|-|-|
-| `start`| *None* | `sgm start` | Launches the first-run setup wizard. |
-| `status`| *None* | `sgm status` | Displays a **rich** table of balances, credit limits, and the current *marked* total. |
-| `exp` | `<amount> <desc> {yes\|no} [acc_id] [date]` | `sgm exp 7000 "sushi" yes cc 2023-10-27` | Records an **expense**. The `{yes\|no}` choice flags the item for the next render. `[date]` is optional (YYYY-MM-DD). |
-| `inc` | `<amount> <desc> {yes\|no} [acc_id] [date]` | `sgm inc 19000 "pay" no bci 2023-10-27` | Records an **income**. The `{yes\|no}` choice flags the item for the next render. `[date]` is optional (YYYY-MM-DD). |
-| `tr` | `<from> <to> <amount> [date]` | `sgm tr bci cc 10000 2023-10-27` | Executes a transfer between accounts. `[date]` is optional (YYYY-MM-DD). |
-| `render` | *None* | `sgm render` | Sums all marked movements, logs the result to history, and unmarks all items. |
+### `status`
+Displays a rich table of all accounts, their balances, and the total currently marked for the next render.
+- **Syntax**: `sgm status`
+- **Details**: For credit accounts, it also shows "Available Credit" based on your limit.
 
-## Data Management & History
+### `render`
+Processes all marked movements into a historical snapshot.
+- **Syntax**: `sgm render`
+- **Example**:
+  ```bash
+  sgm render
+  # Output: Rendered 5 movements. Net amount logged: -12500
+  ```
 
-Commands to review past performance and individual logs.
+---
 
-| **Command** | **Arguments** | **Example** | **Description** |
-|-|-|-|-|
-| `log` | `[limit]` | `sgm log 25` | Lists the most recent movements. (Default: 15). | 
-| `history` | *None* | `sgm history` | Displays a table of previous render results with dates and total sums. |
-| `delete` | `<id>` | `sgm delete m-23` | Permanently removes a movement (`m-`) or transfer (`t-`) by ID. |
+## Logging Transactions
 
-## Account Configuration
+### `exp` (Expense)
+Records a withdrawal or purchase.
+- **Syntax**: `sgm exp <amount> <description> <mark: yes|no> [acc_id] [date]`
+- **Examples**:
+  ```bash
+  sgm exp 12000 "Groceries" yes wallet      # Explicit account
+  sgm exp 5000 "Coffee" no                  # Uses default/only account
+  sgm exp 45000 "Internet" yes 2023-10-01   # Skip acc_id, use specific date
+  ```
 
-Management of the underlying financial structure.
+### `inc` (Income)
+Records a deposit or gain.
+- **Syntax**: `sgm inc <amount> <description> <mark: yes|no> [acc_id] [date]`
+- **Examples**:
+  ```bash
+  sgm inc 800000 "Salary" yes bank          # Monthly pay
+  sgm inc 5000 "Gift" no wallet             # Small gain, don't mark for render
+  ```
 
-| **Command** | **Arguments** | **Example** | **Description** |
-|-|-|-|-|
-| `acc list` | `[acc_id]` | `sgm acc list cc` | Detailed view of account metadata. Lists all accounts if `[acc_id]` is omitted. |
-| `acc add` | `<id> <name> {debit\|credit} <bal>` | `sgm acc add cc "Santander" credit 0` | Adds a new account with an initial balance. |
-| `acc rename`| `<old_id> <new_id>`| `sgm acc rename cc bci` | Updates the unique identifier for an account. |
-| `acc set-limit`| `<acc_id> <limit>` | `sgm acc set-limit amex 2000000` | Updates the rolling credit limit (Credit accounts only). |
-| `acc delete`| `<acc_id>` | `sgm acc delete bci` | Deletes an account and moves its history to a ghost account. |
+### `tr` (Transfer)
+Moves money between two accounts. Does not affect net "rendering" totals.
+- **Syntax**: `sgm tr <from_acc> <to_acc> <amount> [date]`
+- **Example**:
+  ```bash
+  sgm tr bank wallet 50000                  # ATM withdrawal
+  sgm tr wallet cc 100000 2023-11-05        # Paying off credit card
+  ```
 
-## System & Integration
+---
 
-Meta-commands for maintenance and configuration.
+## Exploration & Audit
 
-| **Command** | **Arguments** | **Example** | **Description** |
-|-|-|-|-|
-| `config` | *None* | `sgm config` | Opens the `sgm` global settings (default accounts). |
-| `restore` | *None* | `sgm restore` | Deletes all data and leaves the database empty. Requires confirmation. |
-| `update`| *None* | `sgm update` | Checks for a newer version on PyPI and performs an upgrade. |
-| `version` | *None* | `sgm version` | Displays current version. |
+### `log`
+Lists the most recent movements and transfers.
+- **Syntax**: `sgm log [limit]`
+- **Example**:
+  ```bash
+  sgm log 10        # Show last 10 entries
+  sgm log           # Show last 15 (default)
+  ```
+
+### `history`
+Shows the results of all previous `render` commands.
+- **Syntax**: `sgm history`
+
+### `delete`
+Permanently removes a record by its unique ID.
+- **Syntax**: `sgm delete <unique_id>`
+- **Example**:
+  ```bash
+  sgm log           # Find the ID, e.g., m-15
+  sgm delete m-15   # Delete movement #15
+  ```
+
+---
+
+## Account Management
+
+### `acc list`
+Shows details for one or all accounts.
+- **Syntax**: `sgm acc list [acc_id]`
+- **Example**:
+  ```bash
+  sgm acc list      # List all IDs, names, and balances
+  sgm acc list cc   # Show full metadata for the 'cc' account
+  ```
+
+### `acc add`
+Creates a new account.
+- **Syntax**: `sgm acc add <id> <name> <type: debit|credit> <initial_balance>`
+- **Example**:
+  ```bash
+  sgm acc add bci "Main Bank" debit 500000
+  sgm acc add amex "Travel Card" credit 0
+  ```
+
+### `acc rename`
+Changes an account's unique identifier.
+- **Syntax**: `sgm acc rename <old_id> <new_id>`
+
+### `acc set-limit`
+Updates the credit limit for credit-type accounts.
+- **Syntax**: `sgm acc set-limit <acc_id> <limit>`
+
+### `acc delete`
+Deletes an account. **Safety feature**: History is preserved by moving it to a hidden "ghost" account.
+- **Syntax**: `sgm acc delete <acc_id>`
+
+---
+
+## System & Maintenance
+
+### `config`
+Interactive prompt to set your default income and expense accounts for faster logging.
+- **Syntax**: `sgm config`
+
+### `restore`
+**DANGER**: Completely wipes the database. Requires typing 'RESTORE' to confirm.
+- **Syntax**: `sgm restore`
+
+### `update`
+Checks for and installs the latest version of Sigma from PyPI.
+- **Syntax**: `sgm update`
+
+### `version`
+Displays current version information.
+- **Syntax**: `sgm version`
