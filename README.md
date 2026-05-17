@@ -4,7 +4,6 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/sigma-finance.svg)](https://pypi.org/project/sigma-finance/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Build Status](https://github.com/fzunigam/sigma/actions/workflows/ci.yml/badge.svg)](https://github.com/fzunigam/sigma/actions)
 
 ## Why Sigma?
 

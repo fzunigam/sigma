@@ -11,7 +11,7 @@ def test_config_prompts_and_saves_defaults(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
 
     # First initialize DB and add accounts
-    runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n5000\n")
+    runner.invoke(app, ["start"], input="n\nwallet\nCash\ndebit\n5000\n")
     runner.invoke(app, ["acc", "add", "bci", "BCI", "debit", "0"])
 
     # Run config command
@@ -39,7 +39,7 @@ def test_config_prompts_and_saves_defaults(tmp_path: Path, monkeypatch) -> None:
 def test_config_invalid_account(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
 
-    runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n0\n")
+    runner.invoke(app, ["start"], input="n\nwallet\nCash\ndebit\n0\n")
 
     # Run config command with an invalid account
     runner.invoke(app, ["config"], input="fake\nwallet\n")

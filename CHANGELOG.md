@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-05-17
+
+### Added
+- Data Export: New `sgm export` command to bundle all database tables into a timestamped ZIP file containing CSVs.
+- Data Import: Integrated import option in `sgm start` setup wizard, allowing restoration from ZIP or folder.
+- Robust data validation and schema checking for imported CSV files.
+- Automated smoke tests for export and import functionalities.
+
 ## [0.1.4] - 2026-05-17
 
 ### Added

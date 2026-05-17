@@ -1,4 +1,8 @@
+import csv
+import shutil
 import sqlite3
+import tempfile
+import zipfile
 from pathlib import Path
 
 
@@ -720,3 +724,86 @@ def get_all_table_data(db_path: Path | None = None) -> dict[str, list[dict]]:
             all_data[table] = [dict(row) for row in cursor.fetchall()]
 
     return all_data
+
+
+def import_from_csvs(import_path: Path, db_path: Path | None = None) -> None:
+    """
+    Imports data from a ZIP file or a folder containing Sigma CSVs.
+    Performs validation before clearing and inserting data.
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    expected_files = {
+        "accounts.csv": ["id", "name", "type", "balance", "credit_limit"],
+        "movements.csv": ["id", "amount", "description", "account_id", "type", "created_at"],
+        "movement_marks.csv": ["movement_id", "marked"],
+        "transfers.csv": ["id", "from_account", "to_account", "amount", "created_at"],
+        "render_history.csv": ["id", "net_amount", "rendered_at"]
+    }
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        working_dir = Path(tmp_dir)
+        
+        # 1. Extraction if ZIP
+        if import_path.is_file():
+            if not zipfile.is_zipfile(import_path):
+                raise ValueError(f"File '{import_path}' is not a valid ZIP file.")
+            with zipfile.ZipFile(import_path, 'r') as zipf:
+                zipf.extractall(working_dir)
+        elif import_path.is_dir():
+            for f in expected_files:
+                src = import_path / f
+                if src.exists():
+                    shutil.copy(src, working_dir / f)
+        else:
+            raise ValueError(f"Path '{import_path}' does not exist or is not a file/directory.")
+
+        # 2. Validation
+        for filename, expected_headers in expected_files.items():
+            file_path = working_dir / filename
+            if not file_path.exists():
+                raise FileNotFoundError(f"Missing required file: {filename}")
+            
+            # Check headers
+            with open(file_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                try:
+                    headers = next(reader)
+                    # Use set comparison to be order-independent but strict on presence
+                    if not set(expected_headers).issubset(set(headers)):
+                        missing = set(expected_headers) - set(headers)
+                        raise ValueError(f"Invalid headers in {filename}. Missing: {missing}")
+                except StopIteration:
+                    # Empty file is okay if it's supposed to be empty, but we still expect headers
+                    # However, export creates empty files without headers if no rows.
+                    # Let's adjust: if file is empty and expected headers are missing, it might be an empty export.
+                    pass
+
+        # 3. Restoration
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Clear existing data
+            cursor.execute("DELETE FROM movement_marks")
+            cursor.execute("DELETE FROM movements")
+            cursor.execute("DELETE FROM transfers")
+            cursor.execute("DELETE FROM render_history")
+            cursor.execute("DELETE FROM accounts")
+            
+            # Insert data table by table
+            for filename, headers in expected_files.items():
+                table_name = filename.replace(".csv", "")
+                file_path = working_dir / filename
+                
+                with open(file_path, 'r', newline='', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        # Clean row to only include expected headers
+                        clean_row = {k: row[k] for k in headers if k in row}
+                        placeholders = ", ".join(["?"] * len(clean_row))
+                        columns = ", ".join(clean_row.keys())
+                        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+                        cursor.execute(query, list(clean_row.values()))
+            
+            conn.commit()

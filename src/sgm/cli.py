@@ -1,5 +1,6 @@
 import csv
 import re
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -13,7 +14,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data, import_from_csvs
 from sgm.infrastructure.user_config import is_configured, save_config, load_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -69,6 +70,22 @@ def start(
     
     init_db()
     typer.echo("Database initialized.")
+    
+    do_import = typer.confirm("\nDo you want to import existing data from a ZIP or folder?", default=False)
+    
+    if do_import:
+        import_path_str = typer.prompt("Path to ZIP file or folder containing CSVs")
+        import_path = Path(import_path_str).expanduser().resolve()
+        
+        try:
+            import_from_csvs(import_path)
+            typer.echo("Data imported successfully!")
+            save_config()
+            typer.echo("Configuration saved. Ready to use Sigma!")
+            raise typer.Exit()
+        except (ValueError, FileNotFoundError, sqlite3.Error) as e:
+            typer.echo(f"Import failed: {e}", err=True)
+            typer.echo("Falling back to manual account creation.")
     
     typer.echo("\nLet's create your first account.")
     acc_id = typer.prompt("Account ID (e.g. 'wallet', 'cc')")
@@ -560,7 +577,7 @@ def export(
         if not downloads_path.exists():
             downloads_path = Path.home()
         
-        timestamp = datetime.now().strftime("%Y%m%d")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output = downloads_path / f"sigma_export_{timestamp}.zip"
     
     # 2. Fetch all data
@@ -594,7 +611,7 @@ def export(
                 for csv_file in csv_files:
                     zipf.write(csv_file, arcname=csv_file.name)
                     
-        console.print(f"Successfully exported data to: [cyan]{output.absolute()}[/cyan]")
+        console.print(f"[green]Successfully exported data to:[/green] [bold]{output.absolute()}[/bold]")
     except Exception as e:
         console.print(f"[red]Error creating export file: {e}[/red]")
         raise typer.Exit(1)

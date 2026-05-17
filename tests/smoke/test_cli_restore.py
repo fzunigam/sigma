@@ -12,7 +12,7 @@ def test_restore_cancels_if_not_confirmed(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     
     # Init DB and insert something
-    result_start = runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n0\n")
+    result_start = runner.invoke(app, ["start"], input="n\nwallet\nCash\ndebit\n0\n")
     assert result_start.exit_code == 0
 
     # Answer 'no' or something other than 'RESTORE'
@@ -34,7 +34,7 @@ def test_restore_deletes_all_data(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     
     # Init DB and insert something
-    result_start = runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n0\n")
+    result_start = runner.invoke(app, ["start"], input="n\nwallet\nCash\ndebit\n0\n")
     assert result_start.exit_code == 0
     
     db_path = tmp_path / ".local" / "share" / "sgm" / "sigma.db"

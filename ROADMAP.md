@@ -16,5 +16,4 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] Investments integration
 
 ## ✅ Completed
-- [x] Export functionality (CSV, JSON)
 View [Changelog](CHANGELOG.md) for completed features.

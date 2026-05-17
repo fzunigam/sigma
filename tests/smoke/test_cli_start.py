@@ -10,8 +10,13 @@ runner = CliRunner()
 def test_start_creates_user_config_and_db(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
 
-    # Input: acc_id, acc_name, acc_type, acc_balance
-    result = runner.invoke(app, ["start"], input="wallet\nCash\ndebit\n0\n")
+    # Input: 
+    # n (Do you want to import?)
+    # wallet (acc_id)
+    # Cash (acc_name)
+    # debit (acc_type)
+    # 0 (acc_balance)
+    result = runner.invoke(app, ["start"], input="n\nwallet\nCash\ndebit\n0\n")
 
     assert result.exit_code == 0
     assert (tmp_path / ".config" / "sgm" / "config.toml").exists()
@@ -21,8 +26,14 @@ def test_start_creates_user_config_and_db(tmp_path: Path, monkeypatch) -> None:
 def test_start_creates_credit_account(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
 
-    # Input: acc_id, acc_name, acc_type, acc_balance, acc_limit
-    result = runner.invoke(app, ["start"], input="cc\nCredit Card\ncredit\n0\n1000000\n")
+    # Input:
+    # n (Do you want to import?)
+    # cc (acc_id)
+    # Credit Card (acc_name)
+    # credit (acc_type)
+    # 0 (acc_balance)
+    # 1000000 (acc_limit)
+    result = runner.invoke(app, ["start"], input="n\ncc\nCredit Card\ncredit\n0\n1000000\n")
 
     assert result.exit_code == 0
     assert (tmp_path / ".config" / "sgm" / "config.toml").exists()

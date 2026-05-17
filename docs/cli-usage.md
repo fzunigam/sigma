@@ -35,10 +35,14 @@ sgm render                          # Close the current cycle
 ### `start`
 Launches the interactive setup wizard for first-time users.
 - **Syntax**: `sgm start`
+- **Details**:
+    - Initializes the database and configuration.
+    - **Import Option**: Prompts if you'd like to import existing data from a ZIP file or folder containing Sigma's CSV tables.
+    - If no import is performed, it guides you through creating your first account.
 - **Example**:
   ```bash
   sgm start
-  # Follow prompts to set up your primary 'wallet' or 'bank' account.
+  # Choose 'y' to import existing data, or 'n' for manual setup.
   ```
 
 ### `status`
