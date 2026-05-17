@@ -24,3 +24,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Improved Makefile flexibility by using generic `python3` commands.
 
 ## [0.1.1] - 2026-05-10
+
+### Added
+- First functional version
+- Added all basic commands 

@@ -21,7 +21,4 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] Investments integration
 
 ## ✅ Completed
-- [x] Initial project structure and CLI foundation
-- [x] Basic transaction logging (Income/Expense)
-- [x] Account management (List, Create, Delete)
-- [x] Configuration system
+View [Changelog](CHANGELOG.md) for completed features.
