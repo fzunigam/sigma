@@ -82,6 +82,7 @@ sgm start
 | `sgm history` | View previous render results. |
 | `sgm acc list` | List all accounts and their details. |
 | `sgm config` | Configure default accounts for faster logging. |
+| `sgm export` | Export all data to a ZIP file with CSV tables. |
 | `sgm delete <id>` | Remove a record by its unique ID (e.g., `m-1`). |
 
 For a complete reference of all available commands and their arguments, please refer to the [Detailed CLI Usage Guide](docs/cli-usage.md).

@@ -698,3 +698,25 @@ def _delete_transfer(transfer_id: str, db_path: Path) -> None:
         cursor.execute("DELETE FROM transfers WHERE id = ?", (transfer_id,))
         
         conn.commit()
+
+
+def get_all_table_data(db_path: Path | None = None) -> dict[str, list[dict]]:
+    """
+    Returns a dictionary with data from all tables.
+    Keys are table names, values are lists of dicts (rows).
+    """
+    if db_path is None:
+        db_path = get_db_path()
+
+    tables = ["accounts", "movements", "movement_marks", "transfers", "render_history"]
+    all_data = {}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        for table in tables:
+            cursor.execute(f"SELECT * FROM {table}")
+            all_data[table] = [dict(row) for row in cursor.fetchall()]
+
+    return all_data

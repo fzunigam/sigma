@@ -155,6 +155,19 @@ Deletes an account. **Safety feature**: History is preserved by moving it to a h
 Interactive prompt to set your default income and expense accounts for faster logging.
 - **Syntax**: `sgm config`
 
+### `export`
+Exports all database tables into a ZIP file containing CSV files. Useful for backups or external analysis.
+- **Syntax**: `sgm export [--output <path>]`
+- **Details**: 
+    - Defaults to your `Downloads` folder (or home directory if Downloads is missing).
+    - The ZIP file is named `sigma_export_YYYYMMDD_HHMMSS.zip`.
+    - Includes tables: `accounts`, `movements`, `movement_marks`, `transfers`, and `render_history`.
+- **Example**:
+    ```bash
+    sgm export                      # Saves to Downloads
+    sgm export -o ~/backups/my_data.zip  # Saves to a specific path
+    ```
+
 ### `restore`
 **DANGER**: Completely wipes the database. Requires typing 'RESTORE' to confirm.
 - **Syntax**: `sgm restore`

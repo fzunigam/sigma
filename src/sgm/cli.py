@@ -1,6 +1,11 @@
+import csv
 import re
 import subprocess
 import sys
+import tempfile
+import zipfile
+from datetime import datetime
+from pathlib import Path
 
 import click # type: ignore
 import typer # type: ignore
@@ -8,7 +13,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data
 from sgm.infrastructure.user_config import is_configured, save_config, load_config
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
@@ -533,6 +538,65 @@ def update(
         typer.echo("Failed to update sgm. Please try running 'pip install --upgrade sigma-finance' manually.", err=True)
         if e.stderr:
             typer.echo(e.stderr, err=True)
+
+
+@app.command("export")
+def export(
+    ctx: typer.Context,
+    output: Path = typer.Option(None, "--output", "-o", help="Path to save the ZIP file"),
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True)
+) -> None:
+    """Exports all data into a ZIP file with CSV tables."""
+    if help:
+        print(f"Usage: {ctx.command_path} [--output <path>]")
+        print(f"{ctx.command.help}")
+        raise typer.Exit()
+
+    console = Console()
+    
+    # 1. Determine output path
+    if output is None:
+        downloads_path = Path.home() / "Downloads"
+        if not downloads_path.exists():
+            downloads_path = Path.home()
+        
+        timestamp = datetime.now().strftime("%Y%m%d")
+        output = downloads_path / f"sigma_export_{timestamp}.zip"
+    
+    # 2. Fetch all data
+    try:
+        all_data = get_all_table_data()
+    except Exception as e:
+        console.print(f"[red]Error fetching data: {e}[/red]")
+        raise typer.Exit(1)
+        
+    # 3. Create ZIP with CSVs
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            csv_files = []
+            
+            for table_name, rows in all_data.items():
+                csv_file = tmp_path / f"{table_name}.csv"
+                csv_files.append(csv_file)
+                
+                if rows:
+                    fieldnames = rows[0].keys()
+                    with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+                        writer = csv.DictWriter(f, fieldnames=fieldnames)
+                        writer.writeheader()
+                        writer.writerows(rows)
+                else:
+                    # Create empty file with just the table name or specific headers if we had them
+                    csv_file.touch()
+            
+            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for csv_file in csv_files:
+                    zipf.write(csv_file, arcname=csv_file.name)
+                    
+        console.print(f"Successfully exported data to: [cyan]{output.absolute()}[/cyan]")
+    except Exception as e:
+        console.print(f"[red]Error creating export file: {e}[/red]")
         raise typer.Exit(1)
 
 

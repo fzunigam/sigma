@@ -3,12 +3,9 @@
 This document outlines the planned features, improvements, and future direction for **Sigma**.
 
 ## 🎯 Short-Term (Next Steps)
-- [ ] Update documentation with more examples
-- [ ] Add date field for transactions
 
 ## 🚀 Mid-Term (Upcoming Features)
 - [ ] Enhanced data visualization in the CLI
-- [ ] Export functionality (CSV, JSON)
 - [ ] Advanced filtering for transaction history
 - [ ] Telegram integration option
 
@@ -19,4 +16,5 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] Investments integration
 
 ## ✅ Completed
+- [x] Export functionality (CSV, JSON)
 View [Changelog](CHANGELOG.md) for completed features.
