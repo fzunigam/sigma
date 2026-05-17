@@ -1,6 +1,5 @@
 import zipfile
 import sqlite3
-from pathlib import Path
 from typer.testing import CliRunner
 from sgm.cli import app
 from sgm.infrastructure.database import init_db, clear_db, create_account

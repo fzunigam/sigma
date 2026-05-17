@@ -2,7 +2,7 @@ import zipfile
 from pathlib import Path
 from typer.testing import CliRunner
 from sgm.cli import app
-from sgm.infrastructure.database import init_db, clear_db, create_account
+from sgm.infrastructure.database import init_db, create_account
 
 def test_cli_export_success(tmp_path, monkeypatch) -> None:
     # 1. Setup mock DB
