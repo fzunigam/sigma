@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-17
+
+### Added
+- Added `acc delete` command to remove accounts while preserving their transaction history in a hidden ghost account.
+- Implemented protection for the reserved `deleted` account ID across all commands.
+- Major README overhaul with improved structure, badges, and detailed usage documentation.
+- Added comprehensive smoke tests for account deletion.
+
 ## [0.1.2] - 2026-05-10
 
 ### Added
