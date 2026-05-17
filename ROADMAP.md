@@ -3,8 +3,6 @@
 This document outlines the planned features, improvements, and future direction for **Sigma**.
 
 ## 🎯 Short-Term (Next Steps)
-- [ ] Improve test coverage for core CLI commands
-- [ ] Refine error handling and user feedback
 - [ ] Update documentation with more examples
 - [ ] Add date field for transactions
 

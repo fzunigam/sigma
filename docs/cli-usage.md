@@ -30,9 +30,9 @@ Daily-use commands for logging data and managing the rendering cycle.
 |-|-|-|-|
 | `start`| *None* | `sgm start` | Launches the first-run setup wizard. |
 | `status`| *None* | `sgm status` | Displays a **rich** table of balances, credit limits, and the current *marked* total. |
-| `exp` | `<amount> <desc> {yes\|no} [acc_id]` | `sgm exp 7000 "sushi" yes cc` | Records an **expense**. The `{yes\|no}` choice flags the item for the next render. |
-| `inc` | `<amount> <desc> {yes\|no} [acc_id]` | `sgm inc 19000 "pay" no bci` | Records an **income**. The `{yes\|no}` choice flags the item for the next render. |
-| `tr` | `<from> <to> <amount>` | `sgm tr bci cc 10000` | Executes a transfer between accounts. |
+| `exp` | `<amount> <desc> {yes\|no} [acc_id] [date]` | `sgm exp 7000 "sushi" yes cc 2023-10-27` | Records an **expense**. The `{yes\|no}` choice flags the item for the next render. `[date]` is optional (YYYY-MM-DD). |
+| `inc` | `<amount> <desc> {yes\|no} [acc_id] [date]` | `sgm inc 19000 "pay" no bci 2023-10-27` | Records an **income**. The `{yes\|no}` choice flags the item for the next render. `[date]` is optional (YYYY-MM-DD). |
+| `tr` | `<from> <to> <amount> [date]` | `sgm tr bci cc 10000 2023-10-27` | Executes a transfer between accounts. `[date]` is optional (YYYY-MM-DD). |
 | `render` | *None* | `sgm render` | Sums all marked movements, logs the result to history, and unmarks all items. |
 
 ## Data Management & History

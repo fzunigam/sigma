@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Optional `[date]` argument (YYYY-MM-DD) for `exp`, `inc`, and `tr` commands.
+- Smart ambiguity resolution for optional account ID and date in `exp`/`inc` commands.
+- Automatic database migration of existing ISO timestamps to date-only format.
+
+### Changed
+- Transactions now store only the date (`YYYY-MM-DD`) instead of full date-time strings for cleaner logs and history.
+
 ## [0.1.3] - 2026-05-17
 
 ### Added

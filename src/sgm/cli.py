@@ -236,10 +236,31 @@ def _resolve_account(acc_id: str | None, tx_type: str | None = None) -> str:
     raise typer.Exit(1)
 
 
+def _resolve_account_and_date(acc_id: str | None, date_str: str | None, tx_type: str | None = None) -> tuple[str, str | None]:
+    """
+    Handles ambiguity between acc_id and date when both are optional.
+    If date_str is None and acc_id looks like a date (YYYY-MM-DD),
+    it treats acc_id as the date and resolves the account.
+    """
+    import re
+    date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    
+    resolved_date = date_str
+    actual_acc_id = acc_id
+    
+    if date_str is None and acc_id is not None and date_pattern.match(acc_id):
+        resolved_date = acc_id
+        actual_acc_id = None
+        
+    resolved_acc_id = _resolve_account(actual_acc_id, tx_type=tx_type)
+    return resolved_acc_id, resolved_date
+
+
 def exp_help_callback(ctx: typer.Context, value: bool) -> None:
     if value:
-        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id]")
+        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id] [date]")
         print("Records an expense. The <mark> choice (yes/no) flags the item for the next render.")
+        print("The date is optional (format: YYYY-MM-DD) and defaults to today.")
         raise typer.Exit()
 
 @app.command("exp")
@@ -249,6 +270,7 @@ def exp(
     desc: str = typer.Argument(..., help="Description of the expense"),
     mark: str = typer.Argument(..., help="Flag for next render ('yes' or 'no')", click_type=click.Choice(["yes", "no"])),
     acc_id: str | None = typer.Argument(None, help="Account ID (optional if only 1 account exists)"),
+    date: str | None = typer.Argument(None, help="Date of the expense (YYYY-MM-DD, optional)"),
     help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=exp_help_callback)
 ) -> None:
     """Records an expense."""
@@ -256,12 +278,17 @@ def exp(
         typer.echo("Error: Amount must be positive.", err=True)
         raise typer.Exit(1)
         
-    resolved_acc_id = _resolve_account(acc_id, tx_type="expense")
+    resolved_acc_id, resolved_date = _resolve_account_and_date(acc_id, date, tx_type="expense")
     marked = mark == "yes"
     
     try:
-        create_movement(amount, desc, resolved_acc_id, "expense", marked)
-        typer.echo(f"Recorded expense of {amount} ('{desc}') in '{resolved_acc_id}'.")
+        create_movement(amount, desc, resolved_acc_id, "expense", marked, created_at=resolved_date)
+        msg = f"Recorded expense of {amount} ('{desc}') in '{resolved_acc_id}'"
+        if resolved_date:
+            msg += f" on {resolved_date}."
+        else:
+            msg += "."
+        typer.echo(msg)
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
@@ -269,8 +296,9 @@ def exp(
 
 def inc_help_callback(ctx: typer.Context, value: bool) -> None:
     if value:
-        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id]")
+        print(f"Usage: {ctx.command_path} <amount> <desc> <mark> [acc_id] [date]")
         print("Records an income. The <mark> choice (yes/no) flags the item for the next render.")
+        print("The date is optional (format: YYYY-MM-DD) and defaults to today.")
         raise typer.Exit()
 
 @app.command("inc")
@@ -280,6 +308,7 @@ def inc(
     desc: str = typer.Argument(..., help="Description of the income"),
     mark: str = typer.Argument(..., help="Flag for next render ('yes' or 'no')", click_type=click.Choice(["yes", "no"])),
     acc_id: str | None = typer.Argument(None, help="Account ID (optional if only 1 account exists)"),
+    date: str | None = typer.Argument(None, help="Date of the income (YYYY-MM-DD, optional)"),
     help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=inc_help_callback)
 ) -> None:
     """Records an income."""
@@ -287,12 +316,17 @@ def inc(
         typer.echo("Error: Amount must be positive.", err=True)
         raise typer.Exit(1)
         
-    resolved_acc_id = _resolve_account(acc_id, tx_type="income")
+    resolved_acc_id, resolved_date = _resolve_account_and_date(acc_id, date, tx_type="income")
     marked = mark == "yes"
     
     try:
-        create_movement(amount, desc, resolved_acc_id, "income", marked)
-        typer.echo(f"Recorded income of {amount} ('{desc}') in '{resolved_acc_id}'.")
+        create_movement(amount, desc, resolved_acc_id, "income", marked, created_at=resolved_date)
+        msg = f"Recorded income of {amount} ('{desc}') in '{resolved_acc_id}'"
+        if resolved_date:
+            msg += f" on {resolved_date}."
+        else:
+            msg += "."
+        typer.echo(msg)
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
@@ -300,8 +334,9 @@ def inc(
 
 def tr_help_callback(ctx: typer.Context, value: bool) -> None:
     if value:
-        print(f"Usage: {ctx.command_path} <from> <to> <amount>")
+        print(f"Usage: {ctx.command_path} <from> <to> <amount> [date]")
         print("Executes a transfer between accounts.")
+        print("The date is optional (format: YYYY-MM-DD) and defaults to today.")
         raise typer.Exit()
 
 @app.command("tr")
@@ -310,6 +345,7 @@ def tr(
     from_acc: str = typer.Argument(..., help="Source account ID"),
     to_acc: str = typer.Argument(..., help="Destination account ID"),
     amount: int = typer.Argument(..., help="Amount to transfer (CLP)"),
+    date: str | None = typer.Argument(None, help="Date of the transfer (YYYY-MM-DD, optional)"),
     help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=tr_help_callback)
 ) -> None:
     """Executes a transfer between accounts."""
@@ -322,8 +358,13 @@ def tr(
         raise typer.Exit(1)
         
     try:
-        create_transfer(from_acc, to_acc, amount)
-        typer.echo(f"Transferred {amount} from '{from_acc}' to '{to_acc}'.")
+        create_transfer(from_acc, to_acc, amount, created_at=date)
+        msg = f"Transferred {amount} from '{from_acc}' to '{to_acc}'"
+        if date:
+            msg += f" on {date}."
+        else:
+            msg += "."
+        typer.echo(msg)
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)

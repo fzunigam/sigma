@@ -85,10 +85,12 @@ def init_db(db_path: Path | None = None) -> None:
                 cursor.execute("SELECT id, description, amount, type, account_id, marked, created_at FROM old_movements")
                 for old_row in cursor.fetchall():
                     old_id, desc, amt, mtype, acc_id, marked, cat = old_row
+                    # Ensure date-only format
+                    cat_date = cat.split('T')[0] if 'T' in cat else cat
                     cursor.execute("""
                         INSERT INTO movements (amount, description, account_id, type, created_at)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (amt, desc, acc_id, mtype, cat))
+                    """, (amt, desc, acc_id, mtype, cat_date))
                     new_id = cursor.lastrowid
                     cursor.execute("""
                         INSERT INTO movement_marks (movement_id, marked)
@@ -98,9 +100,14 @@ def init_db(db_path: Path | None = None) -> None:
                 cursor.execute("DROP TABLE old_movements")
             else:
                 if 'created_at' not in movement_cols:
-                    from datetime import datetime, timezone
-                    now = datetime.now(timezone.utc).isoformat()
-                    cursor.execute(f"ALTER TABLE movements ADD COLUMN created_at TEXT NOT NULL DEFAULT '{now}'")
+                    from datetime import date
+                    now_date = date.today().isoformat()
+                    cursor.execute(f"ALTER TABLE movements ADD COLUMN created_at TEXT NOT NULL DEFAULT '{now_date}'")
+                else:
+                    # Migrate existing date-times to dates
+                    cursor.execute("SELECT id, created_at FROM movements WHERE created_at LIKE '%T%'")
+                    for mid, cat in cursor.fetchall():
+                        cursor.execute("UPDATE movements SET created_at = ? WHERE id = ?", (cat.split('T')[0], mid))
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS movement_marks (
@@ -124,6 +131,11 @@ def init_db(db_path: Path | None = None) -> None:
                 )
             """)
         else:
+            # Migrate existing date-times to dates
+            cursor.execute("SELECT id, created_at FROM transfers WHERE created_at LIKE '%T%'")
+            for tid, cat in cursor.fetchall():
+                cursor.execute("UPDATE transfers SET created_at = ? WHERE id = ?", (cat.split('T')[0], tid))
+                
             transfer_cols = {row[1]: row[2] for row in transfer_cols_info}
             if transfer_cols.get('id') == 'TEXT' or 'source_account_id' in transfer_cols:
                 # Deep migration from old local schema
@@ -140,10 +152,12 @@ def init_db(db_path: Path | None = None) -> None:
                 cursor.execute("SELECT source_account_id, target_account_id, amount, created_at FROM old_transfers")
                 for old_row in cursor.fetchall():
                     src_id, tgt_id, amt, cat = old_row
+                    # Ensure date-only format
+                    cat_date = cat.split('T')[0] if 'T' in cat else cat
                     cursor.execute("""
                         INSERT INTO transfers (from_account, to_account, amount, created_at)
                         VALUES (?, ?, ?, ?)
-                    """, (src_id, tgt_id, amt, cat))
+                    """, (src_id, tgt_id, amt, cat_date))
                 cursor.execute("DROP TABLE old_transfers")
         
         cursor.execute("PRAGMA table_info(render_history)")
@@ -158,6 +172,11 @@ def init_db(db_path: Path | None = None) -> None:
                 )
             """)
         else:
+            # Migrate existing date-times to dates
+            cursor.execute("SELECT id, rendered_at FROM render_history WHERE rendered_at LIKE '%T%'")
+            for rid, rat in cursor.fetchall():
+                cursor.execute("UPDATE render_history SET rendered_at = ? WHERE id = ?", (rat.split('T')[0], rid))
+
             render_cols = {row[1]: row[2] for row in render_cols_info}
             if 'id' not in render_cols or render_cols.get('id') == 'TEXT' or 'income_total' in render_cols:
                 # Deep migration for old local schema
@@ -354,8 +373,8 @@ def execute_render(db_path: Path | None = None) -> tuple[int, int]:
     if db_path is None:
         db_path = get_db_path()
         
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
+    from datetime import date
+    now_date = date.today().isoformat()
     
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -381,7 +400,7 @@ def execute_render(db_path: Path | None = None) -> tuple[int, int]:
         cursor.execute("""
             INSERT INTO render_history (net_amount, rendered_at)
             VALUES (?, ?)
-        """, (net_amount, now))
+        """, (net_amount, now_date))
         
         # 3. Unmark processed movements
         cursor.execute("""
@@ -394,15 +413,16 @@ def execute_render(db_path: Path | None = None) -> tuple[int, int]:
         return net_amount, count
 
 
-def create_transfer(from_account: str, to_account: str, amount: int, db_path: Path | None = None) -> int:
+def create_transfer(from_account: str, to_account: str, amount: int, created_at: str | None = None, db_path: Path | None = None) -> int:
     if from_account == "deleted" or to_account == "deleted":
         raise ValueError("Cannot manually transfer to or from the reserved 'deleted' account.")
         
     if db_path is None:
         db_path = get_db_path()
         
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
+    if created_at is None:
+        from datetime import date
+        created_at = date.today().isoformat()
     
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -450,7 +470,7 @@ def create_transfer(from_account: str, to_account: str, amount: int, db_path: Pa
         cursor.execute("""
             INSERT INTO transfers (from_account, to_account, amount, created_at)
             VALUES (?, ?, ?, ?)
-        """, (from_account, to_account, amount, now))
+        """, (from_account, to_account, amount, created_at))
         
         transfer_id = cursor.lastrowid
         if transfer_id is None:
@@ -514,15 +534,16 @@ def get_render_history(limit: int = 15, db_path: Path | None = None) -> list[dic
         return [dict(row) for row in cursor.fetchall()]
 
 
-def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, db_path: Path | None = None) -> int:
+def create_movement(amount: int, description: str, account_id: str, type: str, marked: bool, created_at: str | None = None, db_path: Path | None = None) -> int:
     if account_id == "deleted":
         raise ValueError("Cannot manually log movements to the reserved 'deleted' account.")
         
     if db_path is None:
         db_path = get_db_path()
         
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
+    if created_at is None:
+        from datetime import date
+        created_at = date.today().isoformat()
     
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -563,7 +584,7 @@ def create_movement(amount: int, description: str, account_id: str, type: str, m
         cursor.execute("""
             INSERT INTO movements (amount, description, account_id, type, created_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (amount, description, account_id, type, now))
+        """, (amount, description, account_id, type, created_at))
         
         movement_id = cursor.lastrowid
         if movement_id is None:
