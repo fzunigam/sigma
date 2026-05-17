@@ -12,6 +12,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] Enhanced data visualization in the CLI
 - [ ] Export functionality (CSV, JSON)
 - [ ] Advanced filtering for transaction history
+- [ ] Telegram integration option
 
 ## 🗺️ Long-Term (Vision & Backlog)
 - [ ] Multi-currency support

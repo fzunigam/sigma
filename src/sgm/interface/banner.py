@@ -48,7 +48,7 @@ def print_sgm() -> None:
     console.print()
     
     # Print the Commands section
-    console.print("---commands")
+    console.print("---start")
     
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("Command", style="cyan bold")
@@ -56,21 +56,13 @@ def print_sgm() -> None:
     
     table.add_row("start", "First-run setup and preferences")
     table.add_row("status", "Displays balances, credit limits, and marked total")
-    table.add_row("exp", "Records an expense")
-    table.add_row("inc", "Records an income")
-    table.add_row("tr", "Executes a transfer between accounts")
-    table.add_row("render", "Sums marked movements and logs history")
-    table.add_row("log", "Lists the most recent movements")
-    table.add_row("history", "Displays a table of previous render results")
-    table.add_row("delete", "Permanently removes a movement or transfer by ID")
     table.add_row("acc add", "Adds a new account with an initial balance")
-    table.add_row("acc list", "Detailed view of account metadata")
-    table.add_row("acc rename", "Updates the unique identifier for an account")
-    table.add_row("acc set-limit", "Updates the rolling credit limit")
     table.add_row("restore", "Delete all data and leave the database empty")
     table.add_row("update", "Update sgm to the latest version")
     
     console.print(table)
+    console.print()
+    console.print("Type [bold cyan]sgm --help[/bold cyan] for more details on commands and options.")
     console.print()
 
 def print_help() -> None:
