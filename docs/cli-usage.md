@@ -153,6 +153,21 @@ Deletes an account. **Safety feature**: History is preserved by moving it to a h
 
 ---
 
+## Telegram Bot Integration
+
+### `bot setup`
+Interactively configures your Telegram Bot API token and authorized User IDs.
+- **Syntax**: `sgm bot setup`
+
+### `bot run`
+Starts the blocking Telegram Bot event loop.
+- **Syntax**: `sgm bot run`
+- **Details**:
+    - Automatically enables SQLite Write-Ahead Logging (WAL) for safe concurrent database writes between the bot and the CLI.
+    - Blocking process. Press `Ctrl+C` to terminate.
+
+---
+
 ## System & Maintenance
 
 ### `config`
