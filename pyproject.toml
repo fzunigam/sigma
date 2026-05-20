@@ -33,6 +33,10 @@ dev = [
   "build>=1.2.2",
   "twine>=6.1.0",
 ]
+telegram = [
+  "python-telegram-bot>=21.0",
+]
+
 
 [project.scripts]
 sgm = "sgm.cli:app"

@@ -33,6 +33,15 @@ acc_app = typer.Typer(
 )
 app.add_typer(acc_app, name="acc")
 
+bot_app = typer.Typer(
+    help="Telegram Bot configuration and control",
+    add_completion=False,
+    add_help_option=False,
+    rich_markup_mode=None
+)
+app.add_typer(bot_app, name="bot")
+
+
 
 @app.callback(invoke_without_command=True)
 def main(
@@ -780,3 +789,95 @@ def acc_set_limit(
         
     update_credit_limit(acc_id, limit)
     typer.echo(f"Credit limit for '{acc_id}' updated to {limit} successfully!")
+
+
+def bot_setup_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path}")
+        print("Interactively configures the Telegram Bot integration.")
+        raise typer.Exit()
+
+@bot_app.command("setup")
+def bot_setup(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=bot_setup_help_callback)
+) -> None:
+    """Interactively configures the Telegram Bot integration."""
+    config_data = load_config()
+    telegram_cfg = config_data.get("telegram", {})
+    
+    current_token = telegram_cfg.get("token", "")
+    current_users = telegram_cfg.get("allowed_users", [])
+    current_users_str = ", ".join(map(str, current_users))
+    
+    typer.echo("--- Sigma Telegram Bot Setup ---")
+    token = typer.prompt("Telegram Bot Token (from @BotFather)", default=current_token, type=str)
+    
+    users_input = typer.prompt("Allowed Telegram User IDs (comma-separated)", default=current_users_str, type=str)
+    allowed_users = []
+    if users_input.strip():
+        for uid_str in users_input.split(","):
+            uid_str = uid_str.strip()
+            if uid_str:
+                try:
+                    allowed_users.append(int(uid_str))
+                except ValueError:
+                    typer.echo(f"Warning: '{uid_str}' is not a valid integer ID. Skipping.", err=True)
+                    
+    if "telegram" not in config_data:
+        config_data["telegram"] = {}
+        
+    config_data["telegram"]["token"] = token
+    config_data["telegram"]["allowed_users"] = allowed_users
+    
+    save_config(config_data)
+    typer.echo("Telegram configuration saved successfully.")
+
+
+def bot_run_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path}")
+        print("Starts the Telegram Bot event loop (blocking).")
+        raise typer.Exit()
+
+@bot_app.command("run")
+def bot_run(
+    ctx: typer.Context,
+    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=bot_run_help_callback)
+) -> None:
+    """Starts the Telegram Bot event loop."""
+    config_data = load_config()
+    telegram_cfg = config_data.get("telegram", {})
+    token = telegram_cfg.get("token", "")
+    allowed_users = telegram_cfg.get("allowed_users", [])
+    
+    if not token:
+        typer.echo("Error: Telegram bot token is not configured.", err=True)
+        typer.echo("Please run 'sgm bot setup' first.", err=True)
+        raise typer.Exit(1)
+        
+    if not allowed_users:
+        typer.echo("Warning: No allowed Telegram users configured.", err=True)
+        typer.echo("The bot will ignore all messages.", err=True)
+        
+    typer.echo("Initializing database...")
+    init_db()
+    
+    from sgm.infrastructure.database import get_db_path
+    db_path = get_db_path()
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+        typer.echo("Database WAL mode enabled for concurrent write safety.")
+    except Exception as e:
+        typer.echo(f"Warning: Could not enable WAL mode: {e}", err=True)
+
+    typer.echo("Starting Telegram Bot...")
+    from sgm.telegram_bot import run_telegram_bot
+    try:
+        run_telegram_bot(token, allowed_users)
+    except KeyboardInterrupt:
+        typer.echo("\nStopping Telegram Bot.")
+    except Exception as e:
+        typer.echo(f"Error starting Telegram Bot: {e}", err=True)
+        raise typer.Exit(1)

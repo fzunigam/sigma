@@ -40,6 +40,20 @@ def save_config(config_data: dict[str, Any] | None = None) -> None:
                 lines.append(f'{k} = "{v}"')
             else:
                 lines.append(f'{k} = {v}')
+        lines.append("")
                 
+    if "telegram" in config_data:
+        lines.append("[telegram]")
+        for k, v in config_data["telegram"].items():
+            if isinstance(v, str):
+                lines.append(f'{k} = "{v}"')
+            elif isinstance(v, list):
+                list_str = ", ".join(f'"{item}"' if isinstance(item, str) else str(item) for item in v)
+                lines.append(f'{k} = [{list_str}]')
+            else:
+                lines.append(f'{k} = {v}')
+        lines.append("")
+
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
 

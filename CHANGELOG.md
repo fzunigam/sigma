@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Telegram Bot Integration: Easily control SGM from Telegram.
+- New `sgm bot setup` command to configure Telegram bot token and allowed user IDs.
+- New `sgm bot run` command to start the Telegram bot daemon.
+- Secure command authorization filtering to restrict bot control to specified Telegram users.
+- Support for CLI commands mapped directly to Telegram messages (e.g. `exp`, `inc`, `tr`, `status`, `log`, `render`, `acc`).
+- Added SQLite WAL (Write-Ahead Logging) mode activation when launching the bot for safe concurrent CLI and bot write access.
+- Containerized bot deployment option using `Dockerfile` and `docker-compose.yml`.
+- Expanded documentation with `docs/plans/telegram-deployment.md`.
+- Automated smoke tests in `tests/smoke/test_telegram_bot.py`.
+
 ## [0.1.5] - 2026-05-17
 
 ### Added
