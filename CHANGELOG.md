@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-21
+
 ### Added
 - Telegram Bot Integration: Easily control SGM from Telegram.
 - New `sgm bot setup` command to configure Telegram bot token and allowed user IDs.

@@ -22,7 +22,7 @@ Sigma is designed for speed. Commands like `exp` and `inc` have optional argumen
 ## Quickstart
 ```bash
 sgm start                           # Setup your first account
-sgm acc add cc "Visa" credit 0       # Add a credit card
+sgm acc add cc "Visa" credit 0      # Add a credit card
 sgm exp 5000 "Lunch" yes wallet     # Log an expense
 sgm status                          # See where you stand
 sgm render                          # Close the current cycle
@@ -183,8 +183,8 @@ Exports all database tables into a ZIP file containing CSV files. Useful for bac
     - Includes tables: `accounts`, `movements`, `movement_marks`, `transfers`, and `render_history`.
 - **Example**:
     ```bash
-    sgm export                      # Saves to Downloads
-    sgm export -o ~/backups/my_data.zip  # Saves to a specific path
+    sgm export                            # Saves to Downloads
+    sgm export -o ~/backups/my_data.zip   # Saves to a specific path
     ```
 
 ### `restore`
