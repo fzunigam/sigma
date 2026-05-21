@@ -5,6 +5,9 @@ WORKDIR /app
 # Copy dependency definition and README
 COPY pyproject.toml README.md ./
 
+# Create dummy src directory structure so setuptools egg_info doesn't complain about missing src
+RUN mkdir -p src/sgm && touch src/sgm/__init__.py
+
 # Install python-telegram-bot and other dependencies first to leverage caching
 RUN pip install --no-cache-dir ".[telegram]"
 

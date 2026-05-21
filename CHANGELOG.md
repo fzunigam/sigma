@@ -11,6 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Enhanced configuration UI visuals with cyan styling matching the Sigma brand theme.
 
 ### Fixed
+- Fixed Docker build failure where setuptools `egg_info` failed during dependency caching step because the `src` directory did not exist yet in the build context.
 - Fixed a bug where terminal arrow-key escape sequences were incorrectly processed as standalone Escape/exit events due to Python's buffered standard input stream reading. Bypassed buffering using raw OS descriptor reads.
 
 ## [0.2.0] - 2026-05-21
