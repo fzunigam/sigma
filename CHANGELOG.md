@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Improved the `sgm config` command with an interactive terminal menu using arrow-key navigation and Escape-to-cancel support.
+- Integrated Telegram Bot Token and Allowed User IDs setup directly into the main config menu.
+- Enhanced configuration UI visuals with cyan styling matching the Sigma brand theme.
+
+### Fixed
+- Fixed a bug where terminal arrow-key escape sequences were incorrectly processed as standalone Escape/exit events due to Python's buffered standard input stream reading. Bypassed buffering using raw OS descriptor reads.
+
 ## [0.2.0] - 2026-05-21
 
 ### Added

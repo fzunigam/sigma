@@ -198,49 +198,429 @@ def config_help_callback(ctx: typer.Context, value: bool) -> None:
         print("Opens the sgm global settings (default accounts).")
         raise typer.Exit()
 
+def mask_token(token: str) -> str:
+    """Mask Telegram bot token for secure display."""
+    if not token:
+        return "Not configured"
+    if len(token) <= 10:
+        return "****"
+    return f"{token[:6]}...{token[-4:]}"
+
+
+def format_allowed_users(users: list) -> str:
+    """Format the list of allowed Telegram user IDs."""
+    if not users:
+        return "None (bot ignores messages)"
+    return ", ".join(map(str, users))
+
+
+def get_key() -> str:
+    """Reads a single key or escape sequence from standard input on Unix/Mac."""
+    import os
+    import select
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = os.read(fd, 1)
+        if ch == b'\x1b':
+            r, _, _ = select.select([fd], [], [], 0.05)
+            if r:
+                ch2 = os.read(fd, 1)
+                if ch2 == b'[':
+                    r, _, _ = select.select([fd], [], [], 0.05)
+                    if r:
+                        ch3 = os.read(fd, 1)
+                        if ch3 == b'A':
+                            return "up"
+                        elif ch3 == b'B':
+                            return "down"
+                        elif ch3 == b'C':
+                            return "right"
+                        elif ch3 == b'D':
+                            return "left"
+                        return f"esc[{ch3.decode('utf-8', errors='ignore')}"
+                    return "esc["
+                return f"esc{ch2.decode('utf-8', errors='ignore')}"
+            return "escape"
+        elif ch in (b'\r', b'\n'):
+            return "enter"
+        elif ch in (b'\x7f', b'\x08'):
+            return "backspace"
+        elif ch == b'\x03':  # Ctrl+C
+            raise KeyboardInterrupt
+        try:
+            return ch.decode('utf-8')
+        except UnicodeDecodeError:
+            return ch.decode('utf-8', errors='ignore')
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+def interactive_input(prompt: str, default: str = "") -> str | None:
+    """Reads line input from terminal with inline editing and Esc-to-cancel support."""
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    current = list(default)
+    pos = len(current)
+
+    sys.stdout.write("".join(current))
+    sys.stdout.flush()
+
+    while True:
+        try:
+            key = get_key()
+        except KeyboardInterrupt:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            raise KeyboardInterrupt
+
+        if key == "enter":
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            return "".join(current)
+        elif key in ("escape", "q"):
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            return None
+        elif key == "backspace":
+            if pos > 0:
+                current.pop(pos - 1)
+                pos -= 1
+        elif key == "left":
+            if pos > 0:
+                pos -= 1
+        elif key == "right":
+            if pos < len(current):
+                pos += 1
+        elif len(key) == 1 and key.isprintable() and key != '\t':
+            current.insert(pos, key)
+            pos += 1
+
+        # Redraw
+        sys.stdout.write("\r\x1b[K")
+        sys.stdout.write(prompt + "".join(current))
+        offset = len(current) - pos
+        if offset > 0:
+            sys.stdout.write(f"\x1b[{offset}D")
+        sys.stdout.flush()
+
+
+def draw_menu(options: list[str], selected_idx: int, header: str = "") -> int:
+    """Draw menu options, highlighting the selected index in cyan. Returns line count."""
+    lines = 0
+    if header:
+        print(header)
+        lines += len(header.splitlines()) + 1
+
+    for i, opt in enumerate(options):
+        if i == selected_idx:
+            print(f"  > \x1b[1;36m{opt}\x1b[0m")
+        else:
+            print(f"    {opt}")
+        lines += 1
+    return lines
+
+
+def clear_printed_lines(count: int) -> None:
+    """Clear count lines up from the current cursor position."""
+    if count > 0:
+        sys.stdout.write(f"\x1b[{count}A\r\x1b[J")
+        sys.stdout.flush()
+
+
+def run_interactive_menu(options: list[str], header: str, initial_idx: int = 0) -> int | None:
+    """Runs interactive menu loop and returns the selected index or None."""
+    selected_idx = initial_idx
+    count = 0
+    while True:
+        count = draw_menu(options, selected_idx, header)
+        try:
+            key = get_key()
+        except KeyboardInterrupt:
+            clear_printed_lines(count)
+            raise KeyboardInterrupt
+
+        clear_printed_lines(count)
+
+        if key == "up":
+            selected_idx = (selected_idx - 1) % len(options)
+        elif key == "down":
+            selected_idx = (selected_idx + 1) % len(options)
+        elif key == "enter":
+            return selected_idx
+        elif key in ("escape", "q"):
+            return None
+
+
 @app.command("config")
 def config_cmd(
     ctx: typer.Context,
     help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=config_help_callback)
 ) -> None:
-    """Opens the sgm global settings (default accounts)."""
-    accounts = get_accounts()
-    if not accounts:
-        typer.echo("No accounts found. Use 'sgm acc add' to create one first.")
-        raise typer.Exit()
-        
+    """Opens the sgm global settings configuration wizard."""
     config_data = load_config()
     defaults = config_data.get("defaults", {})
-    
+    telegram_cfg = config_data.get("telegram", {})
+
     current_inc = defaults.get("income_acc", "")
     current_exp = defaults.get("expense_acc", "")
-    
-    typer.echo("Configure default accounts.")
-    
-    # Prompt for income account
-    inc_acc = typer.prompt("Default Income Account ID", default=current_inc, type=str)
-    # Validate
-    if inc_acc and not get_account(inc_acc):
-        typer.echo(f"Warning: Account '{inc_acc}' not found. Default not set.", err=True)
-        inc_acc = current_inc
-        
-    # Prompt for expense account
-    exp_acc = typer.prompt("Default Expense Account ID", default=current_exp, type=str)
-    # Validate
-    if exp_acc and not get_account(exp_acc):
-        typer.echo(f"Warning: Account '{exp_acc}' not found. Default not set.", err=True)
-        exp_acc = current_exp
-        
-    if "defaults" not in config_data:
-        config_data["defaults"] = {}
-        
-    if inc_acc:
+    current_token = telegram_cfg.get("token", "")
+    current_users = telegram_cfg.get("allowed_users", [])
+
+    # Check if we are running in an interactive terminal
+    if not sys.stdin.isatty():
+        # Fallback sequential prompt mode for scripting and automated tests
+        typer.echo("Configure default accounts.")
+        inc_acc = typer.prompt("Default Income Account ID", default=current_inc, type=str)
+        if inc_acc and not get_account(inc_acc):
+            typer.echo(f"Warning: Account '{inc_acc}' not found. Default not set.", err=True)
+            inc_acc = current_inc
+
+        exp_acc = typer.prompt("Default Expense Account ID", default=current_exp, type=str)
+        if exp_acc and not get_account(exp_acc):
+            typer.echo(f"Warning: Account '{exp_acc}' not found. Default not set.", err=True)
+            exp_acc = current_exp
+
+        if "defaults" not in config_data:
+            config_data["defaults"] = {}
+
         config_data["defaults"]["income_acc"] = inc_acc
-    if exp_acc:
         config_data["defaults"]["expense_acc"] = exp_acc
-        
-    save_config(config_data)
-    typer.echo("Configuration saved successfully.")
+        save_config(config_data)
+        typer.echo("Configuration saved successfully.")
+        return
+
+    main_header = (
+        "\n\x1b[1;36m--- Sigma Configuration ---\x1b[0m\n"
+        "Use Up/Down arrows to navigate, Enter to select, Esc/Q to exit.\n"
+    )
+
+    selected_main_idx = 0
+    while True:
+        # Construct updated menu options dynamically
+        menu_options = [
+            f"Default Income Account  (Current: \x1b[36m{current_inc or 'Not set'}\x1b[0m)",
+            f"Default Expense Account (Current: \x1b[36m{current_exp or 'Not set'}\x1b[0m)",
+            f"Telegram Bot Token      (Current: \x1b[36m{mask_token(current_token)}\x1b[0m)",
+            f"Telegram Allowed Users  (Current: \x1b[36m{format_allowed_users(current_users)}\x1b[0m)",
+        ]
+
+        choice = run_interactive_menu(menu_options, main_header, initial_idx=selected_main_idx)
+        if choice is None:
+            # Exited main menu
+            print("\x1b[1;32m✓ Configuration saved and closed.\x1b[0m")
+            break
+
+        selected_main_idx = choice
+
+        if choice == 0:
+            accounts = get_accounts()
+            if not accounts:
+                print("\n\x1b[1;31mError: No accounts found. Use 'sgm acc add' to create one first.\x1b[0m")
+                print("Press any key to return...")
+                get_key()
+                sys.stdout.write("\x1b[3A\r\x1b[J")
+                sys.stdout.flush()
+                continue
+
+            acc_options = [f"{acc['id']} ({acc['name']})" for acc in accounts] + ["(Clear Default)"]
+            sub_header = (
+                "\n\x1b[1;36m--- Select Default Income Account ---\x1b[0m\n"
+                "Use Up/Down arrows to navigate, Enter to select, Esc/Q to cancel.\n"
+            )
+
+            sub_idx = 0
+            for i, acc in enumerate(accounts):
+                if acc['id'] == current_inc:
+                    sub_idx = i
+                    break
+            if current_inc == "":
+                sub_idx = len(accounts)
+
+            sel = run_interactive_menu(acc_options, sub_header, initial_idx=sub_idx)
+            if sel is not None:
+                if sel == len(accounts):
+                    current_inc = ""
+                else:
+                    current_inc = accounts[sel]['id']
+
+                if "defaults" not in config_data:
+                    config_data["defaults"] = {}
+                config_data["defaults"]["income_acc"] = current_inc
+                save_config(config_data)
+
+                success_msg = f"\n\x1b[1;32m✓ Default Income Account updated to '{current_inc or 'None'}'\x1b[0m\n"
+                print(success_msg)
+                import time
+                time.sleep(0.8)
+                sys.stdout.write("\x1b[3A\r\x1b[J")
+                sys.stdout.flush()
+
+        elif choice == 1:
+            accounts = get_accounts()
+            if not accounts:
+                print("\n\x1b[1;31mError: No accounts found. Use 'sgm acc add' to create one first.\x1b[0m")
+                print("Press any key to return...")
+                get_key()
+                sys.stdout.write("\x1b[3A\r\x1b[J")
+                sys.stdout.flush()
+                continue
+
+            acc_options = [f"{acc['id']} ({acc['name']})" for acc in accounts] + ["(Clear Default)"]
+            sub_header = (
+                "\n\x1b[1;36m--- Select Default Expense Account ---\x1b[0m\n"
+                "Use Up/Down arrows to navigate, Enter to select, Esc/Q to cancel.\n"
+            )
+
+            sub_idx = 0
+            for i, acc in enumerate(accounts):
+                if acc['id'] == current_exp:
+                    sub_idx = i
+                    break
+            if current_exp == "":
+                sub_idx = len(accounts)
+
+            sel = run_interactive_menu(acc_options, sub_header, initial_idx=sub_idx)
+            if sel is not None:
+                if sel == len(accounts):
+                    current_exp = ""
+                else:
+                    current_exp = accounts[sel]['id']
+
+                if "defaults" not in config_data:
+                    config_data["defaults"] = {}
+                config_data["defaults"]["expense_acc"] = current_exp
+                save_config(config_data)
+
+                success_msg = f"\n\x1b[1;32m✓ Default Expense Account updated to '{current_exp or 'None'}'\x1b[0m\n"
+                print(success_msg)
+                import time
+                time.sleep(0.8)
+                sys.stdout.write("\x1b[3A\r\x1b[J")
+                sys.stdout.flush()
+
+        elif choice == 2:
+            print("\n\x1b[1;36m--- Configure Telegram Bot Token ---\x1b[0m")
+            print(f"Current token: \x1b[36m{mask_token(current_token)}\x1b[0m")
+            print("Enter new token (leave empty and press Enter to clear, Esc/Q to cancel):")
+
+            prompt_str = "\x1b[1;36mToken > \x1b[0m"
+            new_token = interactive_input(prompt_str, default=current_token)
+
+            if new_token is not None:
+                current_token = new_token.strip()
+                if "telegram" not in config_data:
+                    config_data["telegram"] = {}
+                config_data["telegram"]["token"] = current_token
+                save_config(config_data)
+
+                success_msg = "\n\x1b[1;32m✓ Telegram Bot Token updated.\x1b[0m\n"
+                print(success_msg)
+                import time
+                time.sleep(0.8)
+                sys.stdout.write("\x1b[8A\r\x1b[J")
+                sys.stdout.flush()
+            else:
+                sys.stdout.write("\x1b[5A\r\x1b[J")
+                sys.stdout.flush()
+
+        elif choice == 3:
+            sub_idx = 0
+            while True:
+                user_list_str = format_allowed_users(current_users)
+                sub_header = (
+                    f"\n\x1b[1;36m--- Telegram Allowed Users ---\x1b[0m\n"
+                    f"Current allowed IDs: \x1b[36m{user_list_str}\x1b[0m\n"
+                    f"Use Up/Down arrows to navigate, Enter to select, Esc/Q to return.\n"
+                )
+                sub_options = [
+                    "Add User ID",
+                    "Remove User ID",
+                    "Back to Main Menu"
+                ]
+
+                sub_choice = run_interactive_menu(sub_options, sub_header, initial_idx=sub_idx)
+                if sub_choice is None or sub_choice == 2:
+                    break
+
+                sub_idx = sub_choice
+
+                if sub_choice == 0:
+                    print("\n\x1b[1;36m--- Add Allowed Telegram User ID ---\x1b[0m")
+                    print("Enter Telegram User ID (numbers only, Esc/Q to cancel):")
+
+                    prompt_str = "\x1b[1;36mUser ID > \x1b[0m"
+                    new_uid_str = interactive_input(prompt_str, default="")
+                    if new_uid_str is not None:
+                        new_uid_str = new_uid_str.strip()
+                        if not new_uid_str:
+                            sys.stdout.write("\x1b[4A\r\x1b[J")
+                            sys.stdout.flush()
+                            continue
+
+                        try:
+                            uid = int(new_uid_str)
+                            if uid in current_users:
+                                print("\n\x1b[1;33mWarning: User ID already allowed.\x1b[0m\n")
+                                import time
+                                time.sleep(1.0)
+                                sys.stdout.write("\x1b[7A\r\x1b[J")
+                                sys.stdout.flush()
+                            else:
+                                current_users.append(uid)
+                                if "telegram" not in config_data:
+                                    config_data["telegram"] = {}
+                                config_data["telegram"]["allowed_users"] = current_users
+                                save_config(config_data)
+
+                                print(f"\n\x1b[1;32m✓ User ID {uid} added.\x1b[0m\n")
+                                import time
+                                time.sleep(0.8)
+                                sys.stdout.write("\x1b[7A\r\x1b[J")
+                                sys.stdout.flush()
+                        except ValueError:
+                            print("\n\x1b[1;31mError: User ID must be a valid integer.\x1b[0m\n")
+                            import time
+                            time.sleep(1.0)
+                            sys.stdout.write("\x1b[7A\r\x1b[J")
+                            sys.stdout.flush()
+                    else:
+                        sys.stdout.write("\x1b[4A\r\x1b[J")
+                        sys.stdout.flush()
+
+                elif sub_choice == 1:
+                    if not current_users:
+                        print("\n\x1b[1;31mError: No user IDs configured to remove.\x1b[0m")
+                        print("Press any key to return...")
+                        get_key()
+                        sys.stdout.write("\x1b[3A\r\x1b[J")
+                        sys.stdout.flush()
+                        continue
+
+                    remove_options = [str(uid) for uid in current_users] + ["(Cancel)"]
+                    remove_header = (
+                        "\n\x1b[1;36m--- Select User ID to Remove ---\x1b[0m\n"
+                        "Use Up/Down arrows to navigate, Enter to select, Esc/Q to cancel.\n"
+                    )
+
+                    rem_sel = run_interactive_menu(remove_options, remove_header, initial_idx=0)
+                    if rem_sel is not None and rem_sel < len(current_users):
+                        removed_uid = current_users.pop(rem_sel)
+                        if "telegram" not in config_data:
+                            config_data["telegram"] = {}
+                        config_data["telegram"]["allowed_users"] = current_users
+                        save_config(config_data)
+
+                        print(f"\n\x1b[1;32m✓ User ID {removed_uid} removed.\x1b[0m\n")
+                        import time
+                        time.sleep(0.8)
+                        sys.stdout.write("\x1b[3A\r\x1b[J")
+                        sys.stdout.flush()
 
 
 def _resolve_account(acc_id: str | None, tx_type: str | None = None) -> str:
