@@ -3,6 +3,7 @@
 This document outlines the planned features, improvements, and future direction for **Sigma**.
 
 ## 🎯 Short-Term (Next Steps)
+- [ ] Local backup of exportable data 
 
 ## 🚀 Mid-Term (Upcoming Features)
 - [ ] Enhanced data visualization in the CLI

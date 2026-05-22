@@ -3,9 +3,9 @@
 [![PyPI version](https://img.shields.io/pypi/v/sigma-finance.svg)](https://pypi.org/project/sigma-finance/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Sigma** is a fast, CLI-first personal finance tracker designed for local use. It focuses on rapid transaction logging, simple account management, and auditable snapshots through a unique "rendering" cycle.
+**Sigma** is a fast, CLI-first personal finance tracker designed for local use. It focuses on rapid transaction logging, simple account management, and auditable snapshots through a "rendering" cycle.
 
-![Project Logo](assets/sigma_cli.png)
+![Project Logo](assets/demo.gif)
 
 ## Why Sigma?
 
