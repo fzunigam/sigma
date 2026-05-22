@@ -1,9 +1,11 @@
 # Sigma (`sgm`)
 
-**Sigma** is a fast, CLI-first personal finance tracker designed for local use. It focuses on rapid transaction logging, simple account management, and auditable snapshots through a unique "rendering" cycle.
-
 [![PyPI version](https://img.shields.io/pypi/v/sigma-finance.svg)](https://pypi.org/project/sigma-finance/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Sigma** is a fast, CLI-first personal finance tracker designed for local use. It focuses on rapid transaction logging, simple account management, and auditable snapshots through a unique "rendering" cycle.
+
+![Project Logo](assets/sigma_cli.png)
 
 ## Why Sigma?
 
@@ -14,8 +16,6 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 *   **Stay local**: Your data stays on your machine in a lightweight SQLite database.
 *   **See the big picture**: Rich terminal tables provide instant clarity on your balances and credit availability.
 
----
-
 ## Features
 
 - ⚡ **Fast Logging**: Simple commands for `exp` (expense), `inc` (income), and `tr` (transfer).
@@ -23,10 +23,7 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 - 🔄 **Rendering Cycle**: Mark movements for review and "render" them into your history once verified.
 - 📊 **Rich Interface**: Beautifully formatted tables powered by [Rich](https://github.com/Textualize/rich).
 - 📜 **Audit Log**: Full history of movements and render snapshots.
-- 🛠️ **Built-in Setup**: Interactive first-run wizard to get you started in seconds.
 - 🤖 **Telegram Bot**: Optional integration to securely interact with Sigma via Telegram using standard CLI commands.
-
----
 
 ## Installation
 
@@ -48,8 +45,6 @@ Once installed, initialize your database and create your first account:
 sgm start
 ```
 
----
-
 ## Usage
 
 ### Core Workflow
@@ -60,8 +55,8 @@ sgm start
     ```
 2.  **Log an expense**:
     ```bash
-    # Usage: sgm exp <amount> <description> <mark_for_render: yes|no> [account_id]
-    sgm exp 5000 "Lunch" yes wallet
+    # Usage: sgm exp <amount> <description> <mark_for_render: yes|no> [account_id] [date]
+    sgm exp 5000 "Lunch" yes wallet 2026-05-20
     ```
 3.  **Log income**:
     ```bash
@@ -82,8 +77,8 @@ sgm start
 To run Sigma as a background bot, configure your credentials and launch the daemon:
 
 ```bash
-sgm bot setup
-sgm bot run
+sgm bot setup   # Configure bot token and allowed users
+sgm bot run     # Launch the daemon
 ```
 
 *For Docker, systemd, or launchd setup details, see the [Telegram Bot Deployment Guide](docs/plans/telegram-deployment.md).*
@@ -104,8 +99,6 @@ sgm bot run
 
 For a complete reference of all available commands and their arguments, please refer to the [Detailed CLI Usage Guide](docs/cli-usage.md).
 
----
-
 ## Development
 
 We use `Makefile` for common development tasks.
@@ -125,8 +118,6 @@ make test
 make lint
 ```
 
----
-
 ## Project Structure
 
 - `src/sgm/`: Core package logic.
@@ -136,13 +127,9 @@ make lint
 - `docs/`: Detailed documentation and architecture plans.
 - `tests/`: Smoke tests for CLI flows.
 
----
-
 ## License
 
 Sigma is licensed under the [MIT License](LICENSE).
-
----
 
 ## Acknowledgments
 

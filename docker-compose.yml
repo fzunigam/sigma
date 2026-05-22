@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   sigma-bot:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: sigma-telegram-bot
+    container_name: sigma
     restart: unless-stopped
     volumes:
       # Mount the host user's local configuration and database directory.
