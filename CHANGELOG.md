@@ -11,6 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Fixed a validation message in the React frontend where source and destination accounts being identical reported that they "must be identical".
+- Fixed a TypeScript deprecation error in `web/tsconfig.json` by updating the deprecated `moduleResolution=node` setting to `bundler`.
 
 ## [0.3.0] - 2026-05-24
 
