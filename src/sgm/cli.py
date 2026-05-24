@@ -1308,8 +1308,34 @@ def web_cmd(
     static_dir = os.path.join(os.path.dirname(__file__), "interface", "web", "static")
     index_file = os.path.join(static_dir, "index.html")
     if not os.path.exists(index_file):
-        typer.echo("Warning: Web dashboard static assets (index.html) not found.", err=True)
-        typer.echo("The server will run, but you should compile static files using 'cd web && npm run build'.", err=True)
+        # Detect if we have the web source directory to build assets automatically
+        web_src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web"))
+        if os.path.exists(os.path.join(web_src_dir, "package.json")) and not os.environ.get("PYTEST_CURRENT_TEST"):
+            typer.echo("Web dashboard static assets not found. Compiling frontend dashboard automatically...", err=True)
+            import shutil
+            import subprocess
+            
+            npm_cmd = shutil.which("npm")
+            if not npm_cmd:
+                typer.echo("Error: 'npm' command not found. Cannot compile frontend dashboard automatically.", err=True)
+                typer.echo("Please install Node.js/npm and run 'npm run build' in the web/ directory.", err=True)
+                raise typer.Exit(1)
+            
+            try:
+                node_modules_dir = os.path.join(web_src_dir, "node_modules")
+                if not os.path.exists(node_modules_dir):
+                    typer.echo("Installing web dependencies...", err=True)
+                    subprocess.run([npm_cmd, "install"], cwd=web_src_dir, check=True)
+                
+                typer.echo("Building web dashboard...", err=True)
+                subprocess.run([npm_cmd, "run", "build"], cwd=web_src_dir, check=True)
+                typer.echo("Web dashboard compiled successfully!", err=True)
+            except subprocess.CalledProcessError as e:
+                typer.echo(f"Error compiling web dashboard: {e}", err=True)
+                raise typer.Exit(1)
+        else:
+            typer.echo("Warning: Web dashboard static assets (index.html) not found.", err=True)
+            typer.echo("The server will run, but you should compile static files using 'cd web && npm run build'.", err=True)
 
     import uvicorn
     import threading

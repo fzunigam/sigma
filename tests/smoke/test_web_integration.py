@@ -40,3 +40,47 @@ def test_web_command_running(monkeypatch, tmp_path):
     assert uvicorn_args["host"] == "127.0.0.2"
     assert uvicorn_args["port"] == 9000
     assert uvicorn_args["web_app"] is not None
+
+def test_web_command_auto_compile(monkeypatch, tmp_path):
+    # Mock is_configured to return True
+    monkeypatch.setattr("sgm.cli.is_configured", lambda: True)
+    monkeypatch.setattr("sgm.cli.init_db", lambda: None)
+    monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: None)
+    
+    # Mock index_file not existing
+    import os
+    orig_exists = os.path.exists
+    def mock_exists(path):
+        if path.endswith("index.html"):
+            return False
+        if path.endswith("package.json"):
+            return True
+        if path.endswith("node_modules"):
+            return False
+        return orig_exists(path)
+    monkeypatch.setattr("os.path.exists", mock_exists)
+    
+    # Mock shutil.which to find npm
+    monkeypatch.setattr("shutil.which", lambda cmd: "/usr/bin/npm" if cmd == "npm" else None)
+    
+    # Mock subprocess.run
+    called_cmds = []
+    def mock_run(cmd, *args, **kwargs):
+        called_cmds.append(cmd)
+        class MockCompletedProcess:
+            returncode = 0
+        return MockCompletedProcess()
+    monkeypatch.setattr("subprocess.run", mock_run)
+    
+    # Temporarily remove PYTEST_CURRENT_TEST to let it trigger
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        
+    result = runner.invoke(app, ["web", "--no-browser"])
+    assert result.exit_code == 0
+    assert "Web dashboard static assets not found. Compiling frontend dashboard automatically..." in result.output
+    assert "Installing web dependencies..." in result.output
+    assert "Building web dashboard..." in result.output
+    assert "Web dashboard compiled successfully!" in result.output
+    assert len(called_cmds) == 2
+    assert "install" in called_cmds[0]
+    assert "build" in called_cmds[1]

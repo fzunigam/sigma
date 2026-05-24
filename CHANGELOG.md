@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-05-24
+
+### Added
+- Auto-compile Frontend: The `sgm web` command now automatically compiles the frontend static dashboard (using `npm install` and `npm run build`) if the static assets are missing, ensuring a seamless startup experience.
+
+### Changed
+- Package Data: Configured setuptools packaging in `pyproject.toml` to include compiled static web dashboard assets under `src/sgm/interface/web/static` in package distributions.
+
 ## [0.3.2] - 2026-05-24
 
 ### Changed

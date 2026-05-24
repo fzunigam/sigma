@@ -379,11 +379,39 @@ else:
     def dev_fallback():
         return """
         <html>
-            <head><title>Sigma Web Server</title></head>
-            <body style="font-family: sans-serif; padding: 2rem; background: #0f172a; color: #f1f5f9; text-align: center;">
-                <h2>Sigma Web Server</h2>
-                <p>The backend is running successfully!</p>
-                <p style="color: #94a3b8;">Note: The static assets are not built yet. Run <code>npm run build</code> in the <code>web/</code> directory to compile the frontend dashboard.</p>
+            <head>
+                <meta name="viewport" content="width=device-width,initial-scale=1" />
+                <title>Sigma Web Server</title>
+                <style>
+                    :root{
+                        --color-background: #0f172a;
+                        --color-foreground: #f1f5f9;
+                        --color-card: #0b1220;
+                        --color-muted: #94a3b8;
+                        --radius-lg: 0.5rem;
+                        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    }
+                    html,body{height:100%;margin:0}
+                    body{font-family:var(--font-sans);background:var(--color-background);color:var(--color-foreground);display:flex;align-items:center;justify-content:center;padding:2rem}
+                    .card{background:var(--color-card);padding:2rem;border-radius:var(--radius-lg);max-width:720px;width:100%;box-shadow:0 6px 18px rgba(2,6,23,0.6);text-align:left}
+                    h2{margin:0 0 0.25rem;font-size:1.25rem}
+                    p{margin:0.5rem 0}
+                    .note{color:var(--color-muted);font-size:0.95rem}
+                    .actions{margin-top:1rem;display:flex;gap:0.5rem}
+                    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--color-foreground);padding:0.45rem 0.75rem;border-radius:0.375rem;text-decoration:none;font-weight:600}
+                    code{background:rgba(255,255,255,0.03);padding:0.15rem 0.3rem;border-radius:4px}
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h2>Sigma</h2>
+                    <p>The backend API is running successfully.</p>
+                    <p class="note">Static frontend assets are not built. Run <code>npm run build</code> in the <code>web/</code> directory to compile the dashboard.</p>
+                    <div class="actions">
+                        <a class="btn" href="/api/v1/status">API Status</a>
+                        <a class="btn" href="/api/v1/config">Config</a>
+                    </div>
+                </div>
             </body>
         </html>
         """
