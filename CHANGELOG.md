@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-24
+
 ### Added
 - Credit Card Transfer Validation: Transfers from credit card accounts are now blocked in both the CLI and web interface.
 - Credit Card Balance Validation: Transfers to credit card accounts that would result in a negative balance (overpaying the card) are now blocked in both the CLI and web interface.
