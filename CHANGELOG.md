@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-24
+
 ### Changed
 - Modified the `sgm restore` command to delete the sqlite database (`sigma.db`) and the config file (`config.toml`) instead of just emptying the tables, resetting Sigma to its first-run state.
 
