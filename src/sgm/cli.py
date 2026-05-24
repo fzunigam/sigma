@@ -14,8 +14,8 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data, import_from_csvs
-from sgm.infrastructure.user_config import is_configured, save_config, load_config
+from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data, import_from_csvs, get_db_path
+from sgm.infrastructure.user_config import is_configured, save_config, load_config, config_path
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
 app = typer.Typer(
@@ -164,13 +164,14 @@ def restore(
     ctx: typer.Context,
     help: bool = typer.Option(False, "--help", "-h", is_eager=True)
 ) -> None:
-    """Delete all data and leave the database empty."""
+    """Delete all data and configuration, resetting Sigma to its first-run state."""
     if help:
         print(f"Usage: {ctx.command_path}")
         print(f"{ctx.command.help}")
         raise typer.Exit()
         
-    typer.echo("WARNING: This will delete ALL accounts, movements, transfers, and history.", err=True)
+    typer.echo("WARNING: This will delete ALL data (accounts, movements, transfers) and your configuration.", err=True)
+    typer.echo("This will reset Sigma to its first-run state.", err=True)
     typer.echo("This action CANNOT be undone.", err=True)
     
     try:
@@ -182,8 +183,24 @@ def restore(
         typer.echo("\nRestore cancelled.")
         raise typer.Exit()
         
-    clear_db()
-    typer.echo("Database restored. All data has been deleted.")
+    # Delete database file
+    db_path = get_db_path()
+    if db_path.exists():
+        try:
+            db_path.unlink()
+        except Exception as e:
+            typer.echo(f"Error deleting database: {e}", err=True)
+            
+    # Delete configuration file
+    cfg_path = config_path()
+    if cfg_path.exists():
+        try:
+            cfg_path.unlink()
+        except Exception as e:
+            typer.echo(f"Error deleting configuration: {e}", err=True)
+
+    typer.echo("Sigma has been reset. All database files and configurations have been deleted.")
+    typer.echo("You can now run 'sgm start' to set up Sigma again.")
 
 
 @app.command("version")
