@@ -38,8 +38,9 @@ def test_history_command(clean_db):
     assert "Net amount logged: -1000" in result.stdout
     
     # Check history
+    import re
     result = runner.invoke(app, ["history"])
     assert result.exit_code == 0
     assert "Render History" in result.stdout
-    assert "1" in result.stdout  # ID
+    assert re.search(r"\b[0-9a-f]{8}\b", result.stdout) is not None
     assert "-1000" in result.stdout

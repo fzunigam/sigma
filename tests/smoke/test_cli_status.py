@@ -22,16 +22,16 @@ def setup_db(tmp_path, monkeypatch):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         # income marked (1000)
-        cursor.execute("INSERT INTO movements (amount, description, account_id, type, created_at) VALUES (1000, 'inc', 'wallet', 'income', '2026-05-01')")
-        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES (1, 1)")
+        cursor.execute("INSERT INTO movements (id, amount, description, account_id, type, created_at, updated_at) VALUES ('1', 1000, 'inc', 'wallet', 'income', '2026-05-01', '2026-05-01 12:00:00.000')")
+        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES ('1', 1)")
         
         # expense marked (400)
-        cursor.execute("INSERT INTO movements (amount, description, account_id, type, created_at) VALUES (400, 'exp', 'wallet', 'expense', '2026-05-01')")
-        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES (2, 1)")
+        cursor.execute("INSERT INTO movements (id, amount, description, account_id, type, created_at, updated_at) VALUES ('2', 400, 'exp', 'wallet', 'expense', '2026-05-01', '2026-05-01 12:00:00.000')")
+        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES ('2', 1)")
         
         # expense unmarked (500) -> should not affect total
-        cursor.execute("INSERT INTO movements (amount, description, account_id, type, created_at) VALUES (500, 'exp unmarked', 'wallet', 'expense', '2026-05-01')")
-        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES (3, 0)")
+        cursor.execute("INSERT INTO movements (id, amount, description, account_id, type, created_at, updated_at) VALUES ('3', 500, 'exp unmarked', 'wallet', 'expense', '2026-05-01', '2026-05-01 12:00:00.000')")
+        cursor.execute("INSERT INTO movement_marks (movement_id, marked) VALUES ('3', 0)")
         conn.commit()
     
     yield

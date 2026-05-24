@@ -40,6 +40,7 @@ def test_log_command(clean_db):
     assert result.exit_code == 0
     
     # Check log
+    import re
     result = runner.invoke(app, ["log"])
     assert result.exit_code == 0
     assert "Recent Logs" in result.stdout
@@ -49,6 +50,5 @@ def test_log_command(clean_db):
     assert "expense" in result.stdout
     assert "income" in result.stdout
     assert "transfer" in result.stdout
-    assert "m-1" in result.stdout
-    assert "m-2" in result.stdout
-    assert "t-1" in result.stdout
+    assert re.search(r"m-[0-9a-f]{8}", result.stdout) is not None
+    assert re.search(r"t-[0-9a-f]{8}", result.stdout) is not None

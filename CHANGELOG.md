@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-24
+
+### Added
+- Database refactoring to support multi-device sync: migrated movements, transfers, and render history tables from auto-incrementing integer IDs to UUIDv4 strings.
+- Added sync metadata columns (`updated_at` and `deleted_at`) to accounts, movements, transfers, and render history schemas.
+- Implemented soft deletes (tombstones) across the application to track offline deletions.
+- Added automatic SQLite schema migrations to upgrade existing databases to the new UUID/sync-aware schema on startup.
+- Support for prefix-matching resolution in the CLI delete command, allowing users to copy/paste visual short ID prefixes (e.g. `m-3f2504e0`) for deletion.
+- Added backward-compatible CSV/ZIP data import capability to automatically map legacy integer IDs to UUIDs and default sync metadata columns.
+
 ### Changed
 - Improved the `sgm config` command with an interactive terminal menu using arrow-key navigation and Escape-to-cancel support.
 - Integrated Telegram Bot Token and Allowed User IDs setup directly into the main config menu.

@@ -24,9 +24,12 @@ def test_delete_movement(clean_db):
     assert acc["balance"] == 9000
     
     # Delete movement
-    result = runner.invoke(app, ["delete", "m-1"])
+    from sgm.infrastructure.database import get_recent_logs
+    logs = get_recent_logs()
+    m_id = logs[0]["unique_id"]
+    result = runner.invoke(app, ["delete", m_id])
     assert result.exit_code == 0
-    assert "Deleted record 'm-1'" in result.stdout
+    assert f"Deleted record '{m_id}'" in result.stdout
     
     # Verify balance reversed
     acc = get_account("wallet")
@@ -47,9 +50,12 @@ def test_delete_transfer(clean_db):
     assert get_account("w2")["balance"] == 8000
     
     # Delete transfer
-    result = runner.invoke(app, ["delete", "t-1"])
+    from sgm.infrastructure.database import get_recent_logs
+    logs = get_recent_logs()
+    t_id = [log["unique_id"] for log in logs if log["type"] == "transfer"][0]
+    result = runner.invoke(app, ["delete", t_id])
     assert result.exit_code == 0
-    assert "Deleted record 't-1'" in result.stdout
+    assert f"Deleted record '{t_id}'" in result.stdout
     
     # Verify balances reversed
     assert get_account("w1")["balance"] == 10000
