@@ -23,7 +23,7 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 - 🔄 **Rendering Cycle**: Mark movements for review and "render" them into your history once verified.
 - 📊 **Rich Interface**: Beautifully formatted tables powered by [Rich](https://github.com/Textualize/rich).
 - 📜 **Audit Log**: Full history of movements and render snapshots.
-- 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`) using Tailwind CSS v4 and an OKLCH color palette.
+- 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`).
 - 🤖 **Telegram Bot**: Optional integration to securely interact with Sigma via Telegram using standard CLI commands.
 
 ## Installation
@@ -130,12 +130,16 @@ make lint
 
 ## Project Structure
 
-- `src/sgm/`: Core package logic.
-  - `cli.py`: Typer-based CLI definition.
-  - `infrastructure/`: Database (SQLite) and config management.
-  - `interface/`: Terminal banners and UI elements.
-- `docs/`: Detailed documentation and architecture plans.
-- `tests/`: Smoke tests for CLI flows.
+- `src/sgm/` — Core Python package
+    - `cli.py` — Typer-based CLI entrypoints
+    - `telegram_bot.py` — Telegram bot integration
+    - `infrastructure/` — database, persistence and config management (`database.py`, `user_config.py`)
+    - `interface/` — terminal UI, banners and web server glue
+    - `interface/web/` — lightweight web server and static assets for the dashboard
+- `web/` — Next.js web client (React + Tailwind) and frontend sources
+- `docs/` — architecture, guides, deployment notes, and coding conventions
+- `tests/` — test suites (smoke, integration, unit)
+- `assets/` — images and demo assets (GIFs, screenshots)
 
 ## License
 
