@@ -11,6 +11,9 @@ build/
 *.egg-info/
 docs/cli-usage-implementation.md
 
+# venv ignores
+.venv/
+
 # Xcode ignores
 *.xcuserstate
 project.xcworkspace/
