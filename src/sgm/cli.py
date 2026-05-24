@@ -14,7 +14,7 @@ from rich.console import Console # type: ignore
 from rich.table import Table # type: ignore
 
 from sgm import __version__
-from sgm.infrastructure.database import clear_db, create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data, import_from_csvs, get_db_path
+from sgm.infrastructure.database import create_account, init_db, get_account, get_accounts, update_credit_limit, get_marked_total, create_movement, create_transfer, rename_account, get_recent_logs, execute_render, get_render_history, delete_record, delete_account, get_all_table_data, import_from_csvs, get_db_path
 from sgm.infrastructure.user_config import is_configured, save_config, load_config, config_path
 from sgm.interface.banner import print_help, print_sgm, print_startup_text
 
