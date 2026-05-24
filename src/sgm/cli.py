@@ -1261,3 +1261,56 @@ def bot_run(
     except Exception as e:
         typer.echo(f"Error starting Telegram Bot: {e}", err=True)
         raise typer.Exit(1)
+
+
+def web_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} [OPTIONS]")
+        print("Start the local web dashboard server.")
+        raise typer.Exit()
+
+@app.command("web")
+def web_cmd(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Bind host address"),
+    port: int = typer.Option(8000, "--port", "-p", help="Bind port number"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Do not automatically open the browser"),
+    help: bool = typer.Option(False, "--help", is_eager=True, callback=web_help_callback)
+) -> None:
+    """Start the local web dashboard server."""
+    if not is_configured():
+        typer.echo("Error: Sigma configuration file not found.", err=True)
+        typer.echo("Please run 'sgm start' to initialize configuration.", err=True)
+        raise typer.Exit(1)
+
+    init_db()
+
+    # Verify static files exist
+    import os
+    from sgm.interface.web.server import app as web_app
+    static_dir = os.path.join(os.path.dirname(__file__), "interface", "web", "static")
+    index_file = os.path.join(static_dir, "index.html")
+    if not os.path.exists(index_file):
+        typer.echo("Warning: Web dashboard static assets (index.html) not found.", err=True)
+        typer.echo("The server will run, but you should compile static files using 'cd web && npm run build'.", err=True)
+
+    import uvicorn
+    import threading
+    import time
+    import webbrowser
+
+    def open_browser():
+        time.sleep(1.0)
+        webbrowser.open(f"http://{host}:{port}")
+
+    if not no_browser:
+        threading.Thread(target=open_browser, daemon=True).start()
+
+    typer.echo(f"Starting Sigma local dashboard server on http://{host}:{port}")
+    try:
+        from sgm.infrastructure.database import get_db_path
+        web_app.state.db_path = get_db_path()
+        uvicorn.run(web_app, host=host, port=port, log_level="info")
+    except Exception as e:
+        typer.echo(f"Error starting web server: {e}", err=True)
+        raise typer.Exit(1)
