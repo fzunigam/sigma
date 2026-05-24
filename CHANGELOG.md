@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Designed local web dashboard interface (`sgm web`) powered by a FastAPI backend serving a statically-exported Next.js frontend on localhost.
+- Added FastAPI and Uvicorn dependencies to pyproject.toml.
+
 ## [0.2.1] - 2026-05-24
 
 ### Added
