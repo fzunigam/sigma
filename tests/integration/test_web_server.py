@@ -1,9 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
 
 def test_web_server_full_flow(monkeypatch, tmp_path):
     # Mock DB path to keep tests isolated
-    from sgm.infrastructure.database import init_db, get_account
+    from sgm.infrastructure.database import init_db
     db_file = tmp_path / "test_sigma.db"
     monkeypatch.setattr("sgm.infrastructure.database.get_db_path", lambda: db_file)
     init_db(db_file)

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from typing import Any, List, Optional
-from fastapi import FastAPI, HTTPException, Request, status
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
@@ -10,7 +10,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
 
 from sgm.infrastructure.database import (
-    get_db_path,
     get_accounts,
     get_account,
     create_account,
