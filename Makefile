@@ -4,6 +4,12 @@ help:
 	@echo "install test lint smoke"
 
 install:
+	@if command -v npm >/dev/null 2>&1; then \
+		echo "Found npm, compiling web dashboard..."; \
+		(cd web && npm install && npm run build); \
+	else \
+		echo "Warning: npm not found. Skipping web dashboard compilation."; \
+	fi
 	python3 -m pip install -e ".[dev,telegram]"
 
 test:

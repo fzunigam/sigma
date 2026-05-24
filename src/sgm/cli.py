@@ -1286,6 +1286,27 @@ def web_help_callback(ctx: typer.Context, value: bool) -> None:
         print("Start the local web dashboard server.")
         raise typer.Exit()
 
+def find_web_src_dir() -> str | None:
+    """Search for the web dashboard source directory relative to the code or CWD."""
+    import os
+    # 1. Try relative to the package file (editable install or running from source)
+    web_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web"))
+    if os.path.exists(os.path.join(web_dir, "package.json")):
+        return web_dir
+        
+    # 2. Traverse upwards from the current working directory
+    current = os.getcwd()
+    while True:
+        candidate = os.path.join(current, "web")
+        if os.path.exists(os.path.join(candidate, "package.json")):
+            return candidate
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+        
+    return None
+
 @app.command("web")
 def web_cmd(
     ctx: typer.Context,
@@ -1309,8 +1330,8 @@ def web_cmd(
     index_file = os.path.join(static_dir, "index.html")
     if not os.path.exists(index_file):
         # Detect if we have the web source directory to build assets automatically
-        web_src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web"))
-        if os.path.exists(os.path.join(web_src_dir, "package.json")) and not os.environ.get("PYTEST_CURRENT_TEST"):
+        web_src_dir = find_web_src_dir()
+        if web_src_dir and os.path.exists(os.path.join(web_src_dir, "package.json")) and not os.environ.get("PYTEST_CURRENT_TEST"):
             typer.echo("Web dashboard static assets not found. Compiling frontend dashboard automatically...", err=True)
             import shutil
             import subprocess
@@ -1329,10 +1350,23 @@ def web_cmd(
                 
                 typer.echo("Building web dashboard...", err=True)
                 subprocess.run([npm_cmd, "run", "build"], cwd=web_src_dir, check=True)
+                
+                # Copy built assets to the running static_dir if they are different
+                build_out_dir = os.path.abspath(os.path.join(web_src_dir, "..", "src", "sgm", "interface", "web", "static"))
+                running_static_dir = os.path.abspath(static_dir)
+                if build_out_dir != running_static_dir:
+                    typer.echo("Copying built assets to running server directory...", err=True)
+                    if os.path.exists(running_static_dir):
+                        shutil.rmtree(running_static_dir)
+                    shutil.copytree(build_out_dir, running_static_dir)
+                
                 typer.echo("Web dashboard compiled successfully!", err=True)
             except subprocess.CalledProcessError as e:
                 typer.echo(f"Error compiling web dashboard: {e}", err=True)
                 raise typer.Exit(1)
+            except PermissionError as pe:
+                typer.echo(f"Warning: Permission denied when copying assets to running server directory: {pe}", err=True)
+                typer.echo("The server will run, but we could not copy the compiled frontend assets.", err=True)
         else:
             typer.echo("Warning: Web dashboard static assets (index.html) not found.", err=True)
             typer.echo("The server will run, but you should compile static files using 'cd web && npm run build'.", err=True)

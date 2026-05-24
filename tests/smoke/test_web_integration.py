@@ -84,3 +84,79 @@ def test_web_command_auto_compile(monkeypatch, tmp_path):
     assert len(called_cmds) == 2
     assert "install" in called_cmds[0]
     assert "build" in called_cmds[1]
+
+def test_find_web_src_dir(monkeypatch):
+    from sgm.cli import find_web_src_dir
+    
+    # Mock os.path.exists to return True only for /mocked/root/web/package.json
+    def mock_exists(path):
+        return path == "/mocked/root/web/package.json"
+        
+    monkeypatch.setattr("os.path.exists", mock_exists)
+    
+    # If we are in /mocked/root/web, find_web_src_dir should find /mocked/root/web
+    monkeypatch.setattr("os.getcwd", lambda: "/mocked/root/web")
+    assert find_web_src_dir() == "/mocked/root/web"
+    
+    # If we are in /mocked/root/subdir/subsub, it should traverse up and find /mocked/root/web
+    monkeypatch.setattr("os.getcwd", lambda: "/mocked/root/subdir/subsub")
+    assert find_web_src_dir() == "/mocked/root/web"
+    
+    # If we are in /other/path, it should return None
+    monkeypatch.setattr("os.getcwd", lambda: "/other/path")
+    assert find_web_src_dir() is None
+
+def test_web_command_auto_compile_different_static_dir(monkeypatch):
+    # Mock is_configured to return True
+    monkeypatch.setattr("sgm.cli.is_configured", lambda: True)
+    monkeypatch.setattr("sgm.cli.init_db", lambda: None)
+    monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: None)
+    
+    # Mock index_file not existing and others
+    import os
+    orig_exists = os.path.exists
+    def mock_exists(path):
+        if path.endswith("index.html"):
+            return False
+        if path.endswith("package.json"):
+            return True
+        if path.endswith("node_modules"):
+            return True
+        if "interface/web/static" in path or "interface\\web\\static" in path:
+            return True
+        return orig_exists(path)
+    monkeypatch.setattr("os.path.exists", mock_exists)
+    
+    # Mock find_web_src_dir to return a mock directory that will force build_out_dir to be different from static_dir
+    monkeypatch.setattr("sgm.cli.find_web_src_dir", lambda: "/different/web")
+    
+    # Mock shutil.which to find npm
+    monkeypatch.setattr("shutil.which", lambda cmd: "/usr/bin/npm" if cmd == "npm" else None)
+    
+    # Mock subprocess.run
+    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: None)
+    
+    # Mock shutil.copytree and rmtree to verify they are called
+    copytree_called = False
+    rmtree_called = False
+    
+    def mock_copytree(src, dst):
+        nonlocal copytree_called
+        copytree_called = True
+        assert src == "/different/src/sgm/interface/web/static"
+        
+    def mock_rmtree(path):
+        nonlocal rmtree_called
+        rmtree_called = True
+        
+    monkeypatch.setattr("shutil.copytree", mock_copytree)
+    monkeypatch.setattr("shutil.rmtree", mock_rmtree)
+    
+    # Temporarily remove PYTEST_CURRENT_TEST to let it trigger
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        
+    result = runner.invoke(app, ["web", "--no-browser"])
+    assert result.exit_code == 0
+    assert "Copying built assets to running server directory..." in result.output
+    assert copytree_called
+    assert rmtree_called

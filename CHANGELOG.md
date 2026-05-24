@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-05-24
+
+### Added
+- Auto-compile Frontend: The `sgm web` command now dynamically locates the `web/` source directory (including parent folders) and automatically builds the frontend dashboard, copying compiled assets to the active server directory on clean package installations.
+- CI Workflow Integration: Added automatic Next.js frontend compilation to the Publish to PyPI release workflow, ensuring Python wheels are pre-packaged with frontend static files.
+- Makefile compilation: Added conditional frontend compilation to `make install` if `npm` is present.
+
 ## [0.3.3] - 2026-05-24
 
 ### Added
