@@ -57,7 +57,7 @@ def print_sgm() -> None:
     table.add_row("start", "First-run setup and preferences")
     table.add_row("status", "Displays balances, credit limits, and marked total")
     table.add_row("web", "Start the web app")
-    table.add_row("restore", "Delete all data and leave the database empty")
+    table.add_row("restore", "Delete all data and configuration, resetting Sigma")
     table.add_row("update", "Update sgm to the latest version")
     
     console.print(table)
@@ -97,7 +97,7 @@ def print_help() -> None:
     console.print()
     console.print("  config        Interactive configuration for default accounts")
     console.print("  export        Export DB tables to a ZIP of CSVs")
-    console.print("  restore       Delete all data and leave the database empty")
+    console.print("  restore       Delete all data and configuration, resetting Sigma")
     console.print("  update        Update sgm to the latest version")
     console.print("  version       Show the version and exit")
     console.print()
