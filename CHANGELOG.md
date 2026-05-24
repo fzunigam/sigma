@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Fixed GitHub Action CI test failure by adding `httpx` to dev dependencies and ensuring `telegram` optional dependencies are installed during the CI test run.
+
 ## [0.3.1] - 2026-05-24
 
 ### Added

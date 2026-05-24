@@ -4,7 +4,7 @@ help:
 	@echo "install test lint smoke"
 
 install:
-	python3 -m pip install -e ".[dev]"
+	python3 -m pip install -e ".[dev,telegram]"
 
 test:
 	python3 -m pytest -q
