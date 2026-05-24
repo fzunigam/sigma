@@ -15,3 +15,8 @@ docs/cli-usage-implementation.md
 *.xcuserstate
 project.xcworkspace/
 xcuserdata/
+
+# Web ignores
+src/sgm/interface/web/static/
+web/.next/
+web/node_modules/
