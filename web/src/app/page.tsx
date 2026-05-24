@@ -396,9 +396,7 @@ export default function Dashboard() {
       <aside className="w-64 bg-card border-r border-border p-6 flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-mono font-bold text-lg">
-              Σ
-            </div>
+            <img src="/logo.png" alt="Sigma Logo" className="w-8 h-8 rounded-md object-contain" />
             <div>
               <h1 className="font-bold text-base tracking-tight leading-tight">Sigma</h1>
               <span className="text-xs text-muted-foreground">Finance Tracker</span>

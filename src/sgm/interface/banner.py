@@ -56,7 +56,7 @@ def print_sgm() -> None:
     
     table.add_row("start", "First-run setup and preferences")
     table.add_row("status", "Displays balances, credit limits, and marked total")
-    table.add_row("acc add", "Adds a new account with an initial balance")
+    table.add_row("web", "Start the web app")
     table.add_row("restore", "Delete all data and leave the database empty")
     table.add_row("update", "Update sgm to the latest version")
     

@@ -20,3 +20,4 @@ xcuserdata/
 src/sgm/interface/web/static/
 web/.next/
 web/node_modules/
+*.tsbuildinfo
