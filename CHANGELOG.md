@@ -5,9 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-24
+
 ### Added
-- Designed local web dashboard interface (`sgm web`) powered by a FastAPI backend serving a statically-exported Next.js frontend on localhost.
-- Added FastAPI and Uvicorn dependencies to pyproject.toml.
+- Local Web Dashboard: Added the `sgm web` command to spin up a local FastAPI server serving a statically exported Next.js client on localhost.
+- Designed a minimalist, responsive web dashboard utilizing Tailwind CSS v4 and an OKLCH color palette.
+- Light/Dark theme toggle integration directly accessible on the sidebar.
+- Form logging actions (Expense, Income, Transfer) with input validations, double-check deletion confirmations, and live toast alerts (complying with Vercel Web Interface Guidelines).
+- SPA catch-all static router supporting Next.js client-side subroute page refreshes without 404 errors.
+- Added comprehensive integration and smoke test suites for API endpoints and CLI commands.
+
+### Changed
+- Added `fastapi` and `uvicorn` as core Python dependencies to support the local web application.
+
 
 ## [0.2.1] - 2026-05-24
 

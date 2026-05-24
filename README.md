@@ -23,6 +23,7 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 - 🔄 **Rendering Cycle**: Mark movements for review and "render" them into your history once verified.
 - 📊 **Rich Interface**: Beautifully formatted tables powered by [Rich](https://github.com/Textualize/rich).
 - 📜 **Audit Log**: Full history of movements and render snapshots.
+- 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`) using Tailwind CSS v4 and an OKLCH color palette.
 - 🤖 **Telegram Bot**: Optional integration to securely interact with Sigma via Telegram using standard CLI commands.
 
 ## Installation
@@ -72,6 +73,14 @@ sgm start
     sgm render
     ```
 
+### Web Dashboard
+
+To launch the local web interface:
+
+```bash
+sgm web         # Launches the local dashboard in your browser
+```
+
 ### Telegram Bot
 
 To run Sigma as a background bot, configure your credentials and launch the daemon:
@@ -92,6 +101,7 @@ sgm bot run     # Launch the daemon
 | `sgm history` | View previous render results. |
 | `sgm acc list` | List all accounts and their details. |
 | `sgm config` | Configure default accounts for faster logging. |
+| `sgm web` | Start the local web dashboard server. |
 | `sgm export` | Export all data to a ZIP file with CSV tables. |
 | `sgm delete <id>` | Remove a record by its unique ID (e.g., `m-1`). |
 | `sgm bot setup` | Configure the Telegram Bot credentials. |

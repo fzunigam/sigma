@@ -69,7 +69,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  
+
   // Modals States
   const [showRenderModal, setShowRenderModal] = useState(false);
   const [showNewAccountModal, setShowNewAccountModal] = useState(false);
@@ -391,7 +391,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
-      
+
       {/* 1. Minimal Sidebar */}
       <aside className="w-64 bg-card border-r border-border p-6 flex flex-col justify-between">
         <div>
@@ -408,33 +408,30 @@ export default function Dashboard() {
           <nav className="flex flex-col gap-1">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
-                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-              }`}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === 'dashboard'
+                ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+                }`}
             >
               <TrendingUp size={16} />
               <span>Dashboard</span>
             </button>
             <button
               onClick={() => setActiveTab('accounts')}
-              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                activeTab === 'accounts'
-                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
-                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-              }`}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === 'accounts'
+                ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+                }`}
             >
               <CreditCard size={16} />
               <span>Accounts</span>
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                activeTab === 'history'
-                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
-                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-              }`}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === 'history'
+                ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+                }`}
             >
               <FileText size={16} />
               <span>Render History</span>
@@ -471,14 +468,14 @@ export default function Dashboard() {
 
       {/* 2. Main Dashboard Content */}
       <main className="flex-1 p-8 overflow-y-auto h-screen animate-in fade-in duration-200">
-        
+
         {/* --- TAB: DASHBOARD --- */}
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
-            
+
             {/* Minimalist Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
+
               {/* Card 1: Net Balance */}
               <div className="bg-card border border-border rounded-lg p-6 flex flex-col justify-between">
                 <div>
@@ -521,10 +518,10 @@ export default function Dashboard() {
 
             {/* Split Panel Layout */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-              
+
               {/* Left Panel: Accounts & Logs */}
               <div className="xl:col-span-2 space-y-8">
-                
+
                 {/* Minimalist Accounts Grid */}
                 <div>
                   <div className="flex justify-between items-center mb-4">
@@ -663,18 +660,17 @@ export default function Dashboard() {
               {/* Right Panel: Tabbed Form Logger */}
               <div className="bg-card border border-border rounded-lg p-6 space-y-4">
                 <h3 className="text-base font-semibold">Quick Logger</h3>
-                
+
                 {/* Flat selection tabs */}
                 <div className="flex border-b border-border text-sm">
                   {(['expense', 'income', 'transfer'] as const).map((type) => (
                     <button
                       key={type}
                       onClick={() => setTxType(type)}
-                      className={`flex-1 pb-2 font-medium capitalize text-center ${
-                        txType === type
-                          ? 'border-b-2 border-primary text-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`flex-1 pb-2 font-medium capitalize text-center ${txType === type
+                        ? 'border-b-2 border-primary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       {type}
                     </button>
@@ -762,7 +758,7 @@ export default function Dashboard() {
                         onChange={(e) => setTxMark(e.target.checked)}
                         className="w-4 h-4 rounded border-border text-primary focus:ring-ring"
                       />
-                      <label htmlFor="tx-mark" className="text-xs text-muted-foreground cursor-pointer select-none">Mark for audit review cycle</label>
+                      <label htmlFor="tx-mark" className="text-xs text-muted-foreground cursor-pointer select-none">Mark for render cycle</label>
                     </div>
                   )}
 

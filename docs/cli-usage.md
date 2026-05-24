@@ -168,6 +168,25 @@ Starts the blocking Telegram Bot event loop.
 
 ---
 
+## Local Web Dashboard
+
+### `web`
+Starts the local web server and launches the interactive dashboard in your browser.
+- **Syntax**: `sgm web [--host <address>] [--port <port>] [--no-browser]`
+- **Options**:
+    - `--host`, `-h`: The IP address to bind the local server (default: `127.0.0.1`).
+    - `--port`, `-p`: The port to run the web server (default: `8000`).
+    - `--no-browser`: Do not automatically open the browser when the server starts.
+- **Details**:
+    - Launches a programmatically run local FastAPI server.
+    - Serves a pre-compiled Next.js single page app (SPA) using Tailwind CSS v4, supporting theme toggling (light/dark) and fully functional transaction management.
+- **Example**:
+    ```bash
+    sgm web --port 8080
+    ```
+
+---
+
 ## System & Maintenance
 
 ### `config`
