@@ -76,6 +76,7 @@ struct MainView: View {
         }
         .frame(minWidth: 1000, minHeight: 650)
         .background(Color.white)
+        .preferredColorScheme(.light)
     }
     
     private func sidebarButton(title: String, tab: AppTab) -> some View {
@@ -109,6 +110,7 @@ struct SigmaApp: App {
             MainView()
                 .navigationTitle("")
                 .background(Color.white)
+                .preferredColorScheme(.light)
         }
         .windowStyle(TitleBarWindowStyle())
     }

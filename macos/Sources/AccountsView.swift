@@ -41,7 +41,9 @@ public struct AccountsView: View {
                                 .foregroundColor(.gray)
                             TextField("e.g. bank", text: $accountId)
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .foregroundColor(.black)
                                 .padding(8)
+                                .background(Color.white)
                                 .border(Color.black, width: 1)
                         }
                         
@@ -51,7 +53,9 @@ public struct AccountsView: View {
                                 .foregroundColor(.gray)
                             TextField("e.g. Main Savings", text: $accountName)
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .foregroundColor(.black)
                                 .padding(8)
+                                .background(Color.white)
                                 .border(Color.black, width: 1)
                         }
                         
@@ -59,11 +63,28 @@ public struct AccountsView: View {
                             Text("TYPE")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundColor(.gray)
-                            Picker("", selection: $accountType) {
-                                Text("DEBIT").tag(AccountType.debit)
-                                Text("CREDIT").tag(AccountType.credit)
+                            HStack(spacing: 0) {
+                                Button(action: { accountType = .debit }) {
+                                    Text("DEBIT")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
+                                        .background(accountType == .debit ? Color.black : Color.white)
+                                        .foregroundColor(accountType == .debit ? Color.white : Color.black)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { accountType = .credit }) {
+                                    Text("CREDIT")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
+                                        .background(accountType == .credit ? Color.black : Color.white)
+                                        .foregroundColor(accountType == .credit ? Color.white : Color.black)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .pickerStyle(SegmentedPickerStyle())
+                            .border(Color.black, width: 1)
                         }
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -72,7 +93,9 @@ public struct AccountsView: View {
                                 .foregroundColor(.gray)
                             TextField("e.g. 1000", text: $initialBalance)
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .foregroundColor(.black)
                                 .padding(8)
+                                .background(Color.white)
                                 .border(Color.black, width: 1)
                         }
                         
@@ -82,7 +105,9 @@ public struct AccountsView: View {
                                 .foregroundColor(accountType == .credit ? Color.gray : Color(white: 0.8))
                             TextField("e.g. 500000", text: $creditLimit)
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .foregroundColor(accountType == .credit ? .black : .gray)
                                 .padding(8)
+                                .background(accountType == .credit ? Color.white : Color(white: 0.95))
                                 .border(accountType == .credit ? Color.black : Color(white: 0.8), width: 1)
                                 .disabled(accountType == .debit)
                         }
@@ -122,6 +147,7 @@ public struct AccountsView: View {
                             Text("BALANCE").font(.system(size: 10, weight: .bold)).frame(width: 100, alignment: .trailing)
                             Text("ACTION").font(.system(size: 10, weight: .bold)).frame(width: 80, alignment: .trailing)
                         }
+                        .foregroundColor(.black)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 10)
                         .background(Color(white: 0.95))
@@ -162,6 +188,7 @@ public struct AccountsView: View {
                                             .buttonStyle(PlainButtonStyle())
                                             .frame(width: 80, alignment: .trailing)
                                         }
+                                        .foregroundColor(.black)
                                         .padding(.vertical, 10)
                                         .padding(.horizontal, 10)
                                         

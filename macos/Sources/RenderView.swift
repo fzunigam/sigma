@@ -71,6 +71,7 @@ public struct RenderView: View {
                             Text("DATE").font(.system(size: 10, weight: .bold)).frame(minWidth: 120, alignment: .leading)
                             Text("NET AMOUNT").font(.system(size: 10, weight: .bold)).frame(width: 120, alignment: .trailing)
                         }
+                        .foregroundColor(.black)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 10)
                         .background(Color(white: 0.95))
@@ -100,6 +101,7 @@ public struct RenderView: View {
                                                 .font(.system(size: 12, weight: .bold))
                                                 .frame(width: 120, alignment: .trailing)
                                         }
+                                        .foregroundColor(.black)
                                         .padding(.vertical, 10)
                                         .padding(.horizontal, 10)
                                         

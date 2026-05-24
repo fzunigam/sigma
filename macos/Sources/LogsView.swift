@@ -116,7 +116,9 @@ public struct LogsView: View {
                     TextField("m-xxxxxx / t-xxxxxx", text: $deleteIdInput)
                         .textFieldStyle(PlainTextFieldStyle())
                         .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.black)
                         .padding(8)
+                        .background(Color.white)
                         .border(Color.black, width: 1)
                         .frame(width: 250)
                     

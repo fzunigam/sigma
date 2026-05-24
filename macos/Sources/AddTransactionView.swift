@@ -130,6 +130,7 @@ public struct AddTransactionView: View {
         }
         .frame(width: 400, height: 480)
         .background(Color.white)
+        .preferredColorScheme(.light)
         .onAppear {
             // Set defaults if active accounts exist
             if let firstId = db.accounts.first?.id {
@@ -152,27 +153,71 @@ public struct AddTransactionView: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.black)
             
-            Picker("", selection: $mAccountId) {
+            Menu {
                 if db.accounts.isEmpty {
-                    Text("No accounts").tag("")
+                    Button(action: {}) {
+                        Text("No accounts")
+                    }
+                    .disabled(true)
                 } else {
                     ForEach(db.accounts) { acc in
-                        Text("\(acc.name) (\(acc.id))").tag(acc.id)
+                        Button(action: {
+                            mAccountId = acc.id
+                        }) {
+                            Text("\(acc.name) (\(acc.id))")
+                        }
                     }
                 }
+            } label: {
+                HStack {
+                    if let selectedAcc = db.accounts.first(where: { $0.id == mAccountId }) {
+                        Text("\(selectedAcc.name) (\(selectedAcc.id))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.black)
+                    } else {
+                        Text("Select Account")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    Text("▼")
+                        .font(.system(size: 8))
+                        .foregroundColor(.black)
+                }
+                .padding(8)
+                .background(Color.white)
+                .border(Color.black, width: 1)
             }
-            .pickerStyle(DefaultPickerStyle())
+            .menuStyle(.borderlessButton)
             
             HStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("TYPE")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.black)
-                    Picker("", selection: $mType) {
-                        Text("EXPENSE").tag(MovementType.expense)
-                        Text("INCOME").tag(MovementType.income)
+                    
+                    HStack(spacing: 0) {
+                        Button(action: { mType = .expense }) {
+                            Text("EXPENSE")
+                                .font(.system(size: 10, weight: .bold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .background(mType == .expense ? Color.black : Color.white)
+                                .foregroundColor(mType == .expense ? Color.white : Color.black)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: { mType = .income }) {
+                            Text("INCOME")
+                                .font(.system(size: 10, weight: .bold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .background(mType == .income ? Color.black : Color.white)
+                                .foregroundColor(mType == .income ? Color.white : Color.black)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+                    .border(Color.black, width: 1)
                 }
                 
                 VStack(alignment: .leading, spacing: 6) {
@@ -190,7 +235,9 @@ public struct AddTransactionView: View {
                     .foregroundColor(.black)
                 TextField("e.g. 5000", text: $mAmount)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .foregroundColor(.black)
                     .padding(8)
+                    .background(Color.white)
                     .border(Color.black, width: 1)
             }
             
@@ -200,7 +247,9 @@ public struct AddTransactionView: View {
                     .foregroundColor(.black)
                 TextField("e.g. Lunch", text: $mDescription)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .foregroundColor(.black)
                     .padding(8)
+                    .background(Color.white)
                     .border(Color.black, width: 1)
             }
             
@@ -211,6 +260,7 @@ public struct AddTransactionView: View {
                 DatePicker("", selection: $mDate, displayedComponents: .date)
                     .datePickerStyle(DefaultDatePickerStyle())
                     .labelsHidden()
+                    .preferredColorScheme(.light)
             }
         }
     }
@@ -222,22 +272,70 @@ public struct AddTransactionView: View {
             Text("FROM ACCOUNT")
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.black)
-            Picker("", selection: $tFromAccountId) {
+            
+            Menu {
                 ForEach(db.accounts) { acc in
-                    Text("\(acc.name) (\(acc.id))").tag(acc.id)
+                    Button(action: {
+                        tFromAccountId = acc.id
+                    }) {
+                        Text("\(acc.name) (\(acc.id))")
+                    }
                 }
+            } label: {
+                HStack {
+                    if let selectedAcc = db.accounts.first(where: { $0.id == tFromAccountId }) {
+                        Text("\(selectedAcc.name) (\(selectedAcc.id))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.black)
+                    } else {
+                        Text("Select Account")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    Text("▼")
+                        .font(.system(size: 8))
+                        .foregroundColor(.black)
+                }
+                .padding(8)
+                .background(Color.white)
+                .border(Color.black, width: 1)
             }
-            .pickerStyle(DefaultPickerStyle())
+            .menuStyle(.borderlessButton)
             
             Text("TO ACCOUNT")
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.black)
-            Picker("", selection: $tToAccountId) {
+            
+            Menu {
                 ForEach(db.accounts) { acc in
-                    Text("\(acc.name) (\(acc.id))").tag(acc.id)
+                    Button(action: {
+                        tToAccountId = acc.id
+                    }) {
+                        Text("\(acc.name) (\(acc.id))")
+                    }
                 }
+            } label: {
+                HStack {
+                    if let selectedAcc = db.accounts.first(where: { $0.id == tToAccountId }) {
+                        Text("\(selectedAcc.name) (\(selectedAcc.id))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.black)
+                    } else {
+                        Text("Select Account")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    Text("▼")
+                        .font(.system(size: 8))
+                        .foregroundColor(.black)
+                }
+                .padding(8)
+                .background(Color.white)
+                .border(Color.black, width: 1)
             }
-            .pickerStyle(DefaultPickerStyle())
+            .menuStyle(.borderlessButton)
             
             VStack(alignment: .leading, spacing: 6) {
                 Text("AMOUNT (CLP)")
@@ -245,7 +343,9 @@ public struct AddTransactionView: View {
                     .foregroundColor(.black)
                 TextField("e.g. 3000", text: $tAmount)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .foregroundColor(.black)
                     .padding(8)
+                    .background(Color.white)
                     .border(Color.black, width: 1)
             }
             
@@ -256,6 +356,7 @@ public struct AddTransactionView: View {
                 DatePicker("", selection: $tDate, displayedComponents: .date)
                     .datePickerStyle(DefaultDatePickerStyle())
                     .labelsHidden()
+                    .preferredColorScheme(.light)
             }
         }
     }

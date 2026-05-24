@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Improved visual consistency, contrast, and layout of the SwiftUI macOS application (`/macos`) to adhere strictly to the monochrome design language.
+- Replaced standard native `Picker` controls in the transaction entry popup with custom-styled dropdown `Menu` selectors and custom segment button toggles, eliminating native blue tinting issues.
+
+### Fixed
+- Fixed contrast issues where table headers, row items, and text fields in `AccountsView` and `RenderView` rendered low-contrast or invisible (white text on white background) under macOS Dark Mode.
+- Applied `.preferredColorScheme(.light)` globally to ensure system-drawn controls, date pickers, and popovers are consistently legible and stark black-on-white.
+
 ## [0.2.1] - 2026-05-24
 
 ### Added
