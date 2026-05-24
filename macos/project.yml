@@ -1,0 +1,16 @@
+name: Sigma
+options:
+  bundleIdPrefix: com.sigma
+targets:
+  Sigma:
+    type: application
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - Sources
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.sigma.app
+      OTHER_LDFLAGS: -lsqlite3
+      MACOSX_DEPLOYMENT_TARGET: "12.0"
+      GENERATE_INFOPLIST_FILE: YES
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

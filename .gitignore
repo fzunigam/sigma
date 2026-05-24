@@ -10,3 +10,8 @@ dist/
 build/
 *.egg-info/
 docs/cli-usage-implementation.md
+
+# Xcode ignores
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
