@@ -8,18 +8,17 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  Settings,
   CreditCard,
   FileText,
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Sun,
+  Moon,
   Info,
-  Calendar,
   X
 } from 'lucide-react';
 
-// API BASE URL
 const API_URL = '';
 
 interface Account {
@@ -52,10 +51,13 @@ interface ToastMessage {
 }
 
 export default function Dashboard() {
-  // Navigation Tabs
+  // Theme Toggler
+  const [isDark, setIsDark] = useState(true);
+
+  // Navigation Tab
   const [activeTab, setActiveTab] = useState<'dashboard' | 'accounts' | 'history'>('dashboard');
 
-  // Core Data State
+  // Core Data States
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [renderHistory, setRenderHistory] = useState<RenderSnapshot[]>([]);
@@ -63,18 +65,18 @@ export default function Dashboard() {
   const [netBalance, setNetBalance] = useState<number>(0);
   const [defaults, setDefaults] = useState({ income_acc: '', expense_acc: '' });
 
-  // UI States
+  // UI Loaders and Actions States
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   
-  // Modals
+  // Modals States
   const [showRenderModal, setShowRenderModal] = useState(false);
   const [showNewAccountModal, setShowNewAccountModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState<Account | null>(null);
   const [showLimitModal, setShowLimitModal] = useState<Account | null>(null);
 
-  // Forms State
+  // Form Fields State
   const [txType, setTxType] = useState<'expense' | 'income' | 'transfer'>('expense');
   const [txAmount, setTxAmount] = useState('');
   const [txDesc, setTxDesc] = useState('');
@@ -84,7 +86,7 @@ export default function Dashboard() {
   const [txMark, setTxMark] = useState(true);
   const [txError, setTxError] = useState('');
 
-  // New Account Form
+  // New Account Fields
   const [newAccId, setNewAccId] = useState('');
   const [newAccName, setNewAccName] = useState('');
   const [newAccType, setNewAccType] = useState<'debit' | 'credit'>('debit');
@@ -92,31 +94,37 @@ export default function Dashboard() {
   const [newAccLimit, setNewAccLimit] = useState('');
   const [newAccError, setNewAccError] = useState('');
 
-  // Edit / Limit Modals States
+  // Modals Input States
   const [renameValue, setRenameValue] = useState('');
   const [limitValue, setLimitValue] = useState('');
 
-  // Transaction delete double check ID
+  // Table confirmation ID
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Toggle Dark Mode Class
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   // Load Status and Configuration
   const fetchData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      // 1. Fetch dashboard status
       const resStatus = await fetch(`${API_URL}/api/v1/status`);
-      if (!resStatus.ok) throw new Error('Failed to load status');
+      if (!resStatus.ok) throw new Error('Failed to load database status.');
       const dataStatus = await resStatus.json();
       setAccounts(dataStatus.accounts || []);
       setMarkedTotal(dataStatus.marked_total || 0);
       setNetBalance(dataStatus.net_balance || 0);
 
-      // 2. Fetch default accounts
       const resConfig = await fetch(`${API_URL}/api/v1/config`);
       if (resConfig.ok) {
         const dataConfig = await resConfig.json();
         setDefaults(dataConfig);
-        // Pre-fill form values based on type defaults
         if (txType === 'expense' && dataConfig.expense_acc) {
           setTxAccount(dataConfig.expense_acc);
         } else if (txType === 'income' && dataConfig.income_acc) {
@@ -126,20 +134,17 @@ export default function Dashboard() {
         }
       }
 
-      // 3. Fetch transaction log
       const resTx = await fetch(`${API_URL}/api/v1/transactions?limit=30`);
       if (resTx.ok) {
         setTransactions(await resTx.json());
       }
 
-      // 4. Fetch render history
       const resHist = await fetch(`${API_URL}/api/v1/render/history?limit=20`);
       if (resHist.ok) {
         setRenderHistory(await resHist.json());
       }
-
     } catch (error: any) {
-      addToast('error', error.message || 'Error fetching data from local server.');
+      addToast('error', error.message || 'Error communicating with local server.');
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +154,6 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Update default accounts when transaction type changes
   useEffect(() => {
     if (txType === 'expense' && defaults.expense_acc) {
       setTxAccount(defaults.expense_acc);
@@ -160,16 +164,14 @@ export default function Dashboard() {
     }
   }, [txType, defaults, accounts]);
 
-  // Toast System
   const addToast = (type: 'success' | 'error' | 'info', text: string) => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts((prev) => [...prev, { id, type, text }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4500);
+    }, 4000);
   };
 
-  // Helper formatting for CLP Pesos
   const formatCLP = (amount: number) => {
     const isNegative = amount < 0;
     const absAmount = Math.abs(amount);
@@ -177,7 +179,6 @@ export default function Dashboard() {
     return `${isNegative ? '-\xa0' : ''}$${formatted}`;
   };
 
-  // Quick Action Submission
   const handleLogTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     setTxError('');
@@ -217,14 +218,13 @@ export default function Dashboard() {
           date: txDate || null,
         };
       } else {
-        // Transfer
         if (!txAccount || !txTransferTo) {
           setTxError('Both source and destination accounts are required.');
           setIsSubmitting(false);
           return;
         }
         if (txAccount === txTransferTo) {
-          setTxError('Source and destination accounts must be different.');
+          setTxError('Source and destination accounts must be identical.');
           setIsSubmitting(false);
           return;
         }
@@ -244,15 +244,12 @@ export default function Dashboard() {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Failed to log transaction.');
-      }
+      if (!res.ok) throw new Error(data.detail || 'Failed to record transaction.');
 
-      addToast('success', `Transaction logged successfully! ID: ${data.id || 'N/A'}`);
+      addToast('success', `Transaction logged: ${data.id}`);
       setTxAmount('');
       setTxDesc('');
       setTxDate('');
-      setTxError('');
       fetchData(false);
     } catch (err: any) {
       setTxError(err.message);
@@ -261,7 +258,6 @@ export default function Dashboard() {
     }
   };
 
-  // Delete Transaction Action
   const handleDeleteTransaction = async (uniqueId: string) => {
     try {
       const res = await fetch(`${API_URL}/api/v1/transactions/${uniqueId}`, {
@@ -269,9 +265,9 @@ export default function Dashboard() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || 'Failed to delete transaction.');
+        throw new Error(data.detail || 'Deletion failed.');
       }
-      addToast('success', 'Transaction deleted successfully.');
+      addToast('success', 'Transaction deleted.');
       setDeleteConfirmId(null);
       fetchData(false);
     } catch (err: any) {
@@ -279,16 +275,13 @@ export default function Dashboard() {
     }
   };
 
-  // Render Cycle Action
   const handleExecuteRender = async () => {
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/api/v1/render`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Render failed.');
-      }
-      addToast('success', `Render complete! Logged: ${formatCLP(data.net_amount)} across ${data.count} items.`);
+      if (!res.ok) throw new Error(data.detail || 'Render process failed.');
+      addToast('success', `Render executed: ${formatCLP(data.net_amount)}`);
       setShowRenderModal(false);
       fetchData(false);
     } catch (err: any) {
@@ -298,18 +291,14 @@ export default function Dashboard() {
     }
   };
 
-  // New Account Action
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setNewAccError('');
 
     if (!newAccId.trim() || !newAccName.trim()) {
-      setNewAccError('Account ID and Name are required.');
+      setNewAccError('Account ID and Display Name are required.');
       return;
     }
-
-    const initBal = parseInt(newAccBalance, 10) || 0;
-    const limit = parseInt(newAccLimit, 10) || 0;
 
     setIsSubmitting(true);
     try {
@@ -320,17 +309,15 @@ export default function Dashboard() {
           id: newAccId.trim(),
           name: newAccName.trim(),
           type: newAccType,
-          initial_balance: initBal,
-          credit_limit: limit,
+          initial_balance: parseInt(newAccBalance, 10) || 0,
+          credit_limit: parseInt(newAccLimit, 10) || 0,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Failed to create account.');
-      }
+      if (!res.ok) throw new Error(data.detail || 'Account creation failed.');
 
-      addToast('success', `Account '${data.account.name}' created!`);
+      addToast('success', `Account '${data.account.id}' created.`);
       setShowNewAccountModal(false);
       setNewAccId('');
       setNewAccName('');
@@ -344,7 +331,6 @@ export default function Dashboard() {
     }
   };
 
-  // Rename Account Action
   const handleRenameAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showRenameModal) return;
@@ -356,10 +342,8 @@ export default function Dashboard() {
         body: JSON.stringify({ new_id: renameValue.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Failed to rename account.');
-      }
-      addToast('success', `Account renamed to '${data.account.id}' successfully!`);
+      if (!res.ok) throw new Error(data.detail || 'Rename request failed.');
+      addToast('success', `Renamed account to '${data.account.id}'`);
       setShowRenameModal(null);
       setRenameValue('');
       fetchData(false);
@@ -368,7 +352,6 @@ export default function Dashboard() {
     }
   };
 
-  // Update Limit Action
   const handleUpdateLimit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showLimitModal) return;
@@ -380,10 +363,8 @@ export default function Dashboard() {
         body: JSON.stringify({ limit: parseInt(limitValue, 10) || 0 }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Failed to update credit limit.');
-      }
-      addToast('success', `Credit limit for '${data.account.id}' updated!`);
+      if (!res.ok) throw new Error(data.detail || 'Limit update failed.');
+      addToast('success', `Limit updated for '${data.account.id}'`);
       setShowLimitModal(null);
       setLimitValue('');
       fetchData(false);
@@ -392,17 +373,16 @@ export default function Dashboard() {
     }
   };
 
-  // Delete Account Action
   const handleDeleteAccount = async (id: string) => {
-    if (!confirm(`Are you sure you want to delete account '${id}'? This will preserve transaction history under a ghost account.`)) return;
+    if (!confirm(`Confirm deletion of account '${id}'? Transactions are retained under 'deleted'.`)) return;
 
     try {
       const res = await fetch(`${API_URL}/api/v1/accounts/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || 'Failed to delete account.');
+        throw new Error(data.detail || 'Deletion failed.');
       }
-      addToast('success', `Account '${id}' deleted.`);
+      addToast('success', `Account deleted: ${id}`);
       fetchData(false);
     } catch (err: any) {
       addToast('error', err.message);
@@ -410,368 +390,334 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="app-container">
-      {/* 1. Sidebar Navigation */}
-      <aside style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border-card)', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald))', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.25rem', color: '#000' }}>Σ</span>
+    <div className="flex min-h-screen bg-background text-foreground font-sans">
+      
+      {/* 1. Minimal Sidebar */}
+      <aside className="w-64 bg-card border-r border-border p-6 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-mono font-bold text-lg">
+              Σ
+            </div>
+            <div>
+              <h1 className="font-bold text-base tracking-tight leading-tight">Sigma</h1>
+              <span className="text-xs text-muted-foreground">Finance Tracker</span>
+            </div>
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Sigma</h1>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Finance Tracker v0.2.1</span>
-          </div>
+
+          <nav className="flex flex-col gap-1">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+              }`}
+            >
+              <TrendingUp size={16} />
+              <span>Dashboard</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                activeTab === 'accounts'
+                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+              }`}
+            >
+              <CreditCard size={16} />
+              <span>Accounts</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                activeTab === 'history'
+                  ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                  : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+              }`}
+            >
+              <FileText size={16} />
+              <span>Render History</span>
+            </button>
+          </nav>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`glass-panel ${activeTab === 'dashboard' ? 'active-tab' : ''}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              width: '100%',
-              textAlign: 'left',
-              padding: '0.75rem 1rem',
-              background: activeTab === 'dashboard' ? 'var(--accent-cyan-glow)' : 'transparent',
-              borderColor: activeTab === 'dashboard' ? 'var(--accent-cyan)' : 'transparent',
-              color: activeTab === 'dashboard' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              cursor: 'pointer'
-            }}
-          >
-            <TrendingUp size={18} />
-            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Dashboard</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('accounts')}
-            className={`glass-panel ${activeTab === 'accounts' ? 'active-tab' : ''}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              width: '100%',
-              textAlign: 'left',
-              padding: '0.75rem 1rem',
-              background: activeTab === 'accounts' ? 'var(--accent-cyan-glow)' : 'transparent',
-              borderColor: activeTab === 'accounts' ? 'var(--accent-cyan)' : 'transparent',
-              color: activeTab === 'accounts' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              cursor: 'pointer'
-            }}
-          >
-            <CreditCard size={18} />
-            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Accounts</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`glass-panel ${activeTab === 'history' ? 'active-tab' : ''}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              width: '100%',
-              textAlign: 'left',
-              padding: '0.75rem 1rem',
-              background: activeTab === 'history' ? 'var(--accent-cyan-glow)' : 'transparent',
-              borderColor: activeTab === 'history' ? 'var(--accent-cyan)' : 'transparent',
-              color: activeTab === 'history' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              cursor: 'pointer'
-            }}
-          >
-            <FileText size={18} />
-            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Render History</span>
-          </button>
-        </nav>
-
-        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border-card)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <div style={{ background: '#1e293b', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLoading ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}></div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-            {isLoading ? 'Syncing…' : 'Local Node Connected'}
-          </span>
-          <button
-            onClick={() => fetchData(true)}
-            aria-label="Reload data"
-            style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
-          >
-            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-          </button>
+        <div>
+          {/* Theme Selector / Status */}
+          <div className="flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-unbalanced animate-pulse' : 'bg-balanced'}`}></div>
+              <span>{isLoading ? 'Syncing…' : 'Sync Active'}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsDark(!isDark)}
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="hover:text-foreground p-1 transition-colors"
+              >
+                {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+              <button
+                onClick={() => fetchData(true)}
+                aria-label="Refresh data"
+                className="hover:text-foreground p-1 transition-colors"
+              >
+                <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
-      {/* 2. Main content container */}
-      <main style={{ padding: '2.5rem', overflowY: 'auto', height: '100vh' }} className="animate-slide-up">
-        {/* Global Loading Spinner */}
-        {isLoading && (
-          <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', background: '#1e293b', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-card)', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}>
-            <Loader2 size={14} className="animate-spin text-cyan" />
-            <span style={{ fontSize: '0.8rem' }}>Syncing…</span>
-          </div>
-        )}
-
+      {/* 2. Main Dashboard Content */}
+      <main className="flex-1 p-8 overflow-y-auto h-screen animate-in fade-in duration-200">
+        
         {/* --- TAB: DASHBOARD --- */}
         {activeTab === 'dashboard' && (
-          <div>
-            {/* Header / Net Balance and Render Banner */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', marginBottom: '2.5rem', alignItems: 'stretch' }}>
-              <div className="glass-panel" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.4))', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Available Balance</span>
-                <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.5rem 0', color: netBalance >= 0 ? 'var(--color-text-primary)' : 'var(--accent-rose)' }} className="tabular-nums">
-                  {formatCLP(netBalance)}
-                </h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-                  <Info size={14} />
-                  <span>Total funds across debit accounts minus outstanding credit card debt.</span>
-                </div>
-              </div>
-
-              {/* Render Status Card */}
-              <div className="glass-panel" style={{ border: '1px solid var(--border-card-hover)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="space-y-8">
+            
+            {/* Minimalist Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Card 1: Net Balance */}
+              <div className="bg-card border border-border rounded-lg p-6 flex flex-col justify-between">
                 <div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Pending marked total</span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
-                    <span style={{ fontSize: '1.75rem', fontWeight: 700, color: markedTotal === 0 ? 'var(--color-text-secondary)' : markedTotal > 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }} className="tabular-nums">
-                      {formatCLP(markedTotal)}
-                    </span>
-                  </div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Net Balance</span>
+                  <h2 className="text-3xl font-bold mt-2 tabular-nums">
+                    {formatCLP(netBalance)}
+                  </h2>
                 </div>
-
-                <div style={{ marginTop: '1.5rem' }}>
-                  <button
-                    onClick={() => setShowRenderModal(true)}
-                    disabled={markedTotal === 0}
-                    style={{
-                      width: '100%',
-                      background: markedTotal === 0 ? '#1e293b' : 'linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald))',
-                      color: markedTotal === 0 ? 'var(--color-text-muted)' : '#000',
-                      border: 'none',
-                      padding: '0.75rem',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      cursor: markedTotal === 0 ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      transition: 'transform 150ms ease'
-                    }}
-                  >
-                    <RefreshCw size={16} />
-                    <span>Render Cycle</span>
-                  </button>
-                </div>
+                <span className="text-[10px] text-muted-foreground mt-4 block">Calculated liquid asset net worth</span>
               </div>
+
+              {/* Card 2: Pending Render */}
+              <div className="bg-card border border-border rounded-lg p-6 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Pending Marked Sum</span>
+                  <h2 className={`text-3xl font-bold mt-2 tabular-nums ${markedTotal > 0 ? 'text-balanced' : markedTotal < 0 ? 'text-unbalanced' : ''}`}>
+                    {formatCLP(markedTotal)}
+                  </h2>
+                </div>
+                <span className="text-[10px] text-muted-foreground mt-4 block">Sum of active transaction cycle</span>
+              </div>
+
+              {/* Card 3: Quick Action Render */}
+              <div className="bg-card border border-border rounded-lg p-6 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Verification Node</span>
+                  <p className="text-xs text-muted-foreground mt-2">Close the active audit cycle and commit marked items to render history.</p>
+                </div>
+                <button
+                  onClick={() => setShowRenderModal(true)}
+                  disabled={markedTotal === 0 || isSubmitting}
+                  className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-md text-sm mt-4 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity flex justify-center items-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  <span>Render Cycle</span>
+                </button>
+              </div>
+
             </div>
 
-            {/* Quick Actions Logger & Account Summary Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', marginBottom: '2.5rem', alignItems: 'start' }}>
-              {/* Left Column: Accounts and Transactions */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Split Panel Layout */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+              
+              {/* Left Panel: Accounts & Logs */}
+              <div className="xl:col-span-2 space-y-8">
                 
-                {/* Accounts Horizontal List */}
+                {/* Minimalist Accounts Grid */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1.15rem' }}>Your Accounts</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-base font-semibold">Accounts</h3>
                     <button
                       onClick={() => setShowNewAccountModal(true)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 500 }}
+                      className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors flex items-center gap-1"
                     >
-                      <Plus size={16} />
+                      <Plus size={14} />
                       Add Account
                     </button>
                   </div>
 
                   {accounts.length === 0 ? (
-                    <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                      No accounts registered. Click "Add Account" to configure your first account.
+                    <div className="bg-card border border-border border-dashed rounded-lg p-8 text-center text-sm text-muted-foreground">
+                      No accounts found. Use "Add Account" to configure.
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {accounts.map((acc) => (
-                        <div key={acc.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '130px' }}>
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{acc.id}</span>
-                              <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: acc.type === 'credit' ? 'var(--accent-rose-glow)' : 'var(--accent-emerald-glow)', color: acc.type === 'credit' ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>
-                                {acc.type}
-                              </span>
+                        <div key={acc.id} className="bg-card border border-border rounded-lg p-4 flex flex-col justify-between min-h-28">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold text-sm">{acc.name}</h4>
+                              <span className="text-[10px] text-muted-foreground font-mono uppercase">{acc.id}</span>
                             </div>
-                            <h4 style={{ fontSize: '1.05rem', margin: '0.25rem 0' }}>{acc.name}</h4>
+                            <span className="text-[10px] px-2 py-0.5 border border-border rounded font-mono uppercase text-muted-foreground bg-muted/30">
+                              {acc.type}
+                            </span>
                           </div>
 
-                          <div style={{ marginTop: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Balance</span>
-                              <span style={{ fontSize: '1.25rem', fontWeight: 700 }} className="tabular-nums">
-                                {formatCLP(acc.balance)}
-                              </span>
-                            </div>
+                          <div className="mt-4 flex justify-between items-baseline">
+                            <span className="text-[10px] text-muted-foreground">Balance</span>
+                            <span className="text-base font-bold tabular-nums">{formatCLP(acc.balance)}</span>
+                          </div>
 
-                            {/* Limit Utilization Progress Bar for Credit accounts */}
-                            {acc.type === 'credit' && acc.credit_limit > 0 && (
-                              <div style={{ marginTop: '0.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                                  <span>Utilized: {Math.round((acc.balance / acc.credit_limit) * 100)}%</span>
-                                  <span>Limit: {formatCLP(acc.credit_limit)}</span>
-                                </div>
-                                <div style={{ height: '4px', background: '#1e293b', borderRadius: '2px', overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${Math.min((acc.balance / acc.credit_limit) * 100, 100)}%`, background: 'var(--accent-rose)' }}></div>
-                                </div>
+                          {acc.type === 'credit' && acc.credit_limit > 0 && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex justify-between text-[8px] text-muted-foreground">
+                                <span>Util: {Math.round((acc.balance / acc.credit_limit) * 100)}%</span>
+                                <span>Limit: {formatCLP(acc.credit_limit)}</span>
                               </div>
-                            )}
-                          </div>
+                              <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-unbalanced"
+                                  style={{ width: `${Math.min((acc.balance / acc.credit_limit) * 100, 100)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Recent Transaction Log Table */}
+                {/* Minimalist Transactions Table */}
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', marginBottom: '1rem' }}>Recent Log activity</h3>
-                  <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+                  <h3 className="text-base font-semibold mb-4">Chronological Activity</h3>
+                  <div className="bg-card border border-border rounded-lg overflow-hidden">
                     {transactions.length === 0 ? (
-                      <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                        No transactions registered yet. Use the Quick Logger to add entries.
+                      <div className="p-8 text-center text-sm text-muted-foreground">
+                        No transactions registered yet.
                       </div>
                     ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--border-card)', color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                            <th style={{ padding: '1rem' }}>Type</th>
-                            <th style={{ padding: '1rem' }}>Description</th>
-                            <th style={{ padding: '1rem' }}>Account</th>
-                            <th style={{ padding: '1rem', textAlign: 'right' }}>Amount</th>
-                            <th style={{ padding: '1rem', width: '100px' }}>Date</th>
-                            <th style={{ padding: '1rem', width: '80px', textAlign: 'center' }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactions.map((tx) => (
-                            <tr key={tx.unique_id} style={{ borderBottom: '1px solid var(--border-card)' }}>
-                              <td style={{ padding: '1rem', textTransform: 'capitalize' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  {tx.type === 'income' ? (
-                                    <TrendingUp size={16} className="text-emerald" />
-                                  ) : tx.type === 'expense' ? (
-                                    <TrendingDown size={16} className="text-rose" />
-                                  ) : (
-                                    <ArrowLeftRight size={16} className="text-cyan" />
-                                  )}
-                                  <span>{tx.type}</span>
-                                </div>
-                              </td>
-                              <td style={{ padding: '1rem', fontWeight: 500 }}>{tx.description}</td>
-                              <td style={{ padding: '1rem', color: 'var(--color-text-secondary)' }} className="tabular-nums">{tx.account_id || '—'}</td>
-                              <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: tx.type === 'income' ? 'var(--accent-emerald)' : tx.type === 'expense' ? 'var(--accent-rose)' : 'var(--accent-cyan)' }} className="tabular-nums">
-                                {tx.type === 'expense' ? '-' : ''}{formatCLP(tx.amount)}
-                              </td>
-                              <td style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>{tx.created_at.substring(0, 10)}</td>
-                              <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                {deleteConfirmId === tx.unique_id ? (
-                                  <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
-                                    <button
-                                      onClick={() => handleDeleteTransaction(tx.unique_id)}
-                                      aria-label="Confirm delete"
-                                      style={{ background: 'var(--accent-rose)', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '0.7rem', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
-                                    >
-                                      Delete
-                                    </button>
-                                    <button
-                                      onClick={() => setDeleteConfirmId(null)}
-                                      aria-label="Cancel delete"
-                                      style={{ background: '#475569', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '0.7rem', padding: '0.2rem 0.4rem', cursor: 'pointer' }}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => setDeleteConfirmId(tx.unique_id)}
-                                    aria-label={`Delete transaction ${tx.unique_id}`}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', transition: 'color var(--transition-normal)' }}
-                                    onMouseOver={(e) => (e.currentTarget.style.color = 'var(--accent-rose)')}
-                                    onMouseOut={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                )}
-                              </td>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm border-collapse">
+                          <thead>
+                            <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-semibold">
+                              <th className="p-3">Type</th>
+                              <th className="p-3">Description</th>
+                              <th className="p-3">Account</th>
+                              <th className="p-3 text-right">Amount</th>
+                              <th className="p-3">Date</th>
+                              <th className="p-3 text-center w-24">Action</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {transactions.map((tx) => (
+                              <tr key={tx.unique_id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                                <td className="p-3 font-mono text-xs">
+                                  <span className="flex items-center gap-2">
+                                    {tx.type === 'income' ? (
+                                      <TrendingUp size={12} className="text-balanced" />
+                                    ) : tx.type === 'expense' ? (
+                                      <TrendingDown size={12} className="text-unbalanced" />
+                                    ) : (
+                                      <ArrowLeftRight size={12} className="text-muted-foreground" />
+                                    )}
+                                    <span className="capitalize">{tx.type}</span>
+                                  </span>
+                                </td>
+                                <td className="p-3 font-medium text-foreground">{tx.description}</td>
+                                <td className="p-3 text-muted-foreground text-xs font-mono">{tx.account_id || '—'}</td>
+                                <td className={`p-3 text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-balanced' : tx.type === 'expense' ? 'text-unbalanced' : ''}`}>
+                                  {tx.type === 'expense' ? '-' : ''}{formatCLP(tx.amount)}
+                                </td>
+                                <td className="p-3 text-muted-foreground text-xs font-mono">{tx.created_at.substring(0, 10)}</td>
+                                <td className="p-3 text-center">
+                                  {deleteConfirmId === tx.unique_id ? (
+                                    <div className="flex gap-1 justify-center">
+                                      <button
+                                        onClick={() => handleDeleteTransaction(tx.unique_id)}
+                                        className="bg-destructive text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded hover:opacity-90"
+                                      >
+                                        Delete
+                                      </button>
+                                      <button
+                                        onClick={() => setDeleteConfirmId(null)}
+                                        className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5 rounded border border-border"
+                                      >
+                                        No
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setDeleteConfirmId(tx.unique_id)}
+                                      aria-label={`Delete record ${tx.unique_id}`}
+                                      className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 </div>
+
               </div>
 
-              {/* Right Column: Tabbed Quick Logger */}
-              <div className="glass-panel" style={{ border: '1px solid var(--border-card-hover)', position: 'sticky', top: '2.5rem' }}>
-                <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem' }}>Quick Logger</h3>
-
-                {/* Tabs selection */}
-                <div style={{ display: 'flex', background: '#0f172a', padding: '0.25rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
-                  <button
-                    onClick={() => setTxType('expense')}
-                    style={{ flex: 1, border: 'none', background: txType === 'expense' ? '#1e293b' : 'transparent', color: txType === 'expense' ? 'var(--accent-rose)' : 'var(--color-text-secondary)', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500, fontSize: '0.85rem' }}
-                  >
-                    Expense
-                  </button>
-                  <button
-                    onClick={() => setTxType('income')}
-                    style={{ flex: 1, border: 'none', background: txType === 'income' ? '#1e293b' : 'transparent', color: txType === 'income' ? 'var(--accent-emerald)' : 'var(--color-text-secondary)', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500, fontSize: '0.85rem' }}
-                  >
-                    Income
-                  </button>
-                  <button
-                    onClick={() => setTxType('transfer')}
-                    style={{ flex: 1, border: 'none', background: txType === 'transfer' ? '#1e293b' : 'transparent', color: txType === 'transfer' ? 'var(--accent-cyan)' : 'var(--color-text-secondary)', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500, fontSize: '0.85rem' }}
-                  >
-                    Transfer
-                  </button>
+              {/* Right Panel: Tabbed Form Logger */}
+              <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+                <h3 className="text-base font-semibold">Quick Logger</h3>
+                
+                {/* Flat selection tabs */}
+                <div className="flex border-b border-border text-sm">
+                  {(['expense', 'income', 'transfer'] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setTxType(type)}
+                      className={`flex-1 pb-2 font-medium capitalize text-center ${
+                        txType === type
+                          ? 'border-b-2 border-primary text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
 
-                <form onSubmit={handleLogTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  
-                  {/* Amount Input */}
+                <form onSubmit={handleLogTransaction} className="space-y-4 text-sm">
                   <div>
-                    <label htmlFor="tx-amount" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Amount (CLP)</label>
+                    <label htmlFor="tx-amount" className="block text-xs text-muted-foreground mb-1">Amount (CLP)</label>
                     <input
                       id="tx-amount"
                       type="number"
                       inputMode="numeric"
                       value={txAmount}
                       onChange={(e) => setTxAmount(e.target.value)}
-                      placeholder="e.g. 5000…"
+                      placeholder="e.g. 5000"
                       required
-                      style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff', fontSize: '0.95rem' }}
+                      className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
                     />
                   </div>
 
-                  {/* Description Input */}
                   <div>
-                    <label htmlFor="tx-desc" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Description</label>
+                    <label htmlFor="tx-desc" className="block text-xs text-muted-foreground mb-1">Description</label>
                     <input
                       id="tx-desc"
                       type="text"
                       value={txDesc}
                       onChange={(e) => setTxDesc(e.target.value)}
-                      placeholder="e.g. Lunch, Coffee, Rent…"
+                      placeholder="e.g. Groceries, Utility, Paycheck"
                       required
-                      style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff', fontSize: '0.95rem' }}
+                      className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
                     />
                   </div>
 
-                  {/* Account Selector (Or Source Account for transfers) */}
                   <div>
-                    <label htmlFor="tx-account" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                      {txType === 'transfer' ? 'Source Account' : 'Account'}
+                    <label htmlFor="tx-account" className="block text-xs text-muted-foreground mb-1">
+                      {txType === 'transfer' ? 'From Account' : 'Account'}
                     </label>
                     <select
                       id="tx-account"
                       value={txAccount}
                       onChange={(e) => setTxAccount(e.target.value)}
-                      style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff', fontSize: '0.95rem' }}
+                      className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
                     >
                       {accounts.map((acc) => (
                         <option key={acc.id} value={acc.id}>{acc.name} ({acc.id})</option>
@@ -779,15 +725,14 @@ export default function Dashboard() {
                     </select>
                   </div>
 
-                  {/* Target Account (Only for transfers) */}
                   {txType === 'transfer' && (
                     <div>
-                      <label htmlFor="tx-transfer-to" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Destination Account</label>
+                      <label htmlFor="tx-transfer-to" className="block text-xs text-muted-foreground mb-1">To Account</label>
                       <select
                         id="tx-transfer-to"
                         value={txTransferTo}
                         onChange={(e) => setTxTransferTo(e.target.value)}
-                        style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff', fontSize: '0.95rem' }}
+                        className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
                       >
                         <option value="">-- Choose Account --</option>
                         {accounts.map((acc) => (
@@ -797,127 +742,109 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Custom Date Selector */}
                   <div>
-                    <label htmlFor="tx-date" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Date (Optional)</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        id="tx-date"
-                        type="date"
-                        value={txDate}
-                        onChange={(e) => setTxDate(e.target.value)}
-                        style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff', fontSize: '0.95rem' }}
-                      />
-                    </div>
+                    <label htmlFor="tx-date" className="block text-xs text-muted-foreground mb-1">Date Override (Optional)</label>
+                    <input
+                      id="tx-date"
+                      type="date"
+                      value={txDate}
+                      onChange={(e) => setTxDate(e.target.value)}
+                      className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
+                    />
                   </div>
 
-                  {/* Mark toggle (only for Income/Expense) */}
                   {txType !== 'transfer' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0' }}>
+                    <div className="flex items-center gap-2 py-1">
                       <input
                         id="tx-mark"
                         type="checkbox"
                         checked={txMark}
                         onChange={(e) => setTxMark(e.target.checked)}
-                        style={{ width: '16px', height: '16px', accentColor: 'var(--accent-cyan)' }}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-ring"
                       />
-                      <label htmlFor="tx-mark" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>Mark for review cycle</label>
+                      <label htmlFor="tx-mark" className="text-xs text-muted-foreground cursor-pointer select-none">Mark for audit review cycle</label>
                     </div>
                   )}
 
-                  {/* Inline Error */}
                   {txError && (
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--accent-rose-glow)', border: '1px solid var(--accent-rose)', borderRadius: '6px', padding: '0.6rem', color: 'var(--accent-rose)', fontSize: '0.8rem' }}>
-                      <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-xs">
+                      <AlertCircle size={14} className="shrink-0" />
                       <span>{txError}</span>
                     </div>
                   )}
 
-                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={isSubmitting || accounts.length === 0}
-                    style={{
-                      marginTop: '0.5rem',
-                      background: accounts.length === 0 ? '#1e293b' : txType === 'expense' ? 'var(--accent-rose)' : txType === 'income' ? 'var(--accent-emerald)' : 'var(--accent-cyan)',
-                      color: accounts.length === 0 ? 'var(--color-text-muted)' : '#000',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '0.75rem',
-                      fontWeight: 600,
-                      cursor: (isSubmitting || accounts.length === 0) ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}
+                    className="w-full bg-primary text-primary-foreground font-semibold py-2 rounded-md hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity flex justify-center items-center gap-2"
                   >
-                    {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                    <span>{isSubmitting ? 'Logging…' : `Log ${txType.charAt(0).toUpperCase() + txType.slice(1)}`}</span>
+                    {isSubmitting && <Loader2 size={14} className="animate-spin" />}
+                    <span>{isSubmitting ? 'Submitting…' : 'Log Transaction'}</span>
                   </button>
                 </form>
               </div>
+
             </div>
+
           </div>
         )}
 
-        {/* --- TAB: ACCOUNTS MANAGEMENT --- */}
+        {/* --- TAB: ACCOUNTS CONFIGURATION --- */}
         {activeTab === 'accounts' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
               <div>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Accounts Config</h2>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Configure debit accounts, credit cards, limits, and defaults.</p>
+                <h2 className="text-xl font-bold tracking-tight">Accounts Management</h2>
+                <p className="text-xs text-muted-foreground mt-1">Configure ledgers, debt limits, and default tracking paths.</p>
               </div>
               <button
                 onClick={() => setShowNewAccountModal(true)}
-                style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald))', border: 'none', color: '#000', padding: '0.6rem 1.2rem', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity flex items-center gap-2"
               >
                 <Plus size={16} />
                 Create Account
               </button>
             </div>
 
-            {/* List Table of Accounts */}
-            <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
               {accounts.length === 0 ? (
-                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                  No accounts found. Click "Create Account" to get started.
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  No accounts found. Use "Create Account" to add your first.
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+                <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-card)', color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                      <th style={{ padding: '1.25rem' }}>Account ID</th>
-                      <th style={{ padding: '1.25rem' }}>Name</th>
-                      <th style={{ padding: '1.25rem' }}>Type</th>
-                      <th style={{ padding: '1.25rem', textAlign: 'right' }}>Balance</th>
-                      <th style={{ padding: '1.25rem', textAlign: 'right' }}>Credit Limit</th>
-                      <th style={{ padding: '1.25rem', textAlign: 'center', width: '240px' }}>Actions</th>
+                    <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-semibold">
+                      <th className="p-4">Short ID</th>
+                      <th className="p-4">Name</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4 text-right">Balance</th>
+                      <th className="p-4 text-right">Credit Limit</th>
+                      <th className="p-4 text-center w-56">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {accounts.map((acc) => (
-                      <tr key={acc.id} style={{ borderBottom: '1px solid var(--border-card)' }}>
-                        <td style={{ padding: '1.25rem', fontWeight: 600 }} className="tabular-nums">{acc.id}</td>
-                        <td style={{ padding: '1.25rem' }}>{acc.name}</td>
-                        <td style={{ padding: '1.25rem' }}>
-                          <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: acc.type === 'credit' ? 'var(--accent-rose-glow)' : 'var(--accent-emerald-glow)', color: acc.type === 'credit' ? 'var(--accent-rose)' : 'var(--accent-emerald)', textTransform: 'uppercase', fontWeight: 600 }}>
+                      <tr key={acc.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                        <td className="p-4 font-mono font-bold text-xs">{acc.id}</td>
+                        <td className="p-4 font-medium">{acc.name}</td>
+                        <td className="p-4">
+                          <span className="text-[10px] px-2 py-0.5 border border-border rounded font-mono uppercase text-muted-foreground bg-muted/30">
                             {acc.type}
                           </span>
                         </td>
-                        <td style={{ padding: '1.25rem', textAlign: 'right', fontWeight: 600 }} className="tabular-nums">{formatCLP(acc.balance)}</td>
-                        <td style={{ padding: '1.25rem', textAlign: 'right', color: acc.type === 'credit' ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }} className="tabular-nums">
+                        <td className="p-4 text-right font-bold tabular-nums">{formatCLP(acc.balance)}</td>
+                        <td className="p-4 text-right text-muted-foreground tabular-nums">
                           {acc.type === 'credit' ? formatCLP(acc.credit_limit) : '—'}
                         </td>
-                        <td style={{ padding: '1.25rem', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <td className="p-4 text-center">
+                          <div className="flex gap-2 justify-center">
                             <button
                               onClick={() => {
                                 setRenameValue(acc.id);
                                 setShowRenameModal(acc);
                               }}
-                              style={{ background: '#1e293b', border: '1px solid var(--border-card)', color: 'var(--color-text-secondary)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}
+                              className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-2.5 py-1 rounded"
                             >
                               Rename
                             </button>
@@ -927,14 +854,14 @@ export default function Dashboard() {
                                   setLimitValue(acc.credit_limit.toString());
                                   setShowLimitModal(acc);
                                 }}
-                                style={{ background: '#1e293b', border: '1px solid var(--border-card)', color: 'var(--color-text-secondary)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}
+                                className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-2.5 py-1 rounded"
                               >
                                 Limit
                               </button>
                             )}
                             <button
                               onClick={() => handleDeleteAccount(acc.id)}
-                              style={{ background: 'var(--accent-rose-glow)', border: '1px solid var(--accent-rose)', color: 'var(--accent-rose)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}
+                              className="border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10 text-xs px-2.5 py-1 rounded"
                             >
                               Delete
                             </button>
@@ -947,14 +874,16 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Default Accounts Setup Panel */}
-            <div className="glass-panel" style={{ marginTop: '2.5rem' }}>
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '0.5rem' }}>Default User Settings</h3>
-              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Select default accounts for logging income and expenses quickly.</p>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            {/* Config Panel */}
+            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold">Smart Defaults</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Select default accounts to pre-select in logging operations.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <label htmlFor="default-income" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>Default Income Account</label>
+                  <label htmlFor="default-income" className="block text-xs text-muted-foreground mb-1">Default Income Account</label>
                   <select
                     id="default-income"
                     value={defaults.income_acc}
@@ -966,14 +895,14 @@ export default function Dashboard() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(newDefaults),
                         });
-                        if (!res.ok) throw new Error('Failed to update config');
+                        if (!res.ok) throw new Error('Update failed');
                         setDefaults(newDefaults);
-                        addToast('success', 'Default income account updated.');
+                        addToast('success', 'Config updated.');
                       } catch (err: any) {
                         addToast('error', err.message);
                       }
                     }}
-                    style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                    className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">-- None --</option>
                     {accounts.map(acc => (
@@ -983,7 +912,7 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <label htmlFor="default-expense" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>Default Expense Account</label>
+                  <label htmlFor="default-expense" className="block text-xs text-muted-foreground mb-1">Default Expense Account</label>
                   <select
                     id="default-expense"
                     value={defaults.expense_acc}
@@ -995,14 +924,14 @@ export default function Dashboard() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(newDefaults),
                         });
-                        if (!res.ok) throw new Error('Failed to update config');
+                        if (!res.ok) throw new Error('Update failed');
                         setDefaults(newDefaults);
-                        addToast('success', 'Default expense account updated.');
+                        addToast('success', 'Config updated.');
                       } catch (err: any) {
                         addToast('error', err.message);
                       }
                     }}
-                    style={{ width: '100%', background: '#0f172a', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                    className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">-- None --</option>
                     {accounts.map(acc => (
@@ -1012,35 +941,38 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
           </div>
         )}
 
         {/* --- TAB: RENDER HISTORY --- */}
         {activeTab === 'history' && (
-          <div>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Historical Audit Snapshots</h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>Review all completed render cycle events.</p>
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">Audit Archive</h2>
+              <p className="text-xs text-muted-foreground mt-1">Review finalized rendering cycle snapshots.</p>
+            </div>
 
-            <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
               {renderHistory.length === 0 ? (
-                <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                  No render snapshots recorded. Complete your first cycle in the Dashboard to generate snapshots.
+                <div className="p-12 text-center text-sm text-muted-foreground">
+                  No rendered snapshot history found. Execute a render cycle to populate this section.
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+                <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-card)', color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                      <th style={{ padding: '1.25rem' }}>Snapshot ID</th>
-                      <th style={{ padding: '1.25rem' }}>Rendered Date</th>
-                      <th style={{ padding: '1.25rem', textAlign: 'right' }}>Net Sum Processed</th>
+                    <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-semibold">
+                      <th className="p-4">Snapshot ID</th>
+                      <th className="p-4">Execution Date</th>
+                      <th className="p-4 text-right">Net Value</th>
                     </tr>
                   </thead>
                   <tbody>
                     {renderHistory.map((h) => (
-                      <tr key={h.id} style={{ borderBottom: '1px solid var(--border-card)' }}>
-                        <td style={{ padding: '1.25rem', fontWeight: 600 }} className="tabular-nums">r-{h.id}</td>
-                        <td style={{ padding: '1.25rem', color: 'var(--color-text-secondary)' }}>{h.rendered_at}</td>
-                        <td style={{ padding: '1.25rem', textAlign: 'right', fontWeight: 700, color: h.net_amount >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }} className="tabular-nums">
+                      <tr key={h.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                        <td className="p-4 font-mono font-bold text-xs">r-{h.id}</td>
+                        <td className="p-4 text-muted-foreground text-xs font-mono">{h.rendered_at}</td>
+                        <td className={`p-4 text-right font-bold tabular-nums ${h.net_amount >= 0 ? 'text-balanced' : 'text-unbalanced'}`}>
                           {formatCLP(h.net_amount)}
                         </td>
                       </tr>
@@ -1051,179 +983,164 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
       </main>
 
-      {/* --- TOAST ALERTS SYSTEM (aria-live="polite") --- */}
+      {/* --- NOTIFICATIONS TOAST LAYER --- */}
       <div
         aria-live="polite"
-        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', zIndex: 1000, maxWidth: '350px' }}
+        className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 max-w-sm pointer-events-none"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            style={{
-              background: '#1e293b',
-              borderLeft: `4px solid ${toast.type === 'success' ? 'var(--accent-emerald)' : toast.type === 'error' ? 'var(--accent-rose)' : 'var(--accent-cyan)'}`,
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
-              borderRadius: '6px',
-              padding: '1rem',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              animation: 'slideUp 200ms ease forwards'
-            }}
+            className="pointer-events-auto bg-card border border-border shadow-lg rounded-md p-4 flex items-center gap-3 text-foreground animate-in slide-in-from-bottom duration-200"
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="text-emerald" size={20} style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={16} className="text-balanced shrink-0" />
             ) : toast.type === 'error' ? (
-              <AlertCircle className="text-rose" size={20} style={{ flexShrink: 0 }} />
+              <AlertCircle size={16} className="text-unbalanced shrink-0" />
             ) : (
-              <Info className="text-cyan" size={20} style={{ flexShrink: 0 }} />
+              <Info size={16} className="text-muted-foreground shrink-0" />
             )}
-            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{toast.text}</span>
+            <span className="text-xs font-medium">{toast.text}</span>
           </div>
         ))}
       </div>
 
-      {/* --- MODAL: RENDER CONFIRMATION --- */}
+      {/* --- MODAL: CONFIRM RENDER CYCLE --- */}
       {showRenderModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }}>
-          <div className="glass-panel" style={{ width: '420px', background: '#0f172a', border: '1px solid var(--border-card-hover)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)', padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RefreshCw size={20} className="text-cyan" />
-              <span>Confirm Render Cycle</span>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-40 animate-in fade-in duration-150">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold flex items-center gap-2">
+              <RefreshCw size={16} className="text-primary" />
+              <span>Execute Render Audit</span>
             </h3>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              This will lock the current marked movements and sum their values. The marked balance will reset, and a historical snapshot of <strong className="tabular-nums" style={{ color: markedTotal >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{formatCLP(markedTotal)}</strong> will be saved.
+            <p className="text-xs text-muted-foreground">
+              This process compiles all active transactions, updates the ledger balances, and creates a history snapshot totaling <span className="font-bold tabular-nums">{formatCLP(markedTotal)}</span>. This cannot be undone.
             </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowRenderModal(false)}
-                style={{ background: 'transparent', border: '1px solid var(--border-card)', borderRadius: '6px', color: 'var(--color-text-secondary)', padding: '0.6rem 1.2rem', cursor: 'pointer' }}
+                className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-3 py-2 rounded-md font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExecuteRender}
                 disabled={isSubmitting}
-                style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald))', border: 'none', borderRadius: '6px', color: '#000', padding: '0.6rem 1.2rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                className="bg-primary text-primary-foreground text-xs px-3 py-2 rounded-md font-semibold hover:opacity-90 flex items-center gap-1.5"
               >
-                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                <span>Execute Render</span>
+                {isSubmitting && <Loader2 size={12} className="animate-spin" />}
+                <span>Confirm & Render</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- MODAL: NEW ACCOUNT --- */}
+      {/* --- MODAL: CREATE ACCOUNT --- */}
       {showNewAccountModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }}>
-          <div className="glass-panel" style={{ width: '450px', background: '#0f172a', border: '1px solid var(--border-card-hover)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>Add New Account</h3>
-              <button
-                onClick={() => setShowNewAccountModal(false)}
-                aria-label="Close modal"
-                style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
-              >
-                <X size={20} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-40 animate-in fade-in duration-150">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-bold">New Account Setup</h3>
+              <button onClick={() => setShowNewAccountModal(false)} className="text-muted-foreground hover:text-foreground">
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateAccount} className="space-y-3 text-sm">
               <div>
-                <label htmlFor="new-acc-id" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Account ID (Unique Short Name)</label>
+                <label htmlFor="new-acc-id" className="block text-xs text-muted-foreground mb-1">Short ID (ID used in CLI)</label>
                 <input
                   id="new-acc-id"
                   type="text"
                   value={newAccId}
                   onChange={(e) => setNewAccId(e.target.value)}
-                  placeholder="e.g. wallet, cc, bank…"
+                  placeholder="e.g. bci, wallet, card"
                   required
-                  style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                  className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
               <div>
-                <label htmlFor="new-acc-name" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Account Display Name</label>
+                <label htmlFor="new-acc-name" className="block text-xs text-muted-foreground mb-1">Display Name</label>
                 <input
                   id="new-acc-name"
                   type="text"
                   value={newAccName}
                   onChange={(e) => setNewAccName(e.target.value)}
-                  placeholder="e.g. Visa Signature, Wallet Cash…"
+                  placeholder="e.g. Banco de Chile Checking"
                   required
-                  style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                  className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="new-acc-type" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Account Type</label>
+                  <label htmlFor="new-acc-type" className="block text-xs text-muted-foreground mb-1">Type</label>
                   <select
                     id="new-acc-type"
                     value={newAccType}
                     onChange={(e) => setNewAccType(e.target.value as 'debit' | 'credit')}
-                    style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                    className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="debit">Debit</option>
                     <option value="credit">Credit</option>
                   </select>
                 </div>
-
                 <div>
-                  <label htmlFor="new-acc-balance" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Initial Balance (CLP)</label>
+                  <label htmlFor="new-acc-balance" className="block text-xs text-muted-foreground mb-1">Initial Balance (CLP)</label>
                   <input
                     id="new-acc-balance"
                     type="number"
                     inputMode="numeric"
                     value={newAccBalance}
                     onChange={(e) => setNewAccBalance(e.target.value)}
-                    placeholder="e.g. 100000"
-                    style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                    placeholder="0"
+                    className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </div>
 
               {newAccType === 'credit' && (
                 <div>
-                  <label htmlFor="new-acc-limit" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>Credit Limit (CLP)</label>
+                  <label htmlFor="new-acc-limit" className="block text-xs text-muted-foreground mb-1">Credit Card Limit</label>
                   <input
                     id="new-acc-limit"
                     type="number"
                     inputMode="numeric"
                     value={newAccLimit}
                     onChange={(e) => setNewAccLimit(e.target.value)}
-                    placeholder="e.g. 500000"
-                    style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                    placeholder="500000"
+                    className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               )}
 
               {newAccError && (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--accent-rose-glow)', border: '1px solid var(--accent-rose)', borderRadius: '6px', padding: '0.6rem', color: 'var(--accent-rose)', fontSize: '0.8rem' }}>
-                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-xs">
+                  <AlertCircle size={14} className="shrink-0" />
                   <span>{newAccError}</span>
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setShowNewAccountModal(false)}
-                  style={{ background: 'transparent', border: '1px solid var(--border-card)', borderRadius: '6px', color: 'var(--color-text-secondary)', padding: '0.6rem 1.2rem', cursor: 'pointer' }}
+                  className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-3 py-2 rounded-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald))', border: 'none', borderRadius: '6px', color: '#000', padding: '0.6rem 1.2rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="bg-primary text-primary-foreground text-xs px-3 py-2 rounded-md font-semibold hover:opacity-90 flex items-center gap-1.5"
                 >
-                  {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                  <span>Create Account</span>
+                  {isSubmitting && <Loader2 size={12} className="animate-spin" />}
+                  <span>Add Ledger</span>
                 </button>
               </div>
             </form>
@@ -1231,34 +1148,34 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- MODAL: RENAME ACCOUNT --- */}
+      {/* --- MODAL: RENAME LEDGER --- */}
       {showRenameModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }}>
-          <div className="glass-panel" style={{ width: '400px', background: '#0f172a', border: '1px solid var(--border-card-hover)', padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Rename Account '{showRenameModal.id}'</h3>
-            <form onSubmit={handleRenameAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-40 animate-in fade-in duration-150">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold">Rename '{showRenameModal.id}'</h3>
+            <form onSubmit={handleRenameAccount} className="space-y-4 text-sm">
               <div>
-                <label htmlFor="rename-id" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>New Account ID</label>
+                <label htmlFor="rename-id" className="block text-xs text-muted-foreground mb-1">New ID</label>
                 <input
                   id="rename-id"
                   type="text"
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
                   required
-                  style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                  className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              <div className="flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setShowRenameModal(null)}
-                  style={{ background: 'transparent', border: '1px solid var(--border-card)', borderRadius: '6px', color: 'var(--color-text-secondary)', padding: '0.6rem 1.2rem', cursor: 'pointer' }}
+                  className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-3 py-2 rounded-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ background: 'var(--accent-cyan)', border: 'none', borderRadius: '6px', color: '#000', padding: '0.6rem 1.2rem', fontWeight: 600, cursor: 'pointer' }}
+                  className="bg-primary text-primary-foreground text-xs px-3 py-2 rounded-md font-semibold hover:opacity-90"
                 >
                   Rename
                 </button>
@@ -1270,12 +1187,12 @@ export default function Dashboard() {
 
       {/* --- MODAL: UPDATE CREDIT LIMIT --- */}
       {showLimitModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }}>
-          <div className="glass-panel" style={{ width: '400px', background: '#0f172a', border: '1px solid var(--border-card-hover)', padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Update Credit Limit for '{showLimitModal.id}'</h3>
-            <form onSubmit={handleUpdateLimit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-40 animate-in fade-in duration-150">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold">Credit Limit: {showLimitModal.id}</h3>
+            <form onSubmit={handleUpdateLimit} className="space-y-4 text-sm">
               <div>
-                <label htmlFor="limit-value" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>New Credit Limit (CLP)</label>
+                <label htmlFor="limit-value" className="block text-xs text-muted-foreground mb-1">New Credit Limit (CLP)</label>
                 <input
                   id="limit-value"
                   type="number"
@@ -1283,20 +1200,20 @@ export default function Dashboard() {
                   value={limitValue}
                   onChange={(e) => setLimitValue(e.target.value)}
                   required
-                  style={{ width: '100%', background: '#050b14', border: '1px solid var(--border-card)', borderRadius: '6px', padding: '0.6rem', color: '#fff' }}
+                  className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              <div className="flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setShowLimitModal(null)}
-                  style={{ background: 'transparent', border: '1px solid var(--border-card)', borderRadius: '6px', color: 'var(--color-text-secondary)', padding: '0.6rem 1.2rem', cursor: 'pointer' }}
+                  className="bg-secondary text-secondary-foreground border border-border hover:bg-muted text-xs px-3 py-2 rounded-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ background: 'var(--accent-cyan)', border: 'none', borderRadius: '6px', color: '#000', padding: '0.6rem 1.2rem', fontWeight: 600, cursor: 'pointer' }}
+                  className="bg-primary text-primary-foreground text-xs px-3 py-2 rounded-md font-semibold hover:opacity-90"
                 >
                   Save Limit
                 </button>
@@ -1305,6 +1222,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
