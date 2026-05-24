@@ -101,3 +101,36 @@ def test_web_server_full_flow(monkeypatch, tmp_path):
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["net_amount"] == 30000
+
+def test_web_transfer_credit_card_restrictions(monkeypatch, tmp_path):
+    from sgm.infrastructure.database import init_db
+    from fastapi.testclient import TestClient
+    db_file = tmp_path / "test_sigma.db"
+    monkeypatch.setattr("sgm.infrastructure.database.get_db_path", lambda: db_file)
+    monkeypatch.setattr("sgm.interface.web.server.get_current_db_path", lambda: db_file)
+    init_db(db_file)
+    
+    from sgm.interface.web.server import app
+    client = TestClient(app)
+    
+    # Create accounts
+    client.post("/api/v1/accounts", json={"id": "wallet", "name": "Cash", "type": "debit", "initial_balance": 10000})
+    client.post("/api/v1/accounts", json={"id": "cc", "name": "Visa", "type": "credit", "initial_balance": 0, "credit_limit": 500000})
+    
+    # 1. Try transferring from credit card
+    response = client.post("/api/v1/transactions/transfer", json={
+        "from_account": "cc",
+        "to_account": "wallet",
+        "amount": 1000
+    })
+    assert response.status_code == 400
+    assert "Transfers from credit cards are not allowed." in response.json()["detail"]
+    
+    # 2. Try transferring to credit card leaving negative balance
+    response = client.post("/api/v1/transactions/transfer", json={
+        "from_account": "wallet",
+        "to_account": "cc",
+        "amount": 1000
+    })
+    assert response.status_code == 400
+    assert "Transfer would leave credit card 'cc' with a negative balance." in response.json()["detail"]

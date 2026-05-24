@@ -27,12 +27,12 @@ def isolated_env(tmp_path, monkeypatch):
 def test_acc_delete_success(monkeypatch):
     # Setup initial accounts and movements
     runner.invoke(app, ["acc", "add", "wallet", "Cash", "debit", "1000"])
-    runner.invoke(app, ["acc", "add", "cc", "Credit Card", "credit", "0"])
+    runner.invoke(app, ["acc", "add", "bank", "Bank Account", "debit", "0"])
     
     # Log movement
     runner.invoke(app, ["exp", "500", "lunch", "no", "wallet"])
     # Log transfer
-    runner.invoke(app, ["tr", "wallet", "cc", "200"])
+    runner.invoke(app, ["tr", "wallet", "bank", "200"])
     
     # Verify pre-deletion state
     accounts = get_accounts()
@@ -53,7 +53,7 @@ def test_acc_delete_success(monkeypatch):
     # Verify it is removed from accounts
     accounts = get_accounts()
     assert len(accounts) == 1
-    assert accounts[0]["id"] == "cc"
+    assert accounts[0]["id"] == "bank"
     assert get_account("wallet") is None
     
     # Verify the hidden 'deleted' account exists but doesn't show in list
@@ -72,7 +72,7 @@ def test_acc_delete_success(monkeypatch):
     # The transfer should have from_account = 'deleted'
     # description is "from_account -> to_account"
     transfer = next(log for log in logs if log["type"] == "transfer")
-    assert "deleted -> cc" in transfer["description"]
+    assert "deleted -> bank" in transfer["description"]
 
 
 def test_acc_delete_cancel(monkeypatch):

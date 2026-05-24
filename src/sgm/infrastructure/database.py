@@ -497,6 +497,9 @@ def create_transfer(from_account: str, to_account: str, amount: int, created_at:
             raise ValueError(f"Account with ID '{from_account}' does not exist.")
         from_type, from_balance, from_limit = from_row
         
+        if from_type == "credit":
+            raise ValueError("Transfers from credit cards are not allowed.")
+        
         # Get to_account
         cursor.execute("SELECT type, balance, credit_limit FROM accounts WHERE id = ? AND deleted_at IS NULL", (to_account,))
         to_row = cursor.fetchone()
@@ -522,6 +525,8 @@ def create_transfer(from_account: str, to_account: str, amount: int, created_at:
             new_to_balance = to_balance + amount
         elif to_type == "credit":
             new_to_balance = to_balance - amount
+            if new_to_balance < 0:
+                raise ValueError(f"Transfer would leave credit card '{to_account}' with a negative balance. Current balance: {to_balance}, Transfer amount: {amount}")
         else:
             raise ValueError(f"Unknown account type '{to_type}'")
             

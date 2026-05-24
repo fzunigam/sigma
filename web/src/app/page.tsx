@@ -160,7 +160,12 @@ export default function Dashboard() {
     } else if (txType === 'income' && defaults.income_acc) {
       setTxAccount(defaults.income_acc);
     } else if (accounts.length > 0) {
-      setTxAccount(accounts[0].id);
+      if (txType === 'transfer') {
+        const firstDebit = accounts.find(acc => acc.type !== 'credit');
+        setTxAccount(firstDebit ? firstDebit.id : accounts[0].id);
+      } else {
+        setTxAccount(accounts[0].id);
+      }
     }
   }, [txType, defaults, accounts]);
 
@@ -224,9 +229,23 @@ export default function Dashboard() {
           return;
         }
         if (txAccount === txTransferTo) {
-          setTxError('Source and destination accounts must be identical.');
+          setTxError('Source and destination accounts must be different.');
           setIsSubmitting(false);
           return;
+        }
+        const fromAcc = accounts.find(a => a.id === txAccount);
+        if (fromAcc && fromAcc.type === 'credit') {
+          setTxError('Transfers from credit cards are not allowed.');
+          setIsSubmitting(false);
+          return;
+        }
+        const toAcc = accounts.find(a => a.id === txTransferTo);
+        if (toAcc && toAcc.type === 'credit') {
+          if (toAcc.balance - amountNum < 0) {
+            setTxError(`Transfer would leave credit card '${txTransferTo}' with a negative balance. Current balance: ${toAcc.balance}, Transfer amount: ${amountNum}`);
+            setIsSubmitting(false);
+            return;
+          }
         }
         endpoint = '/api/v1/transactions/transfer';
         payload = {
@@ -713,9 +732,12 @@ export default function Dashboard() {
                       onChange={(e) => setTxAccount(e.target.value)}
                       className="bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring w-full"
                     >
-                      {accounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>{acc.name} ({acc.id})</option>
-                      ))}
+                      {accounts
+                        .filter((acc) => txType !== 'transfer' || acc.type !== 'credit')
+                        .map((acc) => (
+                          <option key={acc.id} value={acc.id}>{acc.name} ({acc.id})</option>
+                        ))
+                      }
                     </select>
                   </div>
 

@@ -75,3 +75,22 @@ def test_tr_negative_amount(clean_db):
     result = runner.invoke(app, ["tr", "wallet", "bank", "--", "-500"])
     assert result.exit_code == 1
     assert "Error: Amount must be positive." in result.output
+
+def test_tr_from_credit_card_disallowed(clean_db):
+    runner.invoke(app, ["acc", "add", "wallet", "Cash", "debit", "10000"])
+    runner.invoke(app, ["acc", "add", "cc", "Visa", "credit", "500000"])
+    
+    result = runner.invoke(app, ["tr", "cc", "wallet", "3000"])
+    assert result.exit_code == 1
+    assert "Error: Transfers from credit cards are not allowed." in result.output
+
+def test_tr_to_credit_card_negative_balance_disallowed(clean_db):
+    runner.invoke(app, ["acc", "add", "wallet", "Cash", "debit", "10000"])
+    # Credit card starts with 0 balance (0 spent)
+    runner.invoke(app, ["acc", "add", "cc", "Visa", "credit", "0"])
+    runner.invoke(app, ["acc", "set-limit", "cc", "500000"])
+    
+    # Try to pay 3000 to credit card, which has 0 debt -> would leave negative balance (-3000)
+    result = runner.invoke(app, ["tr", "wallet", "cc", "3000"])
+    assert result.exit_code == 1
+    assert "Error: Transfer would leave credit card 'cc' with a negative balance." in result.output

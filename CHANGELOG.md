@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Credit Card Transfer Validation: Transfers from credit card accounts are now blocked in both the CLI and web interface.
+- Credit Card Balance Validation: Transfers to credit card accounts that would result in a negative balance (overpaying the card) are now blocked in both the CLI and web interface.
+
+### Fixed
+- Fixed a validation message in the React frontend where source and destination accounts being identical reported that they "must be identical".
+
 ## [0.3.0] - 2026-05-24
 
 ### Added
