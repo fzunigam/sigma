@@ -73,6 +73,16 @@ def test_web_server_full_flow(monkeypatch, tmp_path):
     # marked total = income (50000) - expense (20000) = 30000
     assert data["marked_total"] == 30000
     
+    # Verify transaction list returns marked attribute
+    response = client.get("/api/v1/transactions")
+    assert response.status_code == 200
+    txs = response.json()
+    assert len(txs) == 2
+    coffee_tx = next(t for t in txs if t["description"] == "Coffee Machine")
+    salary_tx = next(t for t in txs if t["description"] == "Salary Bonus")
+    assert coffee_tx["marked"] == 1
+    assert salary_tx["marked"] == 1
+    
     # 6. Log transfer
     response = client.post("/api/v1/transactions/transfer", json={
         "from_account": "bank",
@@ -81,6 +91,26 @@ def test_web_server_full_flow(monkeypatch, tmp_path):
     })
     assert response.status_code == 200
     
+    # Verify transfer marked status is 0
+    response = client.get("/api/v1/transactions")
+    assert response.status_code == 200
+    txs = response.json()
+    assert len(txs) == 3
+    transfer_tx = next(t for t in txs if t["type"] == "transfer")
+    assert transfer_tx["marked"] == 0
+    
+    # Verify year_month filter returns items for this month
+    from datetime import date
+    current_ym = date.today().isoformat()[:7]
+    response = client.get(f"/api/v1/transactions?year_month={current_ym}")
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+    
+    # Verify year_month filter returns 0 items for a different month
+    response = client.get("/api/v1/transactions?year_month=1999-12")
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
     # Verify balances updated: bank 140000, cc spent 10000
     # Net remains 130000
     response = client.get("/api/v1/status")

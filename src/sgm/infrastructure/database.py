@@ -546,7 +546,7 @@ def create_transfer(from_account: str, to_account: str, amount: int, created_at:
         return transfer_id
 
 
-def get_recent_logs(limit: int = 15, db_path: Path | None = None) -> list[dict]:
+def get_recent_logs(limit: int | None = 15, year_month: str | None = None, db_path: Path | None = None) -> list[dict]:
     if db_path is None:
         db_path = get_db_path()
         
@@ -554,33 +554,72 @@ def get_recent_logs(limit: int = 15, db_path: Path | None = None) -> list[dict]:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
-        cursor.execute("""
-            SELECT 
-                'm-' || substr(id, 1, 8) AS unique_id,
-                type,
-                amount,
-                description,
-                account_id,
-                created_at
-            FROM movements
-            WHERE deleted_at IS NULL
+        if year_month:
+            sql = """
+                SELECT 
+                    'm-' || substr(m.id, 1, 8) AS unique_id,
+                    m.type,
+                    m.amount,
+                    m.description,
+                    m.account_id,
+                    COALESCE(mm.marked, 0) AS marked,
+                    m.created_at
+                FROM movements m
+                LEFT JOIN movement_marks mm ON m.id = mm.movement_id
+                WHERE m.deleted_at IS NULL AND substr(m.created_at, 1, 7) = ?
+                
+                UNION ALL
+                
+                SELECT 
+                    't-' || substr(id, 1, 8) AS unique_id,
+                    'transfer' AS type,
+                    amount,
+                    from_account || ' -> ' || to_account AS description,
+                    '' AS account_id,
+                    0 AS marked,
+                    created_at
+                FROM transfers
+                WHERE deleted_at IS NULL AND substr(created_at, 1, 7) = ?
+                
+                ORDER BY created_at DESC
+            """
+            params = [year_month, year_month]
+        else:
+            sql = """
+                SELECT 
+                    'm-' || substr(m.id, 1, 8) AS unique_id,
+                    m.type,
+                    m.amount,
+                    m.description,
+                    m.account_id,
+                    COALESCE(mm.marked, 0) AS marked,
+                    m.created_at
+                FROM movements m
+                LEFT JOIN movement_marks mm ON m.id = mm.movement_id
+                WHERE m.deleted_at IS NULL
+                
+                UNION ALL
+                
+                SELECT 
+                    't-' || substr(id, 1, 8) AS unique_id,
+                    'transfer' AS type,
+                    amount,
+                    from_account || ' -> ' || to_account AS description,
+                    '' AS account_id,
+                    0 AS marked,
+                    created_at
+                FROM transfers
+                WHERE deleted_at IS NULL
+                
+                ORDER BY created_at DESC
+            """
+            params = []
             
-            UNION ALL
+        if limit is not None:
+            sql += " LIMIT ?"
+            params.append(limit)
             
-            SELECT 
-                't-' || substr(id, 1, 8) AS unique_id,
-                'transfer' AS type,
-                amount,
-                from_account || ' -> ' || to_account AS description,
-                '' AS account_id,
-                created_at
-            FROM transfers
-            WHERE deleted_at IS NULL
-            
-            ORDER BY created_at DESC
-            LIMIT ?
-        """, (limit,))
-        
+        cursor.execute(sql, tuple(params))
         return [dict(row) for row in cursor.fetchall()]
 
 

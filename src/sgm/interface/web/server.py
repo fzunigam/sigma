@@ -217,9 +217,10 @@ def delete_existing_account(account_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/transactions")
-def get_transactions(limit: int = 50):
+def get_transactions(limit: int | None = None, year_month: str | None = None):
     try:
-        return get_recent_logs(limit=limit, db_path=get_current_db_path())
+        limit_val = limit if limit is not None else (None if year_month else 50)
+        return get_recent_logs(limit=limit_val, year_month=year_month, db_path=get_current_db_path())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

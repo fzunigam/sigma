@@ -21,6 +21,23 @@ import {
 
 const API_URL = '';
 
+const YEARS_RANGE = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
+
+const MONTHS_LIST = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
 interface Account {
   id: string;
   name: string;
@@ -35,6 +52,7 @@ interface Transaction {
   amount: number;
   description: string;
   account_id: string;
+  marked: number;
   created_at: string;
 }
 
@@ -55,7 +73,7 @@ export default function Dashboard() {
   const [isDark, setIsDark] = useState(true);
 
   // Navigation Tab
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'accounts' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'accounts' | 'history' | 'movements'>('dashboard');
 
   // Core Data States
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -100,6 +118,12 @@ export default function Dashboard() {
 
   // Table confirmation ID
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Movements View Tab States
+  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [filteredMovements, setFilteredMovements] = useState<Transaction[]>([]);
+  const [isMovementsLoading, setIsMovementsLoading] = useState<boolean>(false);
 
   // Toggle Dark Mode Class
   useEffect(() => {
@@ -150,9 +174,47 @@ export default function Dashboard() {
     }
   };
 
+  const fetchMovements = async (year: string, month: string) => {
+    if (!year || !month) return;
+    setIsMovementsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/transactions?year_month=${year}-${month}`);
+      if (res.ok) {
+        setFilteredMovements(await res.json());
+      } else {
+        throw new Error('Failed to load movements for selected month.');
+      }
+    } catch (error: any) {
+      addToast('error', error.message || 'Error fetching movements.');
+    } finally {
+      setIsMovementsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    
+    // Initialize Year/Month selector to last month
+    const today = new Date();
+    let year = today.getFullYear();
+    let month = today.getMonth(); // 0-indexed
+    
+    if (month === 0) {
+      month = 11;
+      year -= 1;
+    } else {
+      month -= 1;
+    }
+    
+    setSelectedYear(String(year));
+    setSelectedMonth(String(month + 1).padStart(2, '0'));
   }, []);
+
+  useEffect(() => {
+    if (selectedYear && selectedMonth) {
+      fetchMovements(selectedYear, selectedMonth);
+    }
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     if (txType === 'expense' && defaults.expense_acc) {
@@ -289,6 +351,9 @@ export default function Dashboard() {
       addToast('success', 'Transaction deleted.');
       setDeleteConfirmId(null);
       fetchData(false);
+      if (selectedYear && selectedMonth) {
+        fetchMovements(selectedYear, selectedMonth);
+      }
     } catch (err: any) {
       addToast('error', err.message);
     }
@@ -453,6 +518,16 @@ export default function Dashboard() {
               <FileText size={16} />
               <span>Render History</span>
             </button>
+            <button
+              onClick={() => setActiveTab('movements')}
+              className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === 'movements'
+                ? 'bg-secondary text-secondary-foreground font-medium border border-border'
+                : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+                }`}
+            >
+              <ArrowLeftRight size={16} />
+              <span>Movements</span>
+            </button>
           </nav>
         </div>
 
@@ -611,6 +686,7 @@ export default function Dashboard() {
                               <th className="p-3">Type</th>
                               <th className="p-3">Description</th>
                               <th className="p-3">Account</th>
+                              <th className="p-3">Marked</th>
                               <th className="p-3 text-right">Amount</th>
                               <th className="p-3">Date</th>
                               <th className="p-3 text-center w-24">Action</th>
@@ -633,6 +709,21 @@ export default function Dashboard() {
                                 </td>
                                 <td className="p-3 font-medium text-foreground">{tx.description}</td>
                                 <td className="p-3 text-muted-foreground text-xs font-mono">{tx.account_id || '—'}</td>
+                                <td className="p-3">
+                                  {tx.type === 'transfer' ? (
+                                    <span className="text-[10px] text-muted-foreground/45 font-mono">—</span>
+                                  ) : tx.marked === 1 ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 border border-balanced/20 rounded font-semibold uppercase text-balanced bg-balanced/10">
+                                      <CheckCircle2 size={10} />
+                                      Yes
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 border border-border rounded font-semibold uppercase text-muted-foreground bg-muted/20">
+                                      <X size={10} />
+                                      No
+                                    </span>
+                                  )}
+                                </td>
                                 <td className={`p-3 text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-balanced' : tx.type === 'expense' ? 'text-unbalanced' : ''}`}>
                                   {tx.type === 'expense' ? '-' : ''}{formatCLP(tx.amount)}
                                 </td>
@@ -995,6 +1086,144 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB: MOVEMENTS LOG --- */}
+        {activeTab === 'movements' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Movements Log</h2>
+                <p className="text-xs text-muted-foreground mt-1">Audit and filter your financial transactions by month and year.</p>
+              </div>
+
+              {/* Month/Year Selectors */}
+              <div className="flex gap-3 items-center bg-card border border-border rounded-lg p-2.5">
+                <div>
+                  <label htmlFor="filter-month" className="sr-only">Month</label>
+                  <select
+                    id="filter-month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-background border border-border text-foreground rounded px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-ring w-36 cursor-pointer"
+                  >
+                    {MONTHS_LIST.map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-year" className="sr-only">Year</label>
+                  <select
+                    id="filter-year"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="bg-background border border-border text-foreground rounded px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-ring w-24 cursor-pointer"
+                  >
+                    {YEARS_RANGE.map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* List Card */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              {isMovementsLoading ? (
+                <div className="p-16 flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 size={16} className="animate-spin text-primary" />
+                  <span>Loading movements...</span>
+                </div>
+              ) : filteredMovements.length === 0 ? (
+                <div className="p-16 text-center text-sm text-muted-foreground">
+                  No movements registered for this period.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-semibold">
+                        <th className="p-3">Type</th>
+                        <th className="p-3">Description</th>
+                        <th className="p-3">Account</th>
+                        <th className="p-3">Marked</th>
+                        <th className="p-3 text-right">Amount</th>
+                        <th className="p-3">Date</th>
+                        <th className="p-3 text-center w-24">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMovements.map((tx) => (
+                        <tr key={tx.unique_id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                          <td className="p-3 font-mono text-xs">
+                            <span className="flex items-center gap-2">
+                              {tx.type === 'income' ? (
+                                <TrendingUp size={12} className="text-balanced" />
+                              ) : tx.type === 'expense' ? (
+                                <TrendingDown size={12} className="text-unbalanced" />
+                              ) : (
+                                <ArrowLeftRight size={12} className="text-muted-foreground" />
+                              )}
+                              <span className="capitalize">{tx.type}</span>
+                            </span>
+                          </td>
+                          <td className="p-3 font-medium text-foreground">{tx.description}</td>
+                          <td className="p-3 text-muted-foreground text-xs font-mono">{tx.account_id || '—'}</td>
+                          <td className="p-3">
+                            {tx.type === 'transfer' ? (
+                              <span className="text-[10px] text-muted-foreground/45 font-mono">—</span>
+                            ) : tx.marked === 1 ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 border border-balanced/20 rounded font-semibold uppercase text-balanced bg-balanced/10">
+                                <CheckCircle2 size={10} />
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 border border-border rounded font-semibold uppercase text-muted-foreground bg-muted/20">
+                                <X size={10} />
+                                No
+                              </span>
+                            )}
+                          </td>
+                          <td className={`p-3 text-right font-bold tabular-nums ${tx.type === 'income' ? 'text-balanced' : tx.type === 'expense' ? 'text-unbalanced' : ''}`}>
+                            {tx.type === 'expense' ? '-' : ''}{formatCLP(tx.amount)}
+                          </td>
+                          <td className="p-3 text-muted-foreground text-xs font-mono">{tx.created_at.substring(0, 10)}</td>
+                          <td className="p-3 text-center">
+                            {deleteConfirmId === tx.unique_id ? (
+                              <div className="flex gap-1 justify-center">
+                                <button
+                                  onClick={() => handleDeleteTransaction(tx.unique_id)}
+                                  className="bg-destructive text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded hover:opacity-90"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5 rounded border border-border"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(tx.unique_id)}
+                                aria-label={`Delete record ${tx.unique_id}`}
+                                className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

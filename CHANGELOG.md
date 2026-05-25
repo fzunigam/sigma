@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Web Dashboard "Marked" column: Added a column to the Chronological Activity table indicating if the transaction is marked for the next render cycle, placed directly after the Account column.
+- Backend API transaction status: Included the `marked` status attribute in the `/api/v1/transactions` API response for movements and transfers.
+- Movements Log Page: Added a "Movements" page to the web interface allowing filtering and auditing of all financial transactions (expenses, incomes, and transfers) by year and month. The page defaults to displaying the previous month's movements.
+- Backend date-based filtering: Extended the GET `/api/v1/transactions` endpoint and database `get_recent_logs` method to optionally filter transactions by year and month using a `year_month` string parameter (formatted as `YYYY-MM`).
+
 ## [0.3.4] - 2026-05-24
 
 ### Added
