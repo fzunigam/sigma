@@ -4,6 +4,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🎯 Short-Term (Next Steps)
 - [ ] Local backup of exportable data 
+- [ ] Custom path for database
 
 ## 🚀 Mid-Term (Upcoming Features)
 - [ ] Enhanced data visualization in the CLI

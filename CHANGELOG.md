@@ -6,6 +6,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Web design guidelines: Added [design-guidelines.md](file:///Users/fzunigam/dev/personal/sigma/docs/conventions/design-guidelines.md) in the conventions directory and updated [AGENTS.md](file:///Users/fzunigam/dev/personal/sigma/AGENTS.md) to ensure all future web interface additions or changes adhere to these brand and tech guidelines.
 - Web Dashboard "Marked" column: Added a column to the Chronological Activity table indicating if the transaction is marked for the next render cycle, placed directly after the Account column.
 - Backend API transaction status: Included the `marked` status attribute in the `/api/v1/transactions` API response for movements and transfers.
 - Movements Log Page: Added a "Movements" page to the web interface allowing filtering and auditing of all financial transactions (expenses, incomes, and transfers) by year and month. The page defaults to displaying the previous month's movements.
@@ -18,7 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - CI Workflow Integration: Added automatic Next.js frontend compilation to the Publish to PyPI release workflow, ensuring Python wheels are pre-packaged with frontend static files.
 - Makefile compilation: Added conditional frontend compilation to `make install` if `npm` is present.
 
-## [0.3.3] - 2026-05-24
+## [0.3.3] - 2026-05-24 [YANKED]
 
 ### Added
 - Auto-compile Frontend: The `sgm web` command now automatically compiles the frontend static dashboard (using `npm install` and `npm run build`) if the static assets are missing, ensuring a seamless startup experience.

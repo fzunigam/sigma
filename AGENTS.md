@@ -12,6 +12,7 @@ Sigma is a CLI-first personal finance tracker focused on fast transaction loggin
 - Coding conventions: `docs/conventions/`
 - Decision log: `docs/decisions/`
 - Implementation plans: `docs/plans/`
+- Web design guidelines: `docs/conventions/design-guidelines.md` (must be followed when introducing or changing any web/user interface)
 
 ## Commands
 - Install dev setup: `python3.12 -m pip install -e ".[dev,telegram]"`
