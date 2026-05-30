@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-05-30
+
 ### Added
 - Web design guidelines: Added [design-guidelines.md](file:///Users/fzunigam/dev/personal/sigma/docs/conventions/design-guidelines.md) in the conventions directory and updated [AGENTS.md](file:///Users/fzunigam/dev/personal/sigma/AGENTS.md) to ensure all future web interface additions or changes adhere to these brand and tech guidelines.
 - Web Dashboard "Marked" column: Added a column to the Chronological Activity table indicating if the transaction is marked for the next render cycle, placed directly after the Account column.
