@@ -52,15 +52,3 @@ def test_config_invalid_account(tmp_path: Path, monkeypatch) -> None:
     assert "wallet" in content
 
 
-def test_config_helper_functions() -> None:
-    from sgm.cli import mask_token, format_allowed_users
-
-    # Verify masking behavior
-    assert mask_token("") == "Not configured"
-    assert mask_token("short") == "****"
-    assert mask_token("1234567890abcdef") == "123456...cdef"
-
-    # Verify allowed users formatting
-    assert format_allowed_users([]) == "None (bot ignores messages)"
-    assert format_allowed_users([123, 456]) == "123, 456"
-

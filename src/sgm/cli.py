@@ -33,13 +33,7 @@ acc_app = typer.Typer(
 )
 app.add_typer(acc_app, name="acc")
 
-bot_app = typer.Typer(
-    help="Telegram Bot configuration and control",
-    add_completion=False,
-    add_help_option=False,
-    rich_markup_mode=None
-)
-app.add_typer(bot_app, name="bot")
+
 
 
 
@@ -215,20 +209,7 @@ def config_help_callback(ctx: typer.Context, value: bool) -> None:
         print("Opens the sgm global settings (default accounts).")
         raise typer.Exit()
 
-def mask_token(token: str) -> str:
-    """Mask Telegram bot token for secure display."""
-    if not token:
-        return "Not configured"
-    if len(token) <= 10:
-        return "****"
-    return f"{token[:6]}...{token[-4:]}"
 
-
-def format_allowed_users(users: list) -> str:
-    """Format the list of allowed Telegram user IDs."""
-    if not users:
-        return "None (bot ignores messages)"
-    return ", ".join(map(str, users))
 
 
 def get_key() -> str:
@@ -382,12 +363,9 @@ def config_cmd(
     """Opens the sgm global settings configuration wizard."""
     config_data = load_config()
     defaults = config_data.get("defaults", {})
-    telegram_cfg = config_data.get("telegram", {})
 
     current_inc = defaults.get("income_acc", "")
     current_exp = defaults.get("expense_acc", "")
-    current_token = telegram_cfg.get("token", "")
-    current_users = telegram_cfg.get("allowed_users", [])
 
     # Check if we are running in an interactive terminal
     if not sys.stdin.isatty():
@@ -423,8 +401,6 @@ def config_cmd(
         menu_options = [
             f"Default Income Account  (Current: \x1b[36m{current_inc or 'Not set'}\x1b[0m)",
             f"Default Expense Account (Current: \x1b[36m{current_exp or 'Not set'}\x1b[0m)",
-            f"Telegram Bot Token      (Current: \x1b[36m{mask_token(current_token)}\x1b[0m)",
-            f"Telegram Allowed Users  (Current: \x1b[36m{format_allowed_users(current_users)}\x1b[0m)",
         ]
 
         choice = run_interactive_menu(menu_options, main_header, initial_idx=selected_main_idx)
@@ -521,123 +497,7 @@ def config_cmd(
                 sys.stdout.write("\x1b[3A\r\x1b[J")
                 sys.stdout.flush()
 
-        elif choice == 2:
-            print("\n\x1b[1;36m--- Configure Telegram Bot Token ---\x1b[0m")
-            print(f"Current token: \x1b[36m{mask_token(current_token)}\x1b[0m")
-            print("Enter new token (leave empty and press Enter to clear, Esc/Q to cancel):")
 
-            prompt_str = "\x1b[1;36mToken > \x1b[0m"
-            new_token = interactive_input(prompt_str, default=current_token)
-
-            if new_token is not None:
-                current_token = new_token.strip()
-                if "telegram" not in config_data:
-                    config_data["telegram"] = {}
-                config_data["telegram"]["token"] = current_token
-                save_config(config_data)
-
-                success_msg = "\n\x1b[1;32m✓ Telegram Bot Token updated.\x1b[0m\n"
-                print(success_msg)
-                import time
-                time.sleep(0.8)
-                sys.stdout.write("\x1b[8A\r\x1b[J")
-                sys.stdout.flush()
-            else:
-                sys.stdout.write("\x1b[5A\r\x1b[J")
-                sys.stdout.flush()
-
-        elif choice == 3:
-            sub_idx = 0
-            while True:
-                user_list_str = format_allowed_users(current_users)
-                sub_header = (
-                    f"\n\x1b[1;36m--- Telegram Allowed Users ---\x1b[0m\n"
-                    f"Current allowed IDs: \x1b[36m{user_list_str}\x1b[0m\n"
-                    f"Use Up/Down arrows to navigate, Enter to select, Esc/Q to return.\n"
-                )
-                sub_options = [
-                    "Add User ID",
-                    "Remove User ID",
-                    "Back to Main Menu"
-                ]
-
-                sub_choice = run_interactive_menu(sub_options, sub_header, initial_idx=sub_idx)
-                if sub_choice is None or sub_choice == 2:
-                    break
-
-                sub_idx = sub_choice
-
-                if sub_choice == 0:
-                    print("\n\x1b[1;36m--- Add Allowed Telegram User ID ---\x1b[0m")
-                    print("Enter Telegram User ID (numbers only, Esc/Q to cancel):")
-
-                    prompt_str = "\x1b[1;36mUser ID > \x1b[0m"
-                    new_uid_str = interactive_input(prompt_str, default="")
-                    if new_uid_str is not None:
-                        new_uid_str = new_uid_str.strip()
-                        if not new_uid_str:
-                            sys.stdout.write("\x1b[4A\r\x1b[J")
-                            sys.stdout.flush()
-                            continue
-
-                        try:
-                            uid = int(new_uid_str)
-                            if uid in current_users:
-                                print("\n\x1b[1;33mWarning: User ID already allowed.\x1b[0m\n")
-                                import time
-                                time.sleep(1.0)
-                                sys.stdout.write("\x1b[7A\r\x1b[J")
-                                sys.stdout.flush()
-                            else:
-                                current_users.append(uid)
-                                if "telegram" not in config_data:
-                                    config_data["telegram"] = {}
-                                config_data["telegram"]["allowed_users"] = current_users
-                                save_config(config_data)
-
-                                print(f"\n\x1b[1;32m✓ User ID {uid} added.\x1b[0m\n")
-                                import time
-                                time.sleep(0.8)
-                                sys.stdout.write("\x1b[7A\r\x1b[J")
-                                sys.stdout.flush()
-                        except ValueError:
-                            print("\n\x1b[1;31mError: User ID must be a valid integer.\x1b[0m\n")
-                            import time
-                            time.sleep(1.0)
-                            sys.stdout.write("\x1b[7A\r\x1b[J")
-                            sys.stdout.flush()
-                    else:
-                        sys.stdout.write("\x1b[4A\r\x1b[J")
-                        sys.stdout.flush()
-
-                elif sub_choice == 1:
-                    if not current_users:
-                        print("\n\x1b[1;31mError: No user IDs configured to remove.\x1b[0m")
-                        print("Press any key to return...")
-                        get_key()
-                        sys.stdout.write("\x1b[3A\r\x1b[J")
-                        sys.stdout.flush()
-                        continue
-
-                    remove_options = [str(uid) for uid in current_users] + ["(Cancel)"]
-                    remove_header = (
-                        "\n\x1b[1;36m--- Select User ID to Remove ---\x1b[0m\n"
-                        "Use Up/Down arrows to navigate, Enter to select, Esc/Q to cancel.\n"
-                    )
-
-                    rem_sel = run_interactive_menu(remove_options, remove_header, initial_idx=0)
-                    if rem_sel is not None and rem_sel < len(current_users):
-                        removed_uid = current_users.pop(rem_sel)
-                        if "telegram" not in config_data:
-                            config_data["telegram"] = {}
-                        config_data["telegram"]["allowed_users"] = current_users
-                        save_config(config_data)
-
-                        print(f"\n\x1b[1;32m✓ User ID {removed_uid} removed.\x1b[0m\n")
-                        import time
-                        time.sleep(0.8)
-                        sys.stdout.write("\x1b[3A\r\x1b[J")
-                        sys.stdout.flush()
 
 
 def _resolve_account(acc_id: str | None, tx_type: str | None = None) -> str:
@@ -1188,96 +1048,7 @@ def acc_set_limit(
     typer.echo(f"Credit limit for '{acc_id}' updated to {limit} successfully!")
 
 
-def bot_setup_help_callback(ctx: typer.Context, value: bool) -> None:
-    if value:
-        print(f"Usage: {ctx.command_path}")
-        print("Interactively configures the Telegram Bot integration.")
-        raise typer.Exit()
 
-@bot_app.command("setup")
-def bot_setup(
-    ctx: typer.Context,
-    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=bot_setup_help_callback)
-) -> None:
-    """Interactively configures the Telegram Bot integration."""
-    config_data = load_config()
-    telegram_cfg = config_data.get("telegram", {})
-    
-    current_token = telegram_cfg.get("token", "")
-    current_users = telegram_cfg.get("allowed_users", [])
-    current_users_str = ", ".join(map(str, current_users))
-    
-    typer.echo("--- Sigma Telegram Bot Setup ---")
-    token = typer.prompt("Telegram Bot Token (from @BotFather)", default=current_token, type=str)
-    
-    users_input = typer.prompt("Allowed Telegram User IDs (comma-separated)", default=current_users_str, type=str)
-    allowed_users = []
-    if users_input.strip():
-        for uid_str in users_input.split(","):
-            uid_str = uid_str.strip()
-            if uid_str:
-                try:
-                    allowed_users.append(int(uid_str))
-                except ValueError:
-                    typer.echo(f"Warning: '{uid_str}' is not a valid integer ID. Skipping.", err=True)
-                    
-    if "telegram" not in config_data:
-        config_data["telegram"] = {}
-        
-    config_data["telegram"]["token"] = token
-    config_data["telegram"]["allowed_users"] = allowed_users
-    
-    save_config(config_data)
-    typer.echo("Telegram configuration saved successfully.")
-
-
-def bot_run_help_callback(ctx: typer.Context, value: bool) -> None:
-    if value:
-        print(f"Usage: {ctx.command_path}")
-        print("Starts the Telegram Bot event loop (blocking).")
-        raise typer.Exit()
-
-@bot_app.command("run")
-def bot_run(
-    ctx: typer.Context,
-    help: bool = typer.Option(False, "--help", "-h", is_eager=True, callback=bot_run_help_callback)
-) -> None:
-    """Starts the Telegram Bot event loop."""
-    config_data = load_config()
-    telegram_cfg = config_data.get("telegram", {})
-    token = telegram_cfg.get("token", "")
-    allowed_users = telegram_cfg.get("allowed_users", [])
-    
-    if not token:
-        typer.echo("Error: Telegram bot token is not configured.", err=True)
-        typer.echo("Please run 'sgm bot setup' first.", err=True)
-        raise typer.Exit(1)
-        
-    if not allowed_users:
-        typer.echo("Warning: No allowed Telegram users configured.", err=True)
-        typer.echo("The bot will ignore all messages.", err=True)
-        
-    typer.echo("Initializing database...")
-    init_db()
-    
-    from sgm.infrastructure.database import get_db_path
-    db_path = get_db_path()
-    try:
-        with sqlite3.connect(db_path) as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
-        typer.echo("Database WAL mode enabled for concurrent write safety.")
-    except Exception as e:
-        typer.echo(f"Warning: Could not enable WAL mode: {e}", err=True)
-
-    typer.echo("Starting Telegram Bot...")
-    from sgm.telegram_bot import run_telegram_bot
-    try:
-        run_telegram_bot(token, allowed_users)
-    except KeyboardInterrupt:
-        typer.echo("\nStopping Telegram Bot.")
-    except Exception as e:
-        typer.echo(f"Error starting Telegram Bot: {e}", err=True)
-        raise typer.Exit(1)
 
 
 def web_help_callback(ctx: typer.Context, value: bool) -> None:
@@ -1391,3 +1162,102 @@ def web_cmd(
     except Exception as e:
         typer.echo(f"Error starting web server: {e}", err=True)
         raise typer.Exit(1)
+
+
+def app_help_callback(ctx: typer.Context, value: bool) -> None:
+    if value:
+        print(f"Usage: {ctx.command_path} [OPTIONS]")
+        print("Launch the Sigma desktop app in a native window.")
+        raise typer.Exit()
+
+
+@app.command("app")
+def app_cmd(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Bind host address"),
+    port: int = typer.Option(8000, "--port", "-p", help="Bind port number"),
+    help: bool = typer.Option(False, "--help", is_eager=True, callback=app_help_callback)
+) -> None:
+    """Launch the Sigma desktop app in a native window."""
+    if not is_configured():
+        typer.echo("Error: Sigma configuration file not found.", err=True)
+        typer.echo("Please run 'sgm start' to initialize configuration.", err=True)
+        raise typer.Exit(1)
+
+    init_db()
+
+    # Verify static files exist
+    static_dir = os.path.join(os.path.dirname(__file__), "interface", "web", "static")
+    index_file = os.path.join(static_dir, "index.html")
+    if not os.path.exists(index_file):
+        web_src_dir = find_web_src_dir()
+        if web_src_dir and os.path.exists(os.path.join(web_src_dir, "package.json")) and not os.environ.get("PYTEST_CURRENT_TEST"):
+            typer.echo("Web dashboard static assets not found. Compiling frontend dashboard automatically...", err=True)
+            import shutil
+            import subprocess
+            
+            npm_cmd = shutil.which("npm")
+            if not npm_cmd:
+                typer.echo("Error: 'npm' command not found. Cannot compile frontend dashboard automatically.", err=True)
+                typer.echo("Please install Node.js/npm and run 'npm run build' in the web/ directory.", err=True)
+                raise typer.Exit(1)
+            
+            try:
+                node_modules_dir = os.path.join(web_src_dir, "node_modules")
+                if not os.path.exists(node_modules_dir):
+                    typer.echo("Installing web dependencies...", err=True)
+                    subprocess.run([npm_cmd, "install"], cwd=web_src_dir, check=True)
+                
+                typer.echo("Building web dashboard...", err=True)
+                subprocess.run([npm_cmd, "run", "build"], cwd=web_src_dir, check=True)
+                
+                # Copy built assets to the running static_dir if they are different
+                build_out_dir = os.path.abspath(os.path.join(web_src_dir, "..", "src", "sgm", "interface", "web", "static"))
+                running_static_dir = os.path.abspath(static_dir)
+                if build_out_dir != running_static_dir:
+                    typer.echo("Copying built assets to running server directory...", err=True)
+                    if os.path.exists(running_static_dir):
+                        shutil.rmtree(running_static_dir)
+                    shutil.copytree(build_out_dir, running_static_dir)
+                
+                typer.echo("Web dashboard compiled successfully!", err=True)
+            except subprocess.CalledProcessError as e:
+                typer.echo(f"Error compiling web dashboard: {e}", err=True)
+                raise typer.Exit(1)
+            except PermissionError as pe:
+                typer.echo(f"Warning: Permission denied when copying assets to running server directory: {pe}", err=True)
+        else:
+            typer.echo("Warning: Web dashboard static assets (index.html) not found.", err=True)
+            typer.echo("The server will run, but you should compile static files using 'cd web && npm run build'.", err=True)
+
+    try:
+        import webview
+    except ImportError:
+        typer.echo("Error: 'pywebview' library is not installed.", err=True)
+        typer.echo("Please install desktop support by running:", err=True)
+        typer.echo("  pip install \"sigma-finance[desktop]\"", err=True)
+        raise typer.Exit(1)
+
+    import uvicorn
+    import threading
+    from sgm.interface.web.server import app as web_app
+    from sgm.infrastructure.database import get_db_path
+
+    web_app.state.db_path = get_db_path()
+
+    def start_server():
+        uvicorn.run(web_app, host=host, port=port, log_level="warning")
+
+    server_thread = threading.Thread(target=start_server, daemon=True)
+    server_thread.start()
+
+    typer.echo(f"Starting native desktop application window pointing to http://{host}:{port}")
+    webview.create_window(
+        title="Sigma Personal Finance",
+        url=f"http://{host}:{port}",
+        width=1280,
+        height=800,
+        resizable=True,
+        min_size=(800, 600)
+    )
+    webview.start()

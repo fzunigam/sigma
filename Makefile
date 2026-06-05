@@ -10,7 +10,7 @@ install:
 	else \
 		echo "Warning: npm not found. Skipping web dashboard compilation."; \
 	fi
-	python3 -m pip install -e ".[dev,telegram]"
+	python3 -m pip install -e ".[dev,desktop]"
 
 test:
 	python3 -m pytest -q

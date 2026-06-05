@@ -36,8 +36,8 @@ dev = [
   "twine>=6.1.0",
   "httpx>=0.27.0",
 ]
-telegram = [
-  "python-telegram-bot>=21.0",
+desktop = [
+  "pywebview>=5.1",
 ]
 
 

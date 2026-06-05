@@ -153,22 +153,7 @@ Deletes an account. **Safety feature**: History is preserved by moving it to a h
 
 ---
 
-## Telegram Bot Integration
-
-### `bot setup`
-Interactively configures your Telegram Bot API token and authorized User IDs.
-- **Syntax**: `sgm bot setup`
-
-### `bot run`
-Starts the blocking Telegram Bot event loop.
-- **Syntax**: `sgm bot run`
-- **Details**:
-    - Automatically enables SQLite Write-Ahead Logging (WAL) for safe concurrent database writes between the bot and the CLI.
-    - Blocking process. Press `Ctrl+C` to terminate.
-
----
-
-## Local Web Dashboard
+## Local Web Dashboard / Desktop App
 
 ### `web`
 Starts the local web server and launches the interactive dashboard in your browser.
@@ -184,6 +169,17 @@ Starts the local web server and launches the interactive dashboard in your brows
     ```bash
     sgm web --port 8080
     ```
+
+### `app`
+Launches the web dashboard in a native, desktop window using `pywebview`.
+- **Syntax**: `sgm app [--host <address>] [--port <port>]`
+- **Options**:
+    - `--host`, `-h`: The IP address to bind the local server (default: `127.0.0.1`).
+    - `--port`, `-p`: The port to run the web server (default: `8000`).
+- **Details**:
+    - Starts the local FastAPI server on a background thread.
+    - Opens a native Cocoa `WKWebView` window pointing to the server.
+    - Requires installing the `desktop` extra (e.g. `pip install "sigma-finance[desktop]"`).
 
 ---
 

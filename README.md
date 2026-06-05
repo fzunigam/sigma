@@ -24,7 +24,7 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 - 📊 **Rich Interface**: Beautifully formatted tables powered by [Rich](https://github.com/Textualize/rich).
 - 📜 **Audit Log**: Full history of movements and render snapshots.
 - 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`).
-- 🤖 **Telegram Bot**: Optional integration to securely interact with Sigma via Telegram using standard CLI commands.
+- 🖥️ **Desktop App**: Native macOS window container for the web client (`sgm app`).
 
 ## Installation
 
@@ -34,8 +34,8 @@ Sigma requires **Python 3.10** or higher.
 # Core CLI only
 pip install sigma-finance
 
-# With Telegram Bot integration
-pip install "sigma-finance[telegram]"
+# With Desktop App support (macOS)
+pip install "sigma-finance[desktop]"
 ```
 
 ### First-run Setup
@@ -81,16 +81,13 @@ To launch the local web interface:
 sgm web         # Launches the local dashboard in your browser
 ```
 
-### Telegram Bot
+### Desktop App
 
-To run Sigma as a background bot, configure your credentials and launch the daemon:
+To run Sigma in a native macOS application window instead of your web browser, install the desktop package and launch it:
 
 ```bash
-sgm bot setup   # Configure bot token and allowed users
-sgm bot run     # Launch the daemon
+sgm app
 ```
-
-*For Docker, systemd, or launchd setup details, see the [Telegram Bot Deployment Guide](docs/plans/telegram-deployment.md).*
 
 ### Command Reference
 
@@ -102,10 +99,9 @@ sgm bot run     # Launch the daemon
 | `sgm acc list` | List all accounts and their details. |
 | `sgm config` | Configure default accounts for faster logging. |
 | `sgm web` | Start the local web dashboard server. |
+| `sgm app` | Launch the native macOS desktop app window. |
 | `sgm export` | Export all data to a ZIP file with CSV tables. |
 | `sgm delete <id>` | Remove a record by its unique ID (e.g., `m-1`). |
-| `sgm bot setup` | Configure the Telegram Bot credentials. |
-| `sgm bot run` | Start the Telegram Bot event loop. |
 
 For a complete reference of all available commands and their arguments, please refer to the [Detailed CLI Usage Guide](docs/cli-usage.md).
 
@@ -132,7 +128,6 @@ make lint
 
 - `src/sgm/` — Core Python package
     - `cli.py` — Typer-based CLI entrypoints
-    - `telegram_bot.py` — Telegram bot integration
     - `infrastructure/` — database, persistence and config management (`database.py`, `user_config.py`)
     - `interface/` — terminal UI, banners and web server glue
     - `interface/web/` — lightweight web server and static assets for the dashboard

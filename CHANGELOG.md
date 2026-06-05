@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Native macOS desktop app support: Added a new `sgm app` command to launch the web dashboard inside a native Cocoa WKWebView window wrapper using `pywebview` (compatible with macOS Monterey and newer). Added the `[desktop]` packaging extra.
+
+### Removed
+- Removed the Telegram bot integration (`sgm bot setup`, `sgm bot run`) and its associated code, configurations, docker files, tests, and deployment guides to simplify the codebase and project structure.
+
 ## [0.3.5] - 2026-05-30
 
 ### Added

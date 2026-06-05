@@ -25,7 +25,7 @@ Sigma v1 uses a layered monolith:
 ## Boundaries and Constraints (v1)
 - Single local user CLI.
 - Manual rendering only (no scheduler in v1).
-- No Telegram implementation yet (roadmap item).
+- Native desktop app window support via pywebview.
 - No multi-currency, categories, or tags in v1.
 
 ## Release and repository automation
