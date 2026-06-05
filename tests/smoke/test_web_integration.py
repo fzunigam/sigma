@@ -7,9 +7,27 @@ def test_web_command_not_configured(monkeypatch, tmp_path):
     # Mock is_configured to return False
     monkeypatch.setattr("sgm.cli.is_configured", lambda: False)
     
-    result = runner.invoke(app, ["web"])
-    assert result.exit_code == 1
-    assert "Error: Sigma configuration file not found" in result.output
+    # Mock save_config and init_db to check they are called during initialization
+    save_called = False
+    def mock_save_config(config_data=None):
+        nonlocal save_called
+        save_called = True
+        
+    monkeypatch.setattr("sgm.cli.save_config", mock_save_config)
+    monkeypatch.setattr("sgm.cli.init_db", lambda *args, **kwargs: None)
+    
+    # Mock uvicorn.run to prevent it from actually running
+    uvicorn_called = False
+    def mock_uvicorn_run(*args, **kwargs):
+        nonlocal uvicorn_called
+        uvicorn_called = True
+        return
+    monkeypatch.setattr("uvicorn.run", mock_uvicorn_run)
+    
+    result = runner.invoke(app, ["web", "--no-browser"])
+    assert result.exit_code == 0
+    assert save_called
+    assert uvicorn_called
 
 def test_web_command_running(monkeypatch, tmp_path):
     # Mock is_configured to return True

@@ -38,6 +38,23 @@ app.add_typer(acc_app, name="acc")
 
 
 
+def ensure_initialized() -> None:
+    """Ensure that the database is initialized and a default config exists."""
+    if not is_configured():
+        init_db()
+        try:
+            create_account("wallet", "Cash", "debit", 0)
+        except ValueError:
+            pass
+        config_data = {
+            "defaults": {
+                "income_account": "wallet",
+                "expense_account": "wallet"
+            }
+        }
+        save_config(config_data)
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -1198,11 +1215,7 @@ def web_cmd(
     help: bool = typer.Option(False, "--help", is_eager=True, callback=web_help_callback)
 ) -> None:
     """Start the local web dashboard server."""
-    if not is_configured():
-        typer.echo("Error: Sigma configuration file not found.", err=True)
-        typer.echo("Please run 'sgm start' to initialize configuration.", err=True)
-        raise typer.Exit(1)
-
+    ensure_initialized()
     init_db()
 
     # Verify static files exist
@@ -1290,11 +1303,7 @@ def app_cmd(
     help: bool = typer.Option(False, "--help", is_eager=True, callback=app_help_callback)
 ) -> None:
     """Launch the Sigma desktop app in a native window."""
-    if not is_configured():
-        typer.echo("Error: Sigma configuration file not found.", err=True)
-        typer.echo("Please run 'sgm start' to initialize configuration.", err=True)
-        raise typer.Exit(1)
-
+    ensure_initialized()
     init_db()
 
     # Verify static files exist
