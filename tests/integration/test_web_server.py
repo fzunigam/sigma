@@ -164,3 +164,69 @@ def test_web_transfer_credit_card_restrictions(monkeypatch, tmp_path):
     })
     assert response.status_code == 400
     assert "Transfer would leave credit card 'cc' with a negative balance." in response.json()["detail"]
+
+def test_backup_endpoints(monkeypatch, tmp_path):
+    from sgm.infrastructure.database import init_db
+    from fastapi.testclient import TestClient
+    import io
+    import zipfile
+    
+    db_file = tmp_path / "test_backup.db"
+    monkeypatch.setattr("sgm.infrastructure.database.get_db_path", lambda: db_file)
+    monkeypatch.setattr("sgm.interface.web.server.get_current_db_path", lambda: db_file)
+    init_db(db_file)
+    
+    from sgm.interface.web.server import app
+    client = TestClient(app)
+    
+    # Create an account
+    client.post("/api/v1/accounts", json={"id": "wallet", "name": "Cash", "type": "debit", "initial_balance": 5000})
+    
+    # 1. Test Export Endpoint
+    response = client.get("/api/v1/backup/export")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
+    assert "attachment; filename=" in response.headers["content-disposition"]
+    
+    # Read the returned ZIP to verify content
+    zip_bytes = io.BytesIO(response.content)
+    assert zipfile.is_zipfile(zip_bytes)
+    with zipfile.ZipFile(zip_bytes) as z:
+        namelist = z.namelist()
+        assert "accounts.csv" in namelist
+        assert "movements.csv" in namelist
+        
+    # 2. Test Reset Endpoint
+    response = client.post("/api/v1/backup/reset")
+    assert response.status_code == 200
+    assert response.json() == {"status": "success"}
+    
+    # Verify account was deleted but DB/config remains initialized via fallback
+    response = client.get("/api/v1/accounts")
+    assert response.status_code == 200
+    assert len(response.json()) == 1  # Should contain only default 'wallet' account
+    
+    # 3. Test Import Endpoint
+    # We will import the exported ZIP
+    zip_bytes.seek(0)
+    files = {"file": ("backup.zip", zip_bytes, "application/zip")}
+    response = client.post("/api/v1/backup/import", files=files)
+    assert response.status_code == 200
+    assert response.json() == {"status": "success"}
+    
+    # Check that imported account matches the original
+    response = client.get("/api/v1/accounts")
+    assert len(response.json()) == 1
+    assert response.json()[0]["id"] == "wallet"
+
+def test_version_endpoints(monkeypatch):
+    from fastapi.testclient import TestClient
+    from sgm.interface.web.server import app
+    client = TestClient(app)
+    
+    # Test version endpoint
+    response = client.get("/api/v1/version")
+    assert response.status_code == 200
+    data = response.json()
+    assert "version" in data
+    assert "latest_version" in data

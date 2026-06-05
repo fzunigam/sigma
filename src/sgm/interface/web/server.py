@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.exception_handlers import http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
@@ -356,6 +356,125 @@ def render_history(limit: int = 50):
         return get_render_history(limit=limit, db_path=get_current_db_path())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/backup/export")
+def export_backup():
+    try:
+        import io
+        import csv
+        import zipfile
+        from datetime import datetime
+        from sgm.infrastructure.database import get_all_table_data
+        
+        db_path = get_current_db_path()
+        all_data = get_all_table_data(db_path=db_path)
+        
+        # Write files to an in-memory ZIP archive
+        zip_io = io.BytesIO()
+        with zipfile.ZipFile(zip_io, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for table_name, rows in all_data.items():
+                csv_io = io.StringIO()
+                if rows:
+                    fieldnames = rows[0].keys()
+                    writer = csv.DictWriter(csv_io, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(rows)
+                else:
+                    # Write empty file
+                    pass
+                
+                zipf.writestr(f"{table_name}.csv", csv_io.getvalue())
+        
+        zip_io.seek(0)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"sigma_export_{timestamp}.zip"
+        
+        return StreamingResponse(
+            zip_io,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/backup/import")
+async def import_backup(file: UploadFile = File(...)):
+    try:
+        from sgm.infrastructure.database import import_from_csvs
+        import shutil
+        import tempfile
+        import uuid
+        
+        db_path = get_current_db_path()
+        
+        # Save uploaded file to a temporary location
+        temp_zip = Path(tempfile.gettempdir()) / f"upload_{uuid.uuid4()}.zip"
+        try:
+            with temp_zip.open("wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+                
+            import_from_csvs(temp_zip, db_path=db_path)
+        finally:
+            if temp_zip.exists():
+                temp_zip.unlink()
+                
+        return {"status": "success"}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except FileNotFoundError as fnf:
+        raise HTTPException(status_code=400, detail=str(fnf))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/backup/reset")
+def reset_database():
+    try:
+        from sgm.infrastructure.user_config import config_path
+        from sgm.cli import ensure_initialized
+        from sgm.infrastructure.database import get_db_path
+        
+        db_path = get_current_db_path() or get_db_path()
+        if db_path.exists():
+            db_path.unlink()
+            
+        cfg_path = config_path()
+        if cfg_path.exists():
+            cfg_path.unlink()
+            
+        # Re-initialize to a clean, empty state so the server continues running
+        ensure_initialized()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/version")
+def get_app_version():
+    from sgm import __version__
+    import urllib.request
+    import json
+    import sys
+    
+    repo = "fzunigam/sigma"
+    api_url = f"https://api.github.com/repos/{repo}/releases/latest"
+    latest_version = None
+    try:
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Sigma-App"})
+        # Fetch with a short timeout to prevent blocking the UI
+        with urllib.request.urlopen(req, timeout=3.0) as response:
+            data = json.loads(response.read().decode())
+            latest_version = data["tag_name"].lstrip("v")
+    except Exception:
+        # Silently fallback to None if offline or request fails
+        pass
+        
+    return {
+        "version": __version__,
+        "latest_version": latest_version,
+        "is_frozen": getattr(sys, "frozen", False),
+        "platform": sys.platform
+    }
 
 # Setup Static Files serving and SPA fallback routing
 static_dir = os.path.join(os.path.dirname(__file__), "static")
