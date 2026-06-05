@@ -1,7 +1,7 @@
-.PHONY: help install test lint smoke
+.PHONY: help install test lint smoke app
 
 help:
-	@echo "install test lint smoke"
+	@echo "install test lint smoke app"
 
 install:
 	@if command -v npm >/dev/null 2>&1; then \
@@ -20,3 +20,6 @@ lint:
 
 smoke:
 	python3 -m pytest tests/smoke -q
+
+app:
+	bash scripts/build_macos_app.sh
