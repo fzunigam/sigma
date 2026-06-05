@@ -8,7 +8,7 @@ Sigma v1 uses a layered monolith:
 - **Domain layer**: entities and business invariants (accounts, movements, transfers, render snapshot).
 - **Application layer**: use cases that orchestrate domain rules.
 - **Infrastructure layer**: SQLite persistence, filesystem/config access, and runtime adapters.
-- **CLI interface layer**: Typer commands and Rich terminal rendering.
+- **Interface layer**: Typer CLI commands, Rich terminal rendering, and a Cocoa WKWebView desktop application (both bundled inside a unified macOS App container).
 
 ## Data Storage
 - SQLite database at `~/.local/share/sgm/sigma.db` by default.

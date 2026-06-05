@@ -824,83 +824,113 @@ def update(
     except Exception as e:
         typer.echo(f"Warning: Could not fetch latest release info from GitHub: {e}", err=True)
     
-    # 1. Update CLI package
-    typer.echo("Upgrading CLI and desktop dependencies...")
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "sigma-finance[desktop]"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        if "Requirement already satisfied" in result.stdout and "sigma-finance" in result.stdout and "Successfully installed" not in result.stdout:
-            typer.echo(f"sgm CLI is already at the latest python version (v{__version__}).")
-            cli_updated = False
-        else:
-            match = re.search(r"sigma-finance-([\w\.-]+)", result.stdout)
-            cli_updated = True
-            if match:
-                typer.echo(f"✓ CLI upgrade complete! New version: v{match.group(1)}")
+    is_frozen = getattr(sys, "frozen", False)
+    cli_updated = False
+
+    # 1. Update CLI package (only if not frozen)
+    if is_frozen:
+        typer.echo("Running from a compiled standalone application bundle. Skipping pip package upgrade.")
+    else:
+        typer.echo("Upgrading CLI and desktop dependencies...")
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "sigma-finance[desktop]"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if "Requirement already satisfied" in result.stdout and "sigma-finance" in result.stdout and "Successfully installed" not in result.stdout:
+                typer.echo(f"sgm CLI is already at the latest python version (v{__version__}).")
+                cli_updated = False
             else:
-                typer.echo("✓ CLI upgrade complete!")
-    except subprocess.CalledProcessError as e:
-        typer.echo("Failed to update sgm CLI. Please try running 'pip install --upgrade \"sigma-finance[desktop]\"' manually.", err=True)
-        if e.stderr:
-            typer.echo(e.stderr, err=True)
-        cli_updated = False
+                match = re.search(r"sigma-finance-([\w\.-]+)", result.stdout)
+                cli_updated = True
+                if match:
+                    typer.echo(f"✓ CLI upgrade complete! New version: v{match.group(1)}")
+                else:
+                    typer.echo("✓ CLI upgrade complete!")
+        except subprocess.CalledProcessError as e:
+            typer.echo("Failed to update sgm CLI. Please try running 'pip install --upgrade \"sigma-finance[desktop]\"' manually.", err=True)
+            if e.stderr:
+                typer.echo(e.stderr, err=True)
+            cli_updated = False
 
     # 2. Update macOS App bundle if on macOS
     if sys.platform == "darwin":
-        if not cli_updated and not force and latest_version == __version__:
-            typer.echo("macOS Desktop App is already up to date.")
-            return
-
-        # Find the Sigma.app.zip asset
-        app_asset = None
-        for asset in assets:
-            if asset["name"].endswith(".app.zip") or asset["name"] == "Sigma.app.zip":
-                app_asset = asset
-                break
-        
-        if not app_asset:
-            typer.echo("No compiled macOS App bundle found in latest GitHub release assets.", err=True)
-            typer.echo("To rebuild the app bundle locally, run: make app", err=True)
-            return
-
-        download_url = app_asset["browser_download_url"]
-        temp_zip = os.path.join(tempfile.gettempdir(), "Sigma.app.zip")
-        
-        typer.echo(f"Downloading macOS App bundle v{latest_version or 'latest'}...")
-        try:
-            urllib.request.urlretrieve(download_url, temp_zip)
-            
-            app_path = "/Applications/Sigma.app"
-            temp_extract = os.path.join(tempfile.gettempdir(), "Sigma_extract")
-            if os.path.exists(temp_extract):
-                shutil.rmtree(temp_extract)
-            
-            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
-                zip_ref.extractall(temp_extract)
-            
-            extracted_app = os.path.join(temp_extract, "Sigma.app")
-            if os.path.exists(extracted_app):
-                typer.echo(f"Installing new version to {app_path}...")
-                if os.path.exists(app_path):
-                    shutil.rmtree(app_path)
-                shutil.move(extracted_app, app_path)
-                typer.echo("✓ macOS Desktop App updated successfully!")
+        # Determine target app path
+        if is_frozen:
+            # sys.executable is something like /Applications/Sigma.app/Contents/MacOS/sgm or /Applications/Sigma.app/Contents/MacOS/Sigma
+            parts = sys.executable.split(os.sep)
+            if len(parts) >= 4 and parts[-2] == "MacOS" and parts[-3] == "Contents" and parts[-4].endswith(".app"):
+                app_path = os.sep.join(parts[:-3])
             else:
-                typer.echo("Error: Extract did not contain Sigma.app", err=True)
+                app_path = "/Applications/Sigma.app"
+        else:
+            app_path = "/Applications/Sigma.app"
+
+        # Determine if we should update the app bundle
+        should_update_app = False
+        if force:
+            should_update_app = True
+        elif is_frozen:
+            # If frozen, we compare current version with latest release version from GitHub
+            if latest_version and latest_version != __version__:
+                should_update_app = True
+            else:
+                typer.echo("macOS Desktop App is already up to date.")
+        else:
+            # If not frozen, update app bundle if CLI was updated or version mismatch
+            if cli_updated or (latest_version and latest_version != __version__):
+                should_update_app = True
+            else:
+                typer.echo("macOS Desktop App is already up to date.")
+
+        if should_update_app:
+            # Find the Sigma.app.zip asset
+            app_asset = None
+            for asset in assets:
+                if asset["name"].endswith(".app.zip") or asset["name"] == "Sigma.app.zip":
+                    app_asset = asset
+                    break
             
-            # Cleanup
-            if os.path.exists(temp_extract):
-                shutil.rmtree(temp_extract)
-            if os.path.exists(temp_zip):
-                os.remove(temp_zip)
-        except Exception as e:
-            typer.echo(f"Error updating macOS App bundle: {e}", err=True)
-            raise typer.Exit(1)
+            if not app_asset:
+                typer.echo("No compiled macOS App bundle found in latest GitHub release assets.", err=True)
+                typer.echo("To rebuild the app bundle locally, run: make app", err=True)
+                return
+
+            download_url = app_asset["browser_download_url"]
+            temp_zip = os.path.join(tempfile.gettempdir(), "Sigma.app.zip")
             
+            typer.echo(f"Downloading macOS App bundle v{latest_version or 'latest'}...")
+            try:
+                urllib.request.urlretrieve(download_url, temp_zip)
+                
+                temp_extract = os.path.join(tempfile.gettempdir(), "Sigma_extract")
+                if os.path.exists(temp_extract):
+                    shutil.rmtree(temp_extract)
+                
+                with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                    zip_ref.extractall(temp_extract)
+                
+                extracted_app = os.path.join(temp_extract, "Sigma.app")
+                if os.path.exists(extracted_app):
+                    typer.echo(f"Installing new version to {app_path}...")
+                    if os.path.exists(app_path):
+                        shutil.rmtree(app_path)
+                    shutil.move(extracted_app, app_path)
+                    typer.echo("✓ macOS Desktop App updated successfully!")
+                else:
+                    typer.echo("Error: Extract did not contain Sigma.app", err=True)
+                
+                # Cleanup
+                if os.path.exists(temp_extract):
+                    shutil.rmtree(temp_extract)
+                if os.path.exists(temp_zip):
+                    os.remove(temp_zip)
+            except Exception as e:
+                typer.echo(f"Error updating macOS App bundle: {e}", err=True)
+                raise typer.Exit(1)
+                
     typer.echo("🎉 Update check finished!")
 
 

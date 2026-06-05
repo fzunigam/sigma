@@ -6,7 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- Native macOS desktop app support: Added a new `sgm app` command to launch the web dashboard inside a native Cocoa WKWebView window wrapper using `pywebview` (compatible with macOS Monterey and newer). Added the `[desktop]` packaging extra.
+- Native macOS desktop app support (Pattern 1: GUI-First, CLI Bundled Inside): Added packaging support using `Sigma.spec` to compile both the GUI `Sigma` app and the CLI `sgm` command line executable into a single `dist/Sigma.app` bundle.
+- Automatic Path Registration: On launch, the `Sigma` desktop app automatically checks and registers a symbolic link to the CLI tool at `/usr/local/bin/sgm` (or `~/.local/bin/sgm` as fallback) to allow immediate command-line usage without manual setup.
+- Added `pyinstaller` to developer dependencies and created build targets for the macOS app bundle.
 
 ### Removed
 - Removed the Telegram bot integration (`sgm bot setup`, `sgm bot run`) and its associated code, configurations, docker files, tests, and deployment guides to simplify the codebase and project structure.

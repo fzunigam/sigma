@@ -26,8 +26,15 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 - 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`).
 - 🖥️ **Desktop App**: Native macOS window container for the web client (`sgm app`).
 
-## Installation
+## Installation & Setup
 
+### macOS Standalone App (Recommended)
+1. Download `Sigma.dmg` or `Sigma.app.zip` from [GitHub Releases](https://github.com/fzunigam/sigma/releases).
+2. Drag `Sigma` to your `/Applications` folder.
+3. Double-click the application. On first launch, it will **automatically register and symlink the `sgm` CLI tool** into your path (at `/usr/local/bin/sgm` or `~/.local/bin/sgm`).
+4. Open your terminal and run `sgm status` to start using the CLI immediately.
+
+### Alternative CLI/Development Setup
 Sigma requires **Python 3.10** or higher.
 
 ```bash
@@ -127,7 +134,9 @@ make lint
 ## Project Structure
 
 - `src/sgm/` — Core Python package
-    - `cli.py` — Typer-based CLI entrypoints
+    - `cli.py` — Typer-based CLI command routing
+    - `app_launcher.py` — GUI Application runner & CLI symlink checker
+    - `cli_launcher.py` — CLI Application runner for the bundled binary
     - `infrastructure/` — database, persistence and config management (`database.py`, `user_config.py`)
     - `interface/` — terminal UI, banners and web server glue
     - `interface/web/` — lightweight web server and static assets for the dashboard

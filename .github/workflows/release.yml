@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  pypi-publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "web/package-lock.json"
+      - name: Build Web Dashboard
+        run: |
+          cd web
+          npm ci
+          npm run build
+      - name: Build and Publish CLI
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  macos-release:
+    name: Build & Release macOS App
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "web/package-lock.json"
+          
+      - name: Build Web Dashboard
+        run: |
+          cd web
+          npm ci
+          npm run build
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,desktop]"
+          
+      - name: Build macOS standalone App
+        run: |
+          make app
+          
+      - name: Package App Bundle into ZIP
+        run: |
+          cd dist
+          zip -r ../Sigma.app.zip Sigma.app
+          
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Sigma.app.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

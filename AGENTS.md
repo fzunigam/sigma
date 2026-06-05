@@ -15,7 +15,7 @@ Sigma is a CLI-first personal finance tracker focused on fast transaction loggin
 - Web design guidelines: `docs/conventions/design-guidelines.md` (must be followed when introducing or changing any web/user interface)
 
 ## Commands
-- Install dev setup: `python3.12 -m pip install -e ".[dev]"`
+- Install dev setup: `python3.12 -m pip install -e ".[dev,desktop]"`
 - Run tests: `python3.12 -m pytest -q`
 - Run lint: `python3.12 -m ruff check .`
 - Convenience commands: `make install`, `make test`, `make lint`, `make smoke`

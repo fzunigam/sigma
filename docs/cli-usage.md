@@ -179,7 +179,7 @@ Launches the web dashboard in a native, desktop window using `pywebview`.
 - **Details**:
     - Starts the local FastAPI server on a background thread.
     - Opens a native Cocoa `WKWebView` window pointing to the server.
-    - Requires installing the `desktop` extra (e.g. `pip install "sigma-finance[desktop]"`).
+    - **App Bundle Integration**: When running the standalone `Sigma.app` bundle, double-clicking the app launches this command automatically. On its first launch, the GUI app registers a symbolic link to `/usr/local/bin/sgm` (or `~/.local/bin/sgm`), enabling immediate use of all `sgm` CLI commands directly in your terminal.
 
 ---
 

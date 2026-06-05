@@ -59,24 +59,11 @@ if ! command -v "$PYINSTALLER_CMD" >/dev/null 2>&1; then
     PYINSTALLER_CMD="python3 -m PyInstaller"
 fi
 
-# Run PyInstaller
-# --windowed: hides console window (windowed mode)
-# --add-data: bundles the static files inside the executable resources
-# --paths=src: lets PyInstaller discover the local package modules correctly
-$PYINSTALLER_CMD --windowed \
-                 --name="Sigma" \
-                 $ICON_FLAG \
-                 --add-data "src/sgm/interface/web/static:sgm/interface/web/static" \
-                 --paths="src" \
-                 --noconfirm \
-                 --clean \
-                 src/sgm/app_launcher.py
+# Run PyInstaller using the custom spec file
+$PYINSTALLER_CMD --noconfirm --clean Sigma.spec
 
 echo "=== 4. Cleaning intermediate build files ==="
-# Move speculative spec file to build folder to keep root clean
-if [ -f "Sigma.spec" ]; then
-    mv Sigma.spec build/Sigma.spec
-fi
+# No spec file to move since we use the version controlled Sigma.spec in root
 
 echo "========================================="
 echo "Success! macOS app compiled successfully."
