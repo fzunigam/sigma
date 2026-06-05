@@ -794,34 +794,114 @@ def delete_cmd(
 @app.command("update")
 def update(
     ctx: typer.Context,
+    force: bool = typer.Option(False, "--force", help="Force update of desktop app even if CLI is up to date"),
     help: bool = typer.Option(False, "--help", "-h", is_eager=True)
 ) -> None:
-    """Update sgm to the latest version."""
+    """Update sgm and the macOS desktop application to the latest version."""
     if help:
         print(f"Usage: {ctx.command_path}")
         print(f"{ctx.command.help}")
         raise typer.Exit()
     
-    print("Checking for updates...")
+    import urllib.request
+    import json
+    import zipfile
+    import tempfile
+    import shutil
+    
+    typer.echo("Checking for updates...")
+    repo = "fzunigam/sigma"
+    api_url = f"https://api.github.com/repos/{repo}/releases/latest"
+    
+    latest_version = None
+    assets = []
+    try:
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Sigma-CLI"})
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            latest_version = data["tag_name"].lstrip("v")
+            assets = data.get("assets", [])
+    except Exception as e:
+        typer.echo(f"Warning: Could not fetch latest release info from GitHub: {e}", err=True)
+    
+    # 1. Update CLI package
+    typer.echo("Upgrading CLI and desktop dependencies...")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "sigma-finance"],
+            [sys.executable, "-m", "pip", "install", "--upgrade", "sigma-finance[desktop]"],
             capture_output=True,
             text=True,
             check=True
         )
         if "Requirement already satisfied" in result.stdout and "sigma-finance" in result.stdout and "Successfully installed" not in result.stdout:
-            typer.echo(f"sgm is already at the latest version (v{__version__}).")
+            typer.echo(f"sgm CLI is already at the latest python version (v{__version__}).")
+            cli_updated = False
         else:
             match = re.search(r"sigma-finance-([\w\.-]+)", result.stdout)
+            cli_updated = True
             if match:
-                typer.echo(f"Update complete! New version: v{match.group(1)}")
+                typer.echo(f"✓ CLI upgrade complete! New version: v{match.group(1)}")
             else:
-                typer.echo("Update complete!")
+                typer.echo("✓ CLI upgrade complete!")
     except subprocess.CalledProcessError as e:
-        typer.echo("Failed to update sgm. Please try running 'pip install --upgrade sigma-finance' manually.", err=True)
+        typer.echo("Failed to update sgm CLI. Please try running 'pip install --upgrade \"sigma-finance[desktop]\"' manually.", err=True)
         if e.stderr:
             typer.echo(e.stderr, err=True)
+        cli_updated = False
+
+    # 2. Update macOS App bundle if on macOS
+    if sys.platform == "darwin":
+        if not cli_updated and not force and latest_version == __version__:
+            typer.echo("macOS Desktop App is already up to date.")
+            return
+
+        # Find the Sigma.app.zip asset
+        app_asset = None
+        for asset in assets:
+            if asset["name"].endswith(".app.zip") or asset["name"] == "Sigma.app.zip":
+                app_asset = asset
+                break
+        
+        if not app_asset:
+            typer.echo("No compiled macOS App bundle found in latest GitHub release assets.", err=True)
+            typer.echo("To rebuild the app bundle locally, run: make app", err=True)
+            return
+
+        download_url = app_asset["browser_download_url"]
+        temp_zip = os.path.join(tempfile.gettempdir(), "Sigma.app.zip")
+        
+        typer.echo(f"Downloading macOS App bundle v{latest_version or 'latest'}...")
+        try:
+            urllib.request.urlretrieve(download_url, temp_zip)
+            
+            app_path = "/Applications/Sigma.app"
+            temp_extract = os.path.join(tempfile.gettempdir(), "Sigma_extract")
+            if os.path.exists(temp_extract):
+                shutil.rmtree(temp_extract)
+            
+            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract)
+            
+            extracted_app = os.path.join(temp_extract, "Sigma.app")
+            if os.path.exists(extracted_app):
+                typer.echo(f"Installing new version to {app_path}...")
+                if os.path.exists(app_path):
+                    shutil.rmtree(app_path)
+                shutil.move(extracted_app, app_path)
+                typer.echo("✓ macOS Desktop App updated successfully!")
+            else:
+                typer.echo("Error: Extract did not contain Sigma.app", err=True)
+            
+            # Cleanup
+            if os.path.exists(temp_extract):
+                shutil.rmtree(temp_extract)
+            if os.path.exists(temp_zip):
+                os.remove(temp_zip)
+        except Exception as e:
+            typer.echo(f"Error updating macOS App bundle: {e}", err=True)
+            raise typer.Exit(1)
+            
+    typer.echo("🎉 Update check finished!")
 
 
 @app.command("export")
@@ -1266,7 +1346,7 @@ def app_cmd(
 
     typer.echo(f"Starting native desktop application window pointing to http://{host}:{port}")
     webview.create_window(
-        title="Sigma Personal Finance",
+        title="Sigma",
         url=f"http://{host}:{port}",
         width=1280,
         height=800,
