@@ -1239,6 +1239,18 @@ def app_cmd(
         typer.echo("  pip install \"sigma-finance[desktop]\"", err=True)
         raise typer.Exit(1)
 
+    # Set Dock Icon on macOS dynamically
+    try:
+        from AppKit import NSApplication, NSImage
+        icon_path = os.path.join(static_dir, "logo.png")
+        if os.path.exists(icon_path):
+            app_instance = NSApplication.sharedApplication()
+            new_icon = NSImage.alloc().initWithContentsOfFile_(icon_path)
+            if new_icon:
+                app_instance.setApplicationIconImage_(new_icon)
+    except Exception:
+        pass
+
     import uvicorn
     import threading
     from sgm.interface.web.server import app as web_app
