@@ -9,6 +9,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Native macOS desktop app support (Pattern 1: GUI-First, CLI Bundled Inside): Added packaging support using `Sigma.spec` to compile both the GUI `Sigma` app and the CLI `sgm` command line executable into a single `dist/Sigma.app` bundle.
 - Automatic Path Registration: On launch, the `Sigma` desktop app automatically checks and registers a symbolic link to the CLI tool at `/usr/local/bin/sgm` (or `~/.local/bin/sgm` as fallback) to allow immediate command-line usage without manual setup.
 - Added `pyinstaller` to developer dependencies and created build targets for the macOS app bundle.
+- Standalone Backup & Restore operations: Expose API endpoints for exporting and importing data backups, along with a full UI panel in the Settings menu for non-coding users to download backups and upload zip restores.
+- Danger-Zone Database Resetting: Added capability to reset the database and configuration directly from the UI settings pane with double-check confirmation typing checks.
+- First-Run Onboarding Welcome Wizard: Added a sleek configuration screen that detects new database installations and guides the user to customize their cash account or upload a backup zip immediately.
+- Sidebar Version & Update Notification: Expose app versions and fetch latest releases from GitHub directly in the sidebar with tailored update instructions.
 
 ### Removed
 - Removed the Telegram bot integration (`sgm bot setup`, `sgm bot run`) and its associated code, configurations, docker files, tests, and deployment guides to simplify the codebase and project structure.

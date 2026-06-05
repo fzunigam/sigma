@@ -119,6 +119,10 @@ export default function Dashboard() {
   // Table confirmation ID
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // Standalone Usability States
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [versionInfo, setVersionInfo] = useState<{ version: string; latest_version: string | null; is_frozen: boolean; platform: string } | null>(null);
+
   // Movements View Tab States
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -158,20 +162,42 @@ export default function Dashboard() {
         }
       }
 
+      let txList = [];
       const resTx = await fetch(`${API_URL}/api/v1/transactions?limit=30`);
       if (resTx.ok) {
-        setTransactions(await resTx.json());
+        txList = await resTx.json();
+        setTransactions(txList);
       }
 
+      let histList = [];
       const resHist = await fetch(`${API_URL}/api/v1/render/history?limit=20`);
       if (resHist.ok) {
-        setRenderHistory(await resHist.json());
+        histList = await resHist.json();
+        setRenderHistory(histList);
+      }
+
+      // Onboarding welcome check
+      const hasOnlyDefaultWallet = dataStatus.accounts?.length === 1 && dataStatus.accounts[0].id === 'wallet' && dataStatus.accounts[0].balance === 0;
+      const hasNoMovements = txList.length === 0 && histList.length === 0;
+      if (hasOnlyDefaultWallet && hasNoMovements) {
+        setShowWelcomeModal(true);
+      } else {
+        setShowWelcomeModal(false);
       }
     } catch (error: any) {
       addToast('error', error.message || 'Error communicating with local server.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchVersion = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/version`);
+      if (res.ok) {
+        setVersionInfo(await res.json());
+      }
+    } catch (err) {}
   };
 
   const fetchMovements = async (year: string, month: string) => {
@@ -193,6 +219,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
+    fetchVersion();
     
     // Initialize Year/Month selector to last month
     const today = new Date();
@@ -555,6 +582,26 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+
+          {/* Version / Updates Footer */}
+          {versionInfo && (
+            <div className="border-t border-border mt-3 pt-3 text-[10px] text-muted-foreground font-mono space-y-1">
+              <div className="flex justify-between items-center">
+                <span>Version</span>
+                <span>{versionInfo.version}</span>
+              </div>
+              {versionInfo.latest_version && versionInfo.version !== versionInfo.latest_version && (
+                <div className="p-2 bg-accent/10 border border-accent/20 rounded text-[10px] text-accent font-semibold leading-normal flex flex-col gap-0.5">
+                  <span>Update Available (v{versionInfo.latest_version})</span>
+                  {versionInfo.is_frozen ? (
+                    <span className="text-[8.5px] text-muted-foreground font-normal leading-normal">Run <code>sgm update</code> in terminal to update.</span>
+                  ) : (
+                    <span className="text-[8.5px] text-muted-foreground font-normal leading-normal">Run <code>pip install -U sigma-finance</code> to update.</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
@@ -1049,6 +1096,100 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Administration & Backups Panel */}
+            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold">Administration & Backups</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Manage data archives and reset the application state.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                {/* Backup Operations */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Backups</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => {
+                        window.open(`${API_URL}/api/v1/backup/export`, '_blank');
+                        addToast('success', 'Downloading backup archive...');
+                      }}
+                      className="bg-accent hover:bg-accent/90 text-black text-xs font-semibold px-4 py-2 rounded-md transition duration-200"
+                    >
+                      Export ZIP Backup
+                    </button>
+                    
+                    <label className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded-md cursor-pointer transition duration-200 inline-block">
+                      <span>Import ZIP Backup</span>
+                      <input
+                        type="file"
+                        accept=".zip"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          setIsSubmitting(true);
+                          try {
+                            const res = await fetch(`${API_URL}/api/v1/backup/import`, {
+                              method: 'POST',
+                              body: formData,
+                            });
+                            if (!res.ok) {
+                              const errorData = await res.json();
+                              throw new Error(errorData.detail || 'Import failed');
+                            }
+                            addToast('success', 'Backup restored successfully!');
+                            fetchData(true);
+                          } catch (err: any) {
+                            addToast('error', err.message);
+                          } finally {
+                            setIsSubmitting(false);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* System Reset / Danger Zone */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-red-500 uppercase tracking-wider">Danger Zone</h4>
+                  <div>
+                    <button
+                      onClick={async () => {
+                        const confirmation = prompt("WARNING: This will wipe ALL database records and configuration settings! This cannot be undone.\n\nType 'RESET' to confirm deletion:");
+                        if (confirmation !== 'RESET') {
+                          addToast('info', 'Reset cancelled.');
+                          return;
+                        }
+                        
+                        setIsSubmitting(true);
+                        try {
+                          const res = await fetch(`${API_URL}/api/v1/backup/reset`, {
+                            method: 'POST',
+                          });
+                          if (!res.ok) throw new Error('Reset failed');
+                          addToast('success', 'Database wiped and reset to clean state.');
+                          fetchData(true);
+                        } catch (err: any) {
+                          addToast('error', err.message);
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-750 text-white text-xs font-semibold px-4 py-2 rounded-md transition duration-200"
+                    >
+                      Reset Database & Config
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -1279,6 +1420,153 @@ export default function Dashboard() {
                 {isSubmitting && <Loader2 size={12} className="animate-spin" />}
                 <span>Confirm & Render</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL: WELCOME WIZARD ONBOARDING --- */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] flex items-center justify-center z-50 animate-in fade-in duration-150">
+          <div className="bg-card border border-border shadow-xl rounded-lg max-w-md w-full p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="space-y-1.5 text-center">
+              <h2 className="text-xl font-bold tracking-tight text-accent flex items-center justify-center gap-2">
+                <span className="font-mono">Σ</span> Welcome to Sigma
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Let's set up your local finance database. Choose an option to get started:
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Onboarding Path 1: Configure Cash Account */}
+              <div className="p-4 border border-border hover:border-accent/30 rounded-md transition duration-200 space-y-3 bg-muted/20">
+                <div>
+                  <h3 className="text-xs font-semibold text-foreground">Option 1: Start Fresh</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Customize your cash account and configure default settings.</p>
+                </div>
+                
+                <div className="space-y-2.5">
+                  <div>
+                    <label htmlFor="wizard-acc-name" className="block text-[10px] text-muted-foreground mb-0.5">Primary Cash Account Name</label>
+                    <input
+                      id="wizard-acc-name"
+                      type="text"
+                      placeholder="Cash / Pocket Money"
+                      value={newAccName}
+                      onChange={(e) => setNewAccName(e.target.value)}
+                      className="bg-background border border-border text-foreground text-xs rounded px-2.5 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="wizard-acc-bal" className="block text-[10px] text-muted-foreground mb-0.5">Initial Balance (CLP)</label>
+                    <input
+                      id="wizard-acc-bal"
+                      type="number"
+                      placeholder="0"
+                      value={newAccBalance}
+                      onChange={(e) => setNewAccBalance(e.target.value)}
+                      className="bg-background border border-border text-foreground text-xs rounded px-2.5 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                  </div>
+                  {newAccError && <p className="text-[11px] text-red-500">{newAccError}</p>}
+                  
+                  <button
+                    onClick={async () => {
+                      setNewAccError('');
+                      const name = newAccName.trim() || 'Cash';
+                      const bal = parseInt(newAccBalance, 10) || 0;
+                      
+                      setIsSubmitting(true);
+                      try {
+                        // 1. Delete default 'wallet' account
+                        const deleteRes = await fetch(`${API_URL}/api/v1/accounts/wallet`, { method: 'DELETE' });
+                        if (!deleteRes.ok) throw new Error('Initialization failed');
+                        
+                        // 2. Create the customized account
+                        const createRes = await fetch(`${API_URL}/api/v1/accounts`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            id: name.toLowerCase().replace(/\s+/g, '_'),
+                            name: name,
+                            type: 'debit',
+                            initial_balance: bal,
+                            credit_limit: 0
+                          }),
+                        });
+                        if (!createRes.ok) throw new Error('Account creation failed');
+                        const newAcc = await createRes.json();
+                        const newId = newAcc.account.id;
+                        
+                        // 3. Save default config
+                        await fetch(`${API_URL}/api/v1/config`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ income_acc: newId, expense_acc: newId }),
+                        });
+                        
+                        addToast('success', 'Application initialized!');
+                        setShowWelcomeModal(false);
+                        setNewAccName('');
+                        setNewAccBalance('');
+                        fetchData(true);
+                      } catch (err: any) {
+                        setNewAccError(err.message);
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                    className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3 py-1.5 rounded transition duration-200 w-full"
+                  >
+                    Initialize Database
+                  </button>
+                </div>
+              </div>
+
+              {/* Onboarding Path 2: Import Backup ZIP */}
+              <div className="p-4 border border-border hover:border-accent/30 rounded-md transition duration-200 flex flex-col items-center justify-between text-center space-y-3 bg-muted/20">
+                <div>
+                  <h3 className="text-xs font-semibold text-foreground">Option 2: Restore from Backup</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Upload a previous Sigma backup ZIP archive to restore all data.</p>
+                </div>
+                
+                <label className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded cursor-pointer transition duration-200 w-full text-center border border-border">
+                  <span>Select ZIP Backup File</span>
+                  <input
+                    type="file"
+                    accept=".zip"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      
+                      setIsSubmitting(true);
+                      try {
+                        const res = await fetch(`${API_URL}/api/v1/backup/import`, {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        if (!res.ok) {
+                          const errorData = await res.json();
+                          throw new Error(errorData.detail || 'Import failed');
+                        }
+                        addToast('success', 'Backup restored successfully!');
+                        setShowWelcomeModal(false);
+                        fetchData(true);
+                      } catch (err: any) {
+                        addToast('error', err.message);
+                      } finally {
+                        setIsSubmitting(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                </label>
+              </div>
             </div>
           </div>
         </div>

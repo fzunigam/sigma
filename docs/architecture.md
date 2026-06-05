@@ -8,7 +8,7 @@ Sigma v1 uses a layered monolith:
 - **Domain layer**: entities and business invariants (accounts, movements, transfers, render snapshot).
 - **Application layer**: use cases that orchestrate domain rules.
 - **Infrastructure layer**: SQLite persistence, filesystem/config access, and runtime adapters.
-- **Interface layer**: Typer CLI commands, Rich terminal rendering, and a Cocoa WKWebView desktop application (both bundled inside a unified macOS App container).
+- **Interface layer**: Typer CLI commands, Rich terminal rendering, and a local FastAPI server powering a Cocoa WKWebView desktop application. The FastAPI backend exposes REST API endpoints for all core operations (including transaction logging, account management, rendering, backup exports/imports, and system updates) to enable the Next.js desktop interface to function completely standalone without command-line dependencies.
 
 ## Data Storage
 - SQLite database at `~/.local/share/sgm/sigma.db` by default.
