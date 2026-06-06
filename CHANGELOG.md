@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-05
+
 ### Added
 - Native macOS desktop app support (Pattern 1: GUI-First, CLI Bundled Inside): Added packaging support using `Sigma.spec` to compile both the GUI `Sigma` app and the CLI `sgm` command line executable into a single `dist/Sigma.app` bundle.
 - Automatic Path Registration: On launch, the `Sigma` desktop app automatically checks and registers a symbolic link to the CLI tool at `/usr/local/bin/sgm` (or `~/.local/bin/sgm` as fallback) to allow immediate command-line usage without manual setup.

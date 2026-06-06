@@ -7,7 +7,6 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] Custom path for database
 
 ## 🚀 Mid-Term (Upcoming Features)
-- [ ] Enhanced data visualization in the CLI
 - [ ] Advanced filtering for transaction history
 
 ## 🗺️ Long-Term (Vision & Backlog)

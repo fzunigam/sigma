@@ -28,27 +28,28 @@ Most finance trackers are either too complex or require too many clicks. Sigma i
 
 ## Installation & Setup
 
-### macOS Standalone App (Recommended)
-1. Download `Sigma.dmg` or `Sigma.app.zip` from [GitHub Releases](https://github.com/fzunigam/sigma/releases).
-2. Drag `Sigma` to your `/Applications` folder.
-3. Double-click the application. On first launch, it will **automatically register and symlink the `sgm` CLI tool** into your path (at `/usr/local/bin/sgm` or `~/.local/bin/sgm`).
-4. Open your terminal and run `sgm status` to start using the CLI immediately.
+### 🖥️ macOS Standalone Application (Recommended)
+Sigma is distributed primarily as a standalone macOS application. You do not need to install Python or use the terminal to get started.
 
-### Alternative CLI/Development Setup
-Sigma requires **Python 3.10** or higher.
+1. **Download the app**: Get the latest `Sigma.dmg` or `Sigma.app.zip` from [GitHub Releases](https://github.com/fzunigam/sigma/releases).
+2. **Install**: Drag `Sigma` to your `/Applications` folder.
+3. **Launch**: Double-click `Sigma.app` to open the native application window.
+4. **Onboarding**: On your first launch, the app will automatically initialize. An interactive onboarding welcome screen will guide you to set up your primary cash account or import a previous backup ZIP.
+5. **Optional CLI Setup**: On startup, the app automatically symlinks the `sgm` command-line executable into your path (at `/usr/local/bin/sgm` or `~/.local/bin/sgm`). You can open your terminal and run `sgm status` to start using the CLI alongside the app!
+
+### 💻 Command-Line Interface (CLI) & Developer Setup
+For developers or terminal-only users, Sigma can be installed as a Python package. It requires **Python 3.10** or higher.
 
 ```bash
-# Core CLI only
+# Install core CLI only
 pip install sigma-finance
 
-# With Desktop App support (macOS)
+# Or install with native desktop window support (macOS)
 pip install "sigma-finance[desktop]"
 ```
 
-### First-run Setup
-
-Once installed, initialize your database and create your first account:
-
+**First-run CLI setup**:
+If you are using the CLI standalone, initialize your database and configuration wizard:
 ```bash
 sgm start
 ```
