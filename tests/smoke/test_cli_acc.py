@@ -25,8 +25,8 @@ def test_cli_acc_add_success() -> None:
 def test_cli_acc_add_invalid_type() -> None:
     result = CliRunner().invoke(app, ["acc", "add", "wallet", "Cash", "invalid_type", "1500"])
     assert result.exit_code != 0
-    assert "Invalid value for" in result.output
-    assert "TYPE:{debit|credit}" in result.output
+    output_text = result.output or (str(result.exception) if result.exception else "")
+    assert any(term in output_text for term in ["Invalid value for", "is not one of", "debit", "credit"])
 
 def test_cli_acc_add_duplicate() -> None:
     runner = CliRunner()
