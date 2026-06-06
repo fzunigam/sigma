@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -93,6 +93,10 @@ export default function Dashboard() {
   const [showNewAccountModal, setShowNewAccountModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState<Account | null>(null);
   const [showLimitModal, setShowLimitModal] = useState<Account | null>(null);
+
+  // File upload refs
+  const settingsUploadRef = useRef<HTMLInputElement>(null);
+  const wizardUploadRef = useRef<HTMLInputElement>(null);
 
   // Form Fields State
   const [txType, setTxType] = useState<'expense' | 'income' | 'transfer'>('expense');
@@ -1118,14 +1122,21 @@ export default function Dashboard() {
                       Export ZIP Backup
                     </button>
                     
-                    <label className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded-md cursor-pointer transition duration-200 inline-block">
-                      <span>Import ZIP Backup</span>
-                      <input
-                        type="file"
-                        accept=".zip"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
+                    <button
+                      type="button"
+                      onClick={() => settingsUploadRef.current?.click()}
+                      className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded-md cursor-pointer transition duration-200 inline-block"
+                    >
+                      Import ZIP Backup
+                    </button>
+                    <input
+                      ref={settingsUploadRef}
+                      id="settings-zip-upload"
+                      type="file"
+                      accept=".zip"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
                           if (!file) return;
                           
                           const formData = new FormData();
@@ -1151,7 +1162,6 @@ export default function Dashboard() {
                           }
                         }}
                       />
-                    </label>
                   </div>
                 </div>
 
@@ -1531,14 +1541,21 @@ export default function Dashboard() {
                   <p className="text-[11px] text-muted-foreground mt-0.5">Upload a previous Sigma backup ZIP archive to restore all data.</p>
                 </div>
                 
-                <label className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded cursor-pointer transition duration-200 w-full text-center border border-border">
-                  <span>Select ZIP Backup File</span>
-                  <input
-                    type="file"
-                    accept=".zip"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
+                <button
+                  type="button"
+                  onClick={() => wizardUploadRef.current?.click()}
+                  className="bg-secondary hover:bg-secondary/95 text-secondary-foreground text-xs font-semibold px-4 py-2 rounded cursor-pointer transition duration-200 w-full text-center border border-border"
+                >
+                  Select ZIP Backup File
+                </button>
+                <input
+                  ref={wizardUploadRef}
+                  id="wizard-zip-upload"
+                  type="file"
+                  accept=".zip"
+                  className="sr-only"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
                       if (!file) return;
                       
                       const formData = new FormData();
@@ -1565,7 +1582,6 @@ export default function Dashboard() {
                       }
                     }}
                   />
-                </label>
               </div>
             </div>
           </div>

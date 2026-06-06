@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Fixed a bug where uploading or importing ZIP backup files did not open the file selection dialog in the desktop app's welcome wizard and settings panel due to a WKWebView label-click forwarding bug. Replaced the label elements with direct ref button clicks.
+- Resolved an HTTP 405 Method Not Allowed error that occurred when performing backup imports by terminating lingering Python uvicorn server processes from older builds.
+- Improved ZIP backup import robustness by automatically detecting and handling nested directory structures (e.g. ZIPs created by compressing folders) inside the zip file.
+
 ## [0.4.0] - 2026-06-05
 
 ### Added

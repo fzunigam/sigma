@@ -886,6 +886,13 @@ def import_from_csvs(import_path: Path, db_path: Path | None = None) -> None:
         else:
             raise ValueError(f"Path '{import_path}' does not exist or is not a file/directory.")
 
+        # If the expected files are not at the root, check if there is a subfolder containing them
+        if not (working_dir / "accounts.csv").exists():
+            for sub in working_dir.glob("**/accounts.csv"):
+                if sub.is_file():
+                    working_dir = sub.parent
+                    break
+
         # 2. Validation
         for filename, expected_headers in expected_files.items():
             file_path = working_dir / filename

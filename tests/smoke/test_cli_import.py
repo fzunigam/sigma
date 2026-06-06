@@ -97,3 +97,50 @@ def test_cli_import_invalid_zip(tmp_path, monkeypatch) -> None:
     assert "Import failed" in result.output
     assert "Falling back to manual account creation" in result.output
     assert "Account 'Fallback' created successfully!" in result.output
+
+
+def test_cli_import_from_nested_zip(tmp_path, monkeypatch) -> None:
+    # 1. Setup mock environment
+    monkeypatch.setenv("HOME", str(tmp_path))
+    db_path = tmp_path / ".local" / "share" / "sgm" / "sigma.db"
+    config_path = tmp_path / ".config" / "sgm" / "config.toml"
+    
+    # Initialize and add data
+    init_db(db_path)
+    create_account("wallet", "Cash", "debit", 1500)
+    
+    # Export it
+    export_file = tmp_path / "export.zip"
+    runner = CliRunner()
+    runner.invoke(app, ["export", "--output", str(export_file)])
+    
+    # Extract the exported ZIP, move the files to a subdirectory, and re-zip
+    nested_zip = tmp_path / "nested_export.zip"
+    extract_dir = tmp_path / "extracted"
+    with zipfile.ZipFile(export_file, 'r') as zf:
+        zf.extractall(extract_dir)
+        
+    with zipfile.ZipFile(nested_zip, 'w') as nzf:
+        for f in ["accounts.csv", "movements.csv", "movement_marks.csv", "transfers.csv", "render_history.csv"]:
+            nzf.write(extract_dir / f, arcname=f"subdir/{f}")
+            
+    # Clean up for "fresh start"
+    if config_path.exists():
+        config_path.unlink()
+    clear_db(db_path)
+    
+    # 3. Run sgm start with import from nested zip
+    result = runner.invoke(app, ["start"], input=f"y\n{nested_zip}\n")
+    
+    assert result.exit_code == 0
+    assert "Data imported successfully!" in result.output
+    
+    # 4. Verify data was restored
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, balance FROM accounts WHERE id = 'wallet'")
+        row = cursor.fetchone()
+        assert row is not None
+        assert row[0] == "wallet"
+        assert row[1] == 1500
+
