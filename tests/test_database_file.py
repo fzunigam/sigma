@@ -111,6 +111,30 @@ def test_opening_a_database_backs_it_up_first(drive: Path):
     assert accounts.list_accounts(backups[0])[0]["balance"] == 1_000
 
 
+def test_startup_backs_up_the_remembered_database(drive: Path):
+    """Opening the app is the common case, so it must produce a backup too."""
+    path = database.create(drive / "finanzas.db")
+    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=1_000)
+
+    database.open_at_startup()
+
+    assert len(connection.list_backups(path)) == 1
+
+
+def test_startup_backs_up_only_once_a_day(drive: Path):
+    path = database.create(drive / "finanzas.db")
+    accounts.create_account(path, "wallet", "Efectivo", "debit")
+
+    for _ in range(5):
+        database.open_at_startup()
+
+    assert len(connection.list_backups(path)) == 1
+
+
+def test_startup_without_a_database_does_nothing(drive: Path):
+    assert database.open_at_startup() is None
+
+
 def test_backups_are_rotated(drive: Path):
     path = database.create(drive / "finanzas.db")
     accounts.create_account(path, "wallet", "Efectivo", "debit")

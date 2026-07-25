@@ -14,8 +14,9 @@ pasa a ser una aplicación de escritorio simple, en español.
 - **El archivo de datos lo eliges tú.** Al abrir Sigma por primera vez decides dónde vive tu base
   de datos. Guardándola en Google Drive o Dropbox queda respaldada sola. Se puede cambiar de
   archivo desde Ajustes, con una lista de recientes.
-- **Respaldos automáticos.** Cada vez que Sigma abre tu archivo, guarda una copia con la fecha en
-  `.sigma-backups/`. Se conservan las últimas 10 y se restauran desde Ajustes.
+- **Respaldos automáticos.** Sigma guarda una copia con la fecha en `.sigma-backups/`: una vez al
+  día al abrir la aplicación, y siempre que cambies de base o restaures. Se conservan las últimas
+  10 y se restauran desde Ajustes.
 - **Migración desde la versión anterior.** Si tenías Sigma instalado, la pantalla de bienvenida
   ofrece traer tus cuentas y movimientos al archivo nuevo. El original no se toca.
 - **Aviso de archivo abierto en otro equipo**, para evitar que la sincronización pierda cambios.

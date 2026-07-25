@@ -63,6 +63,9 @@ def main() -> int:
         )
         return 1
 
+    # Back up and claim the remembered database before anything can write to it.
+    database.open_at_startup()
+
     port = free_port()
     threading.Thread(target=serve, args=(port,), daemon=True).start()
     set_dock_icon()

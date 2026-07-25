@@ -76,14 +76,23 @@ def backup_dir(db_path: Path) -> Path:
     return db_path.parent / BACKUP_DIR_NAME
 
 
-def create_backup(db_path: Path, keep: int = BACKUPS_KEPT) -> Path | None:
+def create_backup(
+    db_path: Path, keep: int = BACKUPS_KEPT, once_per_day: bool = False
+) -> Path | None:
     """Copy the database next to itself, under ``.sigma-backups/``.
 
     Uses SQLite's own backup API rather than a file copy so the snapshot is
     consistent even if something else is mid-write. Returns the backup path, or
     ``None`` if there was nothing to back up.
+
+    ``once_per_day`` skips the copy when today's backup already exists. Opening
+    the app is the common case, and backing up on every launch would burn
+    through the ten kept slots in an afternoon; one per day keeps ten days of
+    history, which is what makes a backup worth having.
     """
     if not db_path.exists() or db_path.stat().st_size == 0:
+        return None
+    if once_per_day and _backed_up_today(db_path):
         return None
 
     target_dir = backup_dir(db_path)
@@ -109,6 +118,11 @@ def list_backups(db_path: Path) -> list[Path]:
         return []
     pattern = f"{db_path.stem}_*{db_path.suffix or '.db'}"
     return sorted(target_dir.glob(pattern), reverse=True)
+
+
+def _backed_up_today(db_path: Path) -> bool:
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    return any(f"_{stamp}_" in backup.name for backup in list_backups(db_path))
 
 
 def _next_backup_path(db_path: Path, target_dir: Path) -> Path:

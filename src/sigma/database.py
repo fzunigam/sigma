@@ -35,6 +35,23 @@ def require_current() -> Path:
     return path
 
 
+def open_at_startup() -> Path | None:
+    """Prepare the remembered database when the app launches.
+
+    Without this the dated backup would only ever happen when the user picks a
+    file in a dialog, which is the rare case — normally you just open the app.
+    Limited to one backup a day so ten launches do not evict ten days of
+    history.
+    """
+    path = current()
+    if path is None:
+        return None
+
+    connection.create_backup(path, once_per_day=True)
+    connection.acquire_lock(path)
+    return path
+
+
 def status() -> dict[str, Any]:
     """Everything the interface needs to decide between setup and normal use."""
     path = settings.database_path()

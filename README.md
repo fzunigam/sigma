@@ -47,8 +47,9 @@ vínculo, así que siempre puedes volver a ver qué incluyó.
 
 ## Respaldos
 
-Cada vez que Sigma abre tu archivo, guarda una copia con la fecha en una carpeta
-`.sigma-backups/` junto a él. Se conservan las últimas 10 y se restauran desde **Ajustes**.
+Sigma guarda una copia con la fecha en una carpeta `.sigma-backups/` junto a tu archivo: una vez
+al día al abrir la aplicación, y siempre que cambies de base o restaures. Se conservan las últimas
+10 y se restauran desde **Ajustes**.
 
 Si además tienes el archivo en Drive o Dropbox, cuentas con el historial de versiones de ese
 servicio.

@@ -32,8 +32,15 @@ vez.** Para eso está el aviso de bloqueo.
 
 ## Respaldos automáticos
 
-Cada vez que Sigma abre una base existente, primero saca una copia en `.sigma-backups/`, dentro de
-la misma carpeta, con la fecha y hora en el nombre. Se conservan los últimos 10.
+Sigma guarda una copia en `.sigma-backups/`, dentro de la misma carpeta, con la fecha y hora en el
+nombre. Se conservan las últimas 10.
+
+Se hace en dos momentos:
+
+- **Al abrir la aplicación**, como máximo una vez al día. Sin el límite, abrir Sigma diez veces en
+  una tarde borraría diez días de historial.
+- **Al elegir un archivo en el diálogo** (abrir otra base, restaurar), siempre. Es una acción
+  deliberada y conviene tener el punto de retorno exacto.
 
 La copia se hace con la API de respaldo de SQLite, no con `cp`, así que es consistente aunque algo
 más esté escribiendo en ese momento.
