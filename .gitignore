@@ -1,26 +1,25 @@
 .DS_Store
 *.DS_Store
 idea.md
+
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .venv/
-dist/
+
+# Build artefacts
 build/
-*.egg-info/
-docs/cli-usage-implementation.md
+dist/
+src/sigma/web/static/
 
-# venv ignores
-.venv/
-
-# Xcode ignores
-*.xcuserstate
-project.xcworkspace/
-xcuserdata/
-
-# Web ignores
-src/sgm/interface/web/static/
-web/.next/
+# Frontend
 web/node_modules/
 *.tsbuildinfo
+
+# Local databases and their backups, in case one ends up inside the repo
+*.db
+*.db.lock
+.sigma-backups/

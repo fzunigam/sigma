@@ -1,156 +1,74 @@
-# Sigma (`sgm`)
+# Sigma
 
-[![PyPI version](https://img.shields.io/pypi/v/sigma-finance.svg)](https://pypi.org/project/sigma-finance/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Registro simple de finanzas personales para macOS.
 
-**Sigma** is a fast, CLI-first personal finance tracker designed for local use. It focuses on rapid transaction logging, simple account management, and auditable snapshots through a "rendering" cycle.
+Sigma es una aplicación de escritorio para anotar en qué se te va la plata, sin cuentas, sin
+suscripción y sin conexión a internet. Todos tus datos viven en un solo archivo que tú eliges: si
+lo guardas en tu carpeta de Google Drive, queda respaldado solo.
 
-![Project Logo](assets/demo.gif)
+## Instalación
 
-## Why Sigma?
+1. Descarga `Sigma.app.zip` desde [Releases](https://github.com/fzunigam/sigma/releases).
+2. Descomprime y arrastra **Sigma** a tu carpeta `Aplicaciones`.
+3. Ábrela. La primera vez, macOS pedirá confirmación por ser una app sin firmar: clic derecho →
+   *Abrir*.
 
-Most finance trackers are either too complex or require too many clicks. Sigma is built for users who live in the terminal and want to:
+## Primer uso
 
-*   **Log quickly**: Record expenses, income, and transfers with minimal keystrokes.
-*   **Audit with ease**: Use the `render` command to verify and clear your pending movements into historical snapshots.
-*   **Stay local**: Your data stays on your machine in a lightweight SQLite database.
-*   **See the big picture**: Rich terminal tables provide instant clarity on your balances and credit availability.
+Al abrirla por primera vez eliges dónde vivirán tus datos:
 
-## Features
+- **Crear una base de datos nueva** — empezar de cero. Guárdala dentro de tu carpeta de Google
+  Drive o Dropbox y el respaldo queda resuelto.
+- **Abrir una base existente** — si ya tienes un archivo, por ejemplo en otro computador.
+- **Traer datos de la versión anterior** — aparece solo si tenías Sigma instalado antes. Copia tus
+  cuentas y movimientos al archivo nuevo sin tocar el original.
 
-- ⚡ **Fast Logging**: Simple commands for `exp` (expense), `inc` (income), and `tr` (transfer).
-- 🏦 **Account Management**: Support for both **Debit** and **Credit** accounts with rolling credit limit tracking.
-- 🔄 **Rendering Cycle**: Mark movements for review and "render" them into your history once verified.
-- 📊 **Rich Interface**: Beautifully formatted tables powered by [Rich](https://github.com/Textualize/rich).
-- 📜 **Audit Log**: Full history of movements and render snapshots.
-- 🌐 **Web Dashboard**: Modern, minimalist local web client (`sgm web`).
-- 🖥️ **Desktop App**: Native macOS window container for the web client (`sgm app`).
+Después, crea tus cuentas en **Cuentas** y ya puedes registrar.
 
-## Installation & Setup
+## Cómo se usa
 
-### 🖥️ macOS Standalone Application (Recommended)
-Sigma is distributed primarily as a standalone macOS application. You do not need to install Python or use the terminal to get started.
+**Registrar** es lo primero que ves. Escribes el monto, una descripción y listo. La cuenta, la
+fecha y el resto vienen con valores por defecto.
 
-1. **Download the app**: Get the latest `Sigma.dmg` or `Sigma.app.zip` from [GitHub Releases](https://github.com/fzunigam/sigma/releases).
-2. **Install**: Drag `Sigma` to your `/Applications` folder.
-3. **Launch**: Double-click `Sigma.app` to open the native application window.
-4. **Onboarding**: On your first launch, the app will automatically initialize. An interactive onboarding welcome screen will guide you to set up your primary cash account or import a previous backup ZIP.
-5. **Optional CLI Setup**: On startup, the app automatically symlinks the `sgm` command-line executable into your path (at `/usr/local/bin/sgm` or `~/.local/bin/sgm`). You can open your terminal and run `sgm status` to start using the CLI alongside the app!
+**Cuentas** pueden ser de dos tipos:
 
-### 💻 Command-Line Interface (CLI) & Developer Setup
-For developers or terminal-only users, Sigma can be installed as a Python package. It requires **Python 3.10** or higher.
+- *De saldo* — una cuenta corriente o el efectivo que llevas encima. Muestra cuánto tienes.
+- *Tarjeta de crédito* — tiene un cupo. Muestra cuánto has gastado y cuánto te queda disponible.
 
-```bash
-# Install core CLI only
-pip install sigma-finance
+**Traspasos** mueven plata entre tus propias cuentas —sacar del banco, pagar la tarjeta— y no
+cuentan como gasto ni como ingreso.
 
-# Or install with native desktop window support (macOS)
-pip install "sigma-finance[desktop]"
-```
+**Conciliar** es para cuadrar. Cada movimiento nace marcado como "por conciliar"; cuando revisas
+un grupo y ves que está correcto, presionas *Conciliar* y se guarda un resumen con la fecha y el
+resultado neto. Los movimientos dejan de estar pendientes, pero la conciliación conserva el
+vínculo, así que siempre puedes volver a ver qué incluyó.
 
-**First-run CLI setup**:
-If you are using the CLI standalone, initialize your database and configuration wizard:
-```bash
-sgm start
-```
+**Movimientos** muestra un mes a la vez, con sus totales de ingresos, gastos y balance.
 
-## Usage
+## Respaldos
 
-### Core Workflow
+Cada vez que Sigma abre tu archivo, guarda una copia con la fecha en una carpeta
+`.sigma-backups/` junto a él. Se conservan las últimas 10 y se restauran desde **Ajustes**.
 
-1.  **Check your status**:
-    ```bash
-    sgm status
-    ```
-2.  **Log an expense**:
-    ```bash
-    # Usage: sgm exp <amount> <description> <mark_for_render: yes|no> [account_id] [date]
-    sgm exp 5000 "Lunch" yes wallet 2026-05-20
-    ```
-3.  **Log income**:
-    ```bash
-    sgm inc 2500000 "Salary" no bci
-    ```
-4.  **Transfer between accounts**:
-    ```bash
-    sgm tr bci wallet 50000
-    ```
-5.  **Render marked movements**:
-    ```bash
-    # Sums marked items, logs to history, and clears marks.
-    sgm render
-    ```
+Si además tienes el archivo en Drive o Dropbox, cuentas con el historial de versiones de ese
+servicio.
 
-### Web Dashboard
+> Una advertencia: no dejes Sigma abierto en dos computadores al mismo tiempo sobre el mismo
+> archivo. Sigma te avisa si lo detecta, pero la sincronización puede perder cambios.
 
-To launch the local web interface:
+## Desarrollo
 
 ```bash
-sgm web         # Launches the local dashboard in your browser
+make install   # dependencias
+make dev       # abrir la aplicación
+make check     # lint y tests
+make app       # construir dist/Sigma.app
 ```
 
-### Desktop App
+Los detalles están en [docs/](docs/): [arquitectura](docs/arquitectura.md),
+[base de datos](docs/base-de-datos.md), [interfaz](docs/interfaz.md) y
+[desarrollo](docs/desarrollo.md).
 
-To run Sigma in a native macOS application window instead of your web browser, install the desktop package and launch it:
+## Licencia
 
-```bash
-sgm app
-```
-
-### Command Reference
-
-| Command | Description |
-| :--- | :--- |
-| `sgm status` | Show balances, credit limits, and marked totals. |
-| `sgm log [limit]` | List recent movements (default: 15). |
-| `sgm history` | View previous render results. |
-| `sgm acc list` | List all accounts and their details. |
-| `sgm config` | Configure default accounts for faster logging. |
-| `sgm web` | Start the local web dashboard server. |
-| `sgm app` | Launch the native macOS desktop app window. |
-| `sgm export` | Export all data to a ZIP file with CSV tables. |
-| `sgm delete <id>` | Remove a record by its unique ID (e.g., `m-1`). |
-
-For a complete reference of all available commands and their arguments, please refer to the [Detailed CLI Usage Guide](docs/cli-usage.md).
-
-## Development
-
-We use `Makefile` for common development tasks.
-
-```bash
-# Clone the repository
-git clone https://github.com/fzunigam/sigma
-cd sigma
-
-# Install in editable mode with dev dependencies
-make install
-
-# Run tests
-make test
-
-# Run linter
-make lint
-```
-
-## Project Structure
-
-- `src/sgm/` — Core Python package
-    - `cli.py` — Typer-based CLI command routing
-    - `app_launcher.py` — GUI Application runner & CLI symlink checker
-    - `cli_launcher.py` — CLI Application runner for the bundled binary
-    - `infrastructure/` — database, persistence and config management (`database.py`, `user_config.py`)
-    - `interface/` — terminal UI, banners and web server glue
-    - `interface/web/` — lightweight web server and static assets for the dashboard
-- `web/` — Next.js web client (React + Tailwind) and frontend sources
-- `docs/` — architecture, guides, deployment notes, and coding conventions
-- `tests/` — test suites (smoke, integration, unit)
-- `assets/` — images and demo assets (GIFs, screenshots)
-
-## License
-
-Sigma is licensed under the [MIT License](LICENSE).
-
-## Acknowledgments
-
-- [Typer](https://typer.tiangolo.com/) for the CLI framework.
-- [Rich](https://github.com/Textualize/rich) for the beautiful terminal output.
+[MIT](LICENSE).

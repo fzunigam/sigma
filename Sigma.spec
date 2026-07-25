@@ -1,105 +1,89 @@
-# -*- mode: python ; coding: utf-8 -*-
+# PyInstaller spec for the Sigma macOS app.
+#
+# Build with: make app
+#
+# The excludes below matter. PyInstaller walks whatever is importable in the
+# active environment, and without them a development machine drags numpy,
+# IPython, Jupyter and matplotlib into the bundle — hundreds of megabytes the
+# app never touches.
 
-block_cipher = None
+import sys
+from pathlib import Path
 
-# 1. GUI Application Analysis and Executable
-a_gui = Analysis(
-    ['src/sgm/app_launcher.py'],
-    pathex=['src'],
+sys.setrecursionlimit(5000)
+
+PROJECT = Path(SPECPATH)
+STATIC = PROJECT / "src" / "sigma" / "web" / "static"
+ICON = PROJECT / "build" / "logo.icns"
+
+EXCLUDES = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scipy",
+    "IPython",
+    "jupyter",
+    "jupyter_client",
+    "jupyter_core",
+    "notebook",
+    "ipykernel",
+    "jedi",
+    "zmq",
+    "tornado",
+    "pytest",
+    "_pytest",
+    "setuptools",
+    "pip",
+    "PIL",
+    "tkinter",
+    "test",
+    "unittest",
+]
+
+analysis = Analysis(
+    [str(PROJECT / "src" / "sigma" / "main.py")],
+    pathex=[str(PROJECT / "src")],
     binaries=[],
-    datas=[('src/sgm/interface/web/static', 'sgm/interface/web/static')],
-    hiddenimports=[],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
+    datas=[(str(STATIC), "sigma/web/static")],
+    hiddenimports=["uvicorn.logging", "uvicorn.protocols", "uvicorn.lifespan"],
+    excludes=EXCLUDES,
     noarchive=False,
 )
 
-pyz_gui = PYZ(a_gui.pure, a_gui.zipped_data, cipher=block_cipher)
+pyz = PYZ(analysis.pure)
 
-exe_gui = EXE(
-    pyz_gui,
-    a_gui.scripts,
+exe = EXE(
+    pyz,
+    analysis.scripts,
     [],
     exclude_binaries=True,
-    name='Sigma',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
+    name="Sigma",
     console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch='arm64',
-    codesign_identity=None,
-    entitlements_file=None,
-)
-
-# 2. CLI Executable Analysis and Executable
-a_cli = Analysis(
-    ['src/sgm/cli_launcher.py'],
-    pathex=['src'],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-
-pyz_cli = PYZ(a_cli.pure, a_cli.zipped_data, cipher=block_cipher)
-
-exe_cli = EXE(
-    pyz_cli,
-    a_cli.scripts,
-    [],
-    exclude_binaries=True,
-    name='sgm',
-    debug=False,
-    bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch='arm64',
-    codesign_identity=None,
-    entitlements_file=None,
+    upx=False,
 )
 
-# 3. Collection (combining both executables and their resources)
-coll = COLLECT(
-    exe_gui,
-    a_gui.binaries,
-    a_gui.zipfiles,
-    a_gui.datas,
-    exe_cli,
-    a_cli.binaries,
-    a_cli.zipfiles,
-    a_cli.datas,
+collection = COLLECT(
+    exe,
+    analysis.binaries,
+    analysis.datas,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='Sigma',
+    upx=False,
+    name="Sigma",
 )
 
-# 4. macOS App Bundle packaging
 app = BUNDLE(
-    coll,
-    name='Sigma.app',
-    icon='build/logo.icns',
-    bundle_identifier='com.sigma.finance',
+    collection,
+    name="Sigma.app",
+    icon=str(ICON) if ICON.exists() else None,
+    bundle_identifier="com.fzunigam.sigma",
     info_plist={
-        'NSPrincipalClass': 'NSApplication',
-        'NSAppleScriptEnabled': False,
+        "CFBundleName": "Sigma",
+        "CFBundleDisplayName": "Sigma",
+        "CFBundleShortVersionString": "1.0.0",
+        "CFBundleVersion": "1.0.0",
+        "NSHighResolutionCapable": True,
+        "LSApplicationCategoryType": "public.app-category.finance",
+        "NSHumanReadableCopyright": "MIT",
     },
 )

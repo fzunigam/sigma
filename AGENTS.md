@@ -1,24 +1,79 @@
 # Sigma
 
-Sigma is a CLI-first personal finance tracker focused on fast transaction logging and auditable render snapshots.
+Aplicación de escritorio para macOS que registra finanzas personales. Un solo usuario, un solo
+archivo de datos, sin servidor ni cuentas en la nube.
 
-## Stack
-- Python 3.12
-- SQLite
-- Typer + Rich
+**La regla que manda sobre todas las demás: si una función hace que la aplicación sea más difícil
+de usar, no va.** Sigma ya fue una herramienta que creció hasta volverse incómoda; la versión 1.0
+existe para revertir eso.
 
-## Guidance
-- Architecture overview: `docs/architecture.md`
-- Coding conventions: `docs/conventions/`
-- Decision log: `docs/decisions/`
-- Implementation plans: `docs/plans/`
-- Web design guidelines: `docs/conventions/design-guidelines.md` (must be followed when introducing or changing any web/user interface)
+## Stack real
 
-## Commands
-- Install dev setup: `python3.12 -m pip install -e ".[dev,desktop]"`
-- Run tests: `python3.12 -m pytest -q`
-- Run lint: `python3.12 -m ruff check .`
-- Convenience commands: `make install`, `make test`, `make lint`, `make smoke`
+| Capa | Qué es |
+|---|---|
+| Datos | SQLite, montos en pesos enteros, un archivo `.db` que el usuario elige |
+| Backend | Python 3.12 + FastAPI, escuchando solo en `127.0.0.1` |
+| Ventana | pywebview (WKWebView) |
+| Interfaz | Vite + React 18 + TypeScript estricto + Tailwind v4 |
+| Empaquetado | PyInstaller → `dist/Sigma.app` |
 
-## Changelog
-Keep `CHANGELOG.md` up to date. Add entries under `[Unreleased]` for every meaningful change using: Added, Changed, Deprecated, Removed, Fixed, Security.
+No hay CLI, no hay paquete en PyPI, no hay build de Windows ni de Linux.
+
+## Estructura
+
+```
+src/sigma/
+  main.py          Arranque: servidor en un hilo + ventana nativa
+  api.py           Rutas HTTP (todo bajo /api)
+  database.py      Ciclo de vida del archivo .db: crear, abrir, migrar, restaurar
+  settings.py      Ajustes de la app (ruta del .db, recientes, tema)
+  bridge.py        Diálogos nativos de archivo expuestos a JavaScript
+  db/              Acceso a datos, un módulo por tema
+web/src/
+  lib/             api, format, bridge, types
+  components/      Piezas reutilizables
+  views/           Una por pantalla
+tests/             pytest, sin dependencias entre archivos
+docs/              Ver docs/README.md
+```
+
+## Comandos
+
+```bash
+make install   # dependencias de Python y de la interfaz
+make dev       # abrir la aplicación
+make check     # lint + tests (esto es lo que corre CI)
+make app       # construir dist/Sigma.app
+```
+
+Para trabajar en la interfaz con recarga en caliente: `make api` en una terminal y
+`cd web && npm run dev` en otra.
+
+## Reglas de trabajo
+
+**Idioma.** Todo lo que ve el usuario va en español, sin jerga: "Gasto", "Saldo", "Conciliar".
+El código, los identificadores, los comentarios y los mensajes de commit van en inglés. La
+documentación de `docs/` va en español.
+
+**Mensajes de error.** Los que lanza `sigma.db.errors` se muestran tal cual en la interfaz.
+Escríbelos en español, dirigidos a la persona, y di qué hacer: `"Saldo insuficiente en 'Efectivo'.
+Disponible: 20000, necesario: 35000."`, no `"insufficient funds"`.
+
+**Base de datos.** El archivo puede estar en una carpeta sincronizada (Drive, Dropbox). Por eso:
+sin WAL, conexiones cortas, y respaldo antes de abrir. Todo eso vive en `sigma/db/connection.py`
+y no debe eludirse abriendo `sqlite3.connect` por fuera.
+
+**Interfaz.** Sigue `docs/interfaz.md`. Lo importante: verde y rojo son exclusivamente el signo
+del dinero, nunca decoración ni estados; todos los montos pasan por el componente `Money`; ningún
+archivo debería superar ~300 líneas.
+
+**Tests.** Cada cambio de comportamiento en `sigma/db/` o en `sigma/api.py` necesita un test. La
+suite corre en menos de dos segundos; no hay excusa para no ejecutarla.
+
+**Changelog.** Registra los cambios que se notan al usar la aplicación en `CHANGELOG.md`, bajo
+`[Unreleased]`, usando Added / Changed / Removed / Fixed. Los refactors internos no van.
+
+## Fuera de alcance
+
+Categorías, multi-moneda, presupuestos, sincronización propia, otras plataformas y volver a
+publicar en PyPI. Si algo de esto parece necesario, discútelo antes de escribir código.

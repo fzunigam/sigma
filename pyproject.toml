@@ -4,25 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sigma-finance"
-version = "0.4.0"
-description = "Sigma CLI finance tracker"
+version = "1.0.0"
+description = "Sigma — registro simple de finanzas personales para macOS"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 classifiers = [
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "License :: OSI Approved :: MIT License",
-  "Environment :: Console",
+  "Environment :: MacOS X",
+  "Private :: Do Not Upload",
 ]
 dependencies = [
-  "typer>=0.12.3",
-  "rich>=13.7.1",
-  "tomli>=2.0.1; python_version < '3.11'",
   "fastapi>=0.110.0",
   "uvicorn>=0.28.0",
-  "python-multipart>=0.0.9",
+  "pywebview>=5.1",
 ]
 
 [project.urls]
@@ -33,24 +29,15 @@ Issues = "https://github.com/fzunigam/sigma/issues"
 dev = [
   "pytest>=8.2.0",
   "ruff>=0.4.0",
-  "build>=1.2.2",
-  "twine>=6.1.0",
   "httpx>=0.27.0",
   "pyinstaller>=6.4.0",
 ]
-desktop = [
-  "pywebview>=5.1",
-]
-
-
-[project.scripts]
-sgm = "sgm.cli:app"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
-"sgm" = ["interface/web/static/**/*"]
+"sigma" = ["web/static/**/*"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -58,3 +45,11 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["build", "dist", "web"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

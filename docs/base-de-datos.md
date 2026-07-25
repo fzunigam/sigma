@@ -1,0 +1,113 @@
+# Base de datos
+
+## El archivo
+
+Todos tus datos están en un archivo `.db` que eliges tú. La aplicación recuerda cuál es en
+`~/Library/Application Support/Sigma/settings.json`, junto con los últimos cinco usados y el tema.
+
+Las **cuentas por defecto** no se guardan ahí sino dentro del propio `.db`, en la tabla `meta`.
+Así, si copias el archivo a otro computador, se lleva su configuración puesta.
+
+## Guardarlo en Google Drive
+
+Es el uso previsto: eliges un archivo dentro de la carpeta local de Drive y el servicio lo
+sincroniza solo. Pero SQLite en una carpeta sincronizada tiene un riesgo real —el cliente de
+sincronización puede subir el archivo mientras se está escribiendo— así que Sigma toma cuatro
+medidas, todas en `sigma/db/connection.py`:
+
+**Sin WAL.** El modo por defecto de SQLite deja archivos `-wal` y `-shm` al lado de la base.
+Drive los sincroniza por separado y fuera de orden, y una base sin su WAL correspondiente queda
+inconsistente. Sigma usa `journal_mode = DELETE`, que no deja nada al lado.
+
+**`synchronous = FULL`.** Cada escritura llega al disco antes de que la operación termine, así
+el cliente de sincronización nunca ve un estado a medias.
+
+**Conexiones cortas.** Se abre una conexión por operación y se cierra enseguida. La ventana en
+que el archivo está ocupado dura milisegundos.
+
+**Respaldo antes de abrir.** Ver más abajo.
+
+Aun así, la regla de oro es la de siempre: **no tengas Sigma abierto en dos computadores a la
+vez.** Para eso está el aviso de bloqueo.
+
+## Respaldos automáticos
+
+Cada vez que Sigma abre una base existente, primero saca una copia en `.sigma-backups/`, dentro de
+la misma carpeta, con la fecha y hora en el nombre. Se conservan los últimos 10.
+
+La copia se hace con la API de respaldo de SQLite, no con `cp`, así que es consistente aunque algo
+más esté escribiendo en ese momento.
+
+Se restauran desde **Ajustes → Respaldos automáticos**. Antes de reemplazar la base activa, Sigma
+respalda el estado actual, así que restaurar también se puede deshacer.
+
+## Aviso de bloqueo
+
+Al abrir una base, Sigma escribe un archivo `<nombre>.db.lock` con el nombre del equipo y el
+número de proceso. Si al abrir encuentra un bloqueo de **otro** equipo, muestra una advertencia en
+Ajustes.
+
+Es un aviso, no un candado: una carpeta sincronizada no permite bloqueo real. Un bloqueo dejado
+por un cierre forzado en este mismo computador se detecta como obsoleto (el proceso ya no existe)
+y se ignora, para que un cierre brusco no deje una advertencia permanente.
+
+## Esquema
+
+```sql
+accounts(
+    id TEXT PK, name, kind CHECK (kind IN ('debit','credit')),
+    balance INT, credit_limit INT, created_at, deleted_at)
+
+movements(
+    id TEXT PK, kind CHECK (kind IN ('expense','income')),
+    amount INT CHECK (amount > 0), description,
+    account_id → accounts, date,
+    pending INT DEFAULT 1,
+    reconciliation_id → reconciliations NULL,
+    created_at, deleted_at)
+
+transfers(
+    id TEXT PK, from_account → accounts, to_account → accounts,
+    amount INT CHECK (amount > 0), date, created_at, deleted_at)
+
+reconciliations(
+    id TEXT PK, net_amount INT, movement_count INT, date, created_at)
+
+meta(key TEXT PK, value TEXT)
+```
+
+### Cómo se leen los saldos
+
+En una cuenta de saldo (`debit`), `balance` es lo que tienes. En una tarjeta (`credit`), `balance`
+es lo que **debes**, y `credit_limit` es el máximo. Por eso el signo se invierte: un gasto con la
+tarjeta sube `balance`, y pagarla lo baja. La API expone además un campo calculado `available`,
+que es el saldo en una y el cupo restante en la otra.
+
+### Fechas
+
+`date` es el día del movimiento, en formato `YYYY-MM-DD`; es lo que ordena y filtra la interfaz.
+`created_at` es cuándo se registró, y sirve solo para desempatar dentro de un mismo día.
+
+## Migración desde la versión anterior
+
+Si existe una base de la versión pre-1.0 en `~/.local/share/sgm/sigma.db`, la pantalla de
+bienvenida ofrece traerla. **El archivo original nunca se toca**: se crea uno nuevo donde tú
+elijas y se copian los datos.
+
+Qué cambia en el camino:
+
+| Antes | Ahora |
+|---|---|
+| `accounts.type` | `accounts.kind` |
+| tabla `movement_marks` | columna `movements.pending` |
+| `movements.created_at` (era la fecha) | `movements.date` |
+| `render_history` | `reconciliations` |
+| cuenta reservada `deleted` | cuenta normal marcada como eliminada |
+| `~/.config/sgm/config.toml` | tabla `meta` del propio `.db` |
+
+Lo único que no sobrevive es el vínculo entre las conciliaciones antiguas y sus movimientos: la
+tabla `render_history` guardaba solo un total, sin registrar qué cerraba. Esos movimientos quedan
+como ya conciliados pero sin conciliación asociada. De ahora en adelante el vínculo sí se guarda.
+
+La migración está cubierta por `tests/test_schema.py`, que arma una base con el formato antiguo y
+verifica saldos, marcas, fechas y borrados.

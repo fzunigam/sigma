@@ -1,1 +1,0 @@
-# Sigma Web Interface Package

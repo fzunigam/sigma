@@ -1,14 +1,57 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Cambios que se notan al usar Sigma. Formato:
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-24
+
+Reformulación completa: Sigma deja de ser una herramienta de terminal con una interfaz encima y
+pasa a ser una aplicación de escritorio simple, en español.
+
+### Added
+- **El archivo de datos lo eliges tú.** Al abrir Sigma por primera vez decides dónde vive tu base
+  de datos. Guardándola en Google Drive o Dropbox queda respaldada sola. Se puede cambiar de
+  archivo desde Ajustes, con una lista de recientes.
+- **Respaldos automáticos.** Cada vez que Sigma abre tu archivo, guarda una copia con la fecha en
+  `.sigma-backups/`. Se conservan las últimas 10 y se restauran desde Ajustes.
+- **Migración desde la versión anterior.** Si tenías Sigma instalado, la pantalla de bienvenida
+  ofrece traer tus cuentas y movimientos al archivo nuevo. El original no se toca.
+- **Aviso de archivo abierto en otro equipo**, para evitar que la sincronización pierda cambios.
+- **Las conciliaciones recuerdan qué movimientos cerraron.** Antes solo se guardaba el total.
+- Diálogos nativos de macOS para elegir archivos, en vez de la subida de archivos del navegador.
+- Tema claro, además del oscuro.
+
+### Changed
+- **Todo en español y sin jerga.** "Verification Node" es ahora *Conciliar*, "Chronological
+  Activity" es *Últimos movimientos*, "Add Ledger" es *Agregar cuenta*.
+- **El ciclo `render` pasa a llamarse conciliación**, que es lo que hace. La mecánica es la misma:
+  los movimientos nacen pendientes y se cierran en grupo.
+- **Registrar un movimiento está siempre a la vista** en Resumen y necesita solo monto y
+  descripción.
+- Movimientos muestra un mes a la vez, con sus totales, en vez de un formulario de filtros.
+- Eliminar una cuenta ya no reasigna sus movimientos a una cuenta ficticia `deleted`: la cuenta
+  se marca como eliminada y su historial se conserva legible.
+- Interfaz reconstruida con Vite en vez de Next.js, y repartida en componentes y vistas en lugar
+  de un único archivo de 1.777 líneas.
+- El paquete de Python pasa de `sgm` a `sigma`.
+
+### Removed
+- **La interfaz de línea de comandos completa** (21 comandos) y su publicación en PyPI.
+- El symlink automático a `/usr/local/bin/sgm`.
+- El comando `update` y el aviso de nueva versión.
+- Los respaldos manuales en ZIP con CSVs, reemplazados por el archivo elegible y los respaldos
+  automáticos.
+- El botón de "resetear la base de datos", innecesario ahora que se puede crear un archivo nuevo.
+
 ### Fixed
-- Fixed a bug where uploading or importing ZIP backup files did not open the file selection dialog in the desktop app's welcome wizard and settings panel due to a WKWebView label-click forwarding bug. Replaced the label elements with direct ref button clicks.
-- Resolved an HTTP 405 Method Not Allowed error that occurred when performing backup imports by terminating lingering Python uvicorn server processes from older builds.
-- Improved ZIP backup import robustness by automatically detecting and handling nested directory structures (e.g. ZIPs created by compressing folders) inside the zip file.
+- Un cierre forzado de la aplicación ya no deja un aviso permanente de "abierto en otro equipo":
+  los bloqueos de procesos que ya no existen se detectan como obsoletos.
+- El diálogo para elegir archivos funciona de forma confiable: se usa el diálogo nativo del
+  sistema en lugar de `<input type="file">`, que fallaba dentro de WKWebView.
+- El bundle de macOS ya no incluye numpy, IPython, Jupyter ni jedi, que entraban por recoger el
+  entorno de desarrollo completo.
 
 ## [0.4.0] - 2026-06-05
 
