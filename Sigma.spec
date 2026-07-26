@@ -16,6 +16,9 @@ PROJECT = Path(SPECPATH)
 STATIC = PROJECT / "src" / "sigma" / "web" / "static"
 ICON = PROJECT / "build" / "logo.icns"
 
+sys.path.insert(0, str(PROJECT / "src"))
+from sigma import __version__ as VERSION  # noqa: E402
+
 EXCLUDES = [
     "numpy",
     "pandas",
@@ -80,8 +83,8 @@ app = BUNDLE(
     info_plist={
         "CFBundleName": "Sigma",
         "CFBundleDisplayName": "Sigma",
-        "CFBundleShortVersionString": "1.0.0",
-        "CFBundleVersion": "1.0.0",
+        "CFBundleShortVersionString": VERSION,
+        "CFBundleVersion": VERSION,
         "NSHighResolutionCapable": True,
         "LSApplicationCategoryType": "public.app-category.finance",
         "NSHumanReadableCopyright": "MIT",
