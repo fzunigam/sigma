@@ -73,6 +73,13 @@ suite corre en menos de dos segundos; no hay excusa para no ejecutarla.
 **Changelog.** Registra los cambios que se notan al usar la aplicación en `CHANGELOG.md`, bajo
 `[Unreleased]`, usando Added / Changed / Removed / Fixed. Los refactors internos no van.
 
+**Versiones.** Al publicar una versión (tag `vX.Y.Z` en GitHub): sube `version` en `pyproject.toml`
+y `__version__` en `src/sigma/__init__.py`, y mueve `[Unreleased]` del changelog a esa versión con
+la fecha del día. Además, **reconstruye e instala la app local** (`make app`, reemplazar
+`/Applications/Sigma.app`) para que quede en la misma versión que el tag. `~/Library/Application
+Support/Sigma/settings.json` vive fuera del `.app`, así que reinstalar no toca la base de datos
+elegida ni el tema — no hay que hacer nada especial para conservarlos.
+
 ## Fuera de alcance
 
 Categorías, multi-moneda, presupuestos, sincronización propia, otras plataformas y volver a

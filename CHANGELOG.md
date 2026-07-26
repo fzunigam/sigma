@@ -5,6 +5,8 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-26
+
 ### Added
 - **Editar movimientos.** Cada fila de la lista tiene un lápiz: se puede corregir el monto, la
   descripción, el tipo, la cuenta y la fecha sin borrar y volver a escribir. Los saldos se ajustan
