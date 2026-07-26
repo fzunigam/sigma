@@ -45,8 +45,10 @@ sistema en cada arranque, así que dos ventanas nunca chocan.
 ## Capas
 
 **`sigma/db/`** — Todo el acceso a datos, un módulo por tema: `accounts`, `movements`,
-`reconciliations`, `preferences`. Cada función recibe la ruta del archivo de forma explícita y
-abre su propia conexión corta a través de `connection.py`. No hay conexión global ni ORM.
+`transfers`, `reconciliations`, `preferences`. Cada función recibe la ruta del archivo de forma
+explícita y abre su propia conexión corta a través de `connection.py`. No hay conexión global ni
+ORM. La lista combinada de movimientos y traspasos —la que lee la interfaz— vive en `movements`,
+porque es una sola consulta que une ambas tablas.
 
 **`sigma/database.py`** — El ciclo de vida del *archivo*: crear, abrir, migrar, restaurar. Aquí
 viven las reglas de seguridad para carpetas sincronizadas, en un solo lugar.

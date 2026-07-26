@@ -9,6 +9,12 @@ import type { Summary } from '../lib/types';
 
 type Kind = 'expense' | 'income' | 'transfer';
 
+const PLACEHOLDER: Record<Kind, string> = {
+  expense: 'Supermercado',
+  income: 'Sueldo',
+  transfer: 'Pago tarjeta',
+};
+
 interface Props {
   summary: Summary;
   onChanged: () => void;
@@ -53,7 +59,7 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
     event.preventDefault();
     setError('');
 
-    const value = Number(amount.replace(/\D/g, ''));
+    const value = Number(amount);
     if (!value) {
       setError('Escribe un monto.');
       return;
@@ -74,6 +80,7 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
           from_account: account,
           to_account: target,
           amount: value,
+          description: description.trim(),
           date: date || null,
         });
         notify.success('Transferencia registrada.');
@@ -124,24 +131,27 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
             id="monto"
             ref={amountField}
             value={amount}
-            onChange={(event) => setAmount(event.target.value.replace(/\D/g, ''))}
+            onValueChange={setAmount}
             placeholder="0"
             autoFocus
             disabled={noAccounts}
           />
         </Field>
 
-        {kind !== 'transfer' && (
-          <Field label="Descripción" htmlFor="descripcion">
-            <Input
-              id="descripcion"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder={kind === 'expense' ? 'Supermercado' : 'Sueldo'}
-              disabled={noAccounts}
-            />
-          </Field>
-        )}
+        <Field
+          label="Descripción"
+          htmlFor="descripcion"
+          hint={kind === 'transfer' ? 'Opcional.' : undefined}
+        >
+          <Input
+            id="descripcion"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder={PLACEHOLDER[kind]}
+            maxLength={200}
+            disabled={noAccounts}
+          />
+        </Field>
 
         <Field label={kind === 'transfer' ? 'Desde' : 'Cuenta'} htmlFor="cuenta">
           <Select

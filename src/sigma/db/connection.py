@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 import socket
 import sqlite3
+import unicodedata
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -26,11 +27,24 @@ BACKUPS_KEPT = 10
 LOCK_SUFFIX = ".lock"
 
 
+def fold(text: str | None) -> str:
+    """Lowercase and drop accents, so searching ``cafe`` finds ``Café``.
+
+    SQLite's own ``LIKE`` only ignores case for ASCII, which in Spanish means
+    half the words in the database would not match what the user typed.
+    """
+    if not text:
+        return ""
+    decomposed = unicodedata.normalize("NFD", text)
+    return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+
+
 def _configure(conn: sqlite3.Connection) -> None:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = DELETE")
     conn.execute("PRAGMA synchronous = FULL")
+    conn.create_function("fold", 1, fold, deterministic=True)
 
 
 @contextmanager

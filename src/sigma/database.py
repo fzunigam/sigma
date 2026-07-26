@@ -8,6 +8,7 @@ data) are applied in exactly one place.
 from __future__ import annotations
 
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +48,16 @@ def open_at_startup() -> Path | None:
     if path is None:
         return None
 
-    connection.create_backup(path, once_per_day=True)
+    # A format upgrade rewrites the file, so it always deserves its own backup
+    # even if today's has already been taken.
+    pending = schema.needs_upgrade(path)
+    connection.create_backup(path, once_per_day=not pending)
+    try:
+        _upgrade(path)
+    except DatabaseFileError as exc:
+        # Launching must never fail because of the remembered file. Picking it
+        # again from Ajustes reports the same refusal where it can be read.
+        print(f"Sigma: {exc}", file=sys.stderr)
     connection.acquire_lock(path)
     return path
 
@@ -112,9 +122,20 @@ def open_existing(path: Path) -> Path:
         connection.release_lock(previous)
 
     connection.create_backup(path)
+    _upgrade(path)
     settings.set_database_path(path)
     connection.acquire_lock(path)
     return path
+
+
+def _upgrade(path: Path) -> None:
+    """Apply any pending format upgrade, reporting refusals in the interface."""
+    try:
+        schema.upgrade_database(path)
+    except ValueError as exc:
+        raise DatabaseFileError(str(exc)) from exc
+    except OSError as exc:
+        raise DatabaseFileError(f"No se pudo actualizar el archivo: {exc}") from exc
 
 
 def migrate_legacy(target: Path, source: Path | None = None) -> dict[str, Any]:

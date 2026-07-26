@@ -1,13 +1,12 @@
-import { useState } from 'react';
-import { ArrowRight, Minus, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Minus, Pencil, Plus } from 'lucide-react';
 import type { Activity } from '../lib/types';
-import { shortDate } from '../lib/format';
+import { activityLabel, shortDate } from '../lib/format';
 import { Money } from './Money';
 import { EmptyState } from './EmptyState';
 
 interface Props {
   items: Activity[];
-  onDelete?: (item: Activity) => void;
+  onEdit?: (item: Activity) => void;
   emptyTitle: string;
   emptyHint?: string;
 }
@@ -17,9 +16,7 @@ interface Props {
  * right as a sentence — what it was, where it happened, when — with the amount
  * pinned right so a column of figures can be scanned vertically.
  */
-export function ActivityList({ items, onDelete, emptyTitle, emptyHint }: Props) {
-  const [confirming, setConfirming] = useState<string | null>(null);
-
+export function ActivityList({ items, onEdit, emptyTitle, emptyHint }: Props) {
   if (items.length === 0) {
     return <EmptyState title={emptyTitle} hint={emptyHint} />;
   }
@@ -36,7 +33,7 @@ export function ActivityList({ items, onDelete, emptyTitle, emptyHint }: Props) 
 
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-medium truncate" data-selectable>
-              {item.record === 'transfer' ? 'Transferencia' : item.description}
+              {activityLabel(item)}
             </p>
             <p className="flex items-center gap-1.5 text-[11px] text-text-subtle mt-0.5">
               <span className="truncate">{item.account_name}</span>
@@ -64,42 +61,17 @@ export function ActivityList({ items, onDelete, emptyTitle, emptyHint }: Props) 
             className="text-[13px] font-medium shrink-0"
           />
 
-          {onDelete && (
-            <div className="w-16 shrink-0 flex justify-end">
-              {confirming === item.id ? (
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onDelete(item);
-                      setConfirming(null);
-                    }}
-                    className="text-[11px] font-semibold text-negative px-1.5 py-0.5
-                      rounded hover:bg-negative/10"
-                  >
-                    Borrar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(null)}
-                    className="text-[11px] text-text-subtle px-1.5 py-0.5 rounded
-                      hover:bg-surface-hover"
-                  >
-                    No
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirming(item.id)}
-                  aria-label={`Eliminar ${item.description || 'transferencia'}`}
-                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100
-                    text-text-subtle hover:text-negative transition-all p-1"
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              aria-label={`Editar ${activityLabel(item)}`}
+              title="Editar"
+              className="shrink-0 grid place-items-center size-7 rounded-[6px]
+                text-text-subtle hover:text-text hover:bg-surface-hover transition-colors"
+            >
+              <Pencil size={13} />
+            </button>
           )}
         </li>
       ))}

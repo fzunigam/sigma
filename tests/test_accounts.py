@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sigma.db import accounts, movements
+from sigma.db import accounts, movements, transfers
 from sigma.db.errors import NotFound, ValidationError
 
 
@@ -64,8 +64,8 @@ def test_limit_rejected_on_debit_account(db: Path, wallet):
 def test_rename_id_carries_every_reference(db: Path, wallet):
     accounts.create_account(db, "bank", "Banco", "debit", balance=10_000)
     movements.create_movement(db, "expense", 1_000, "Café", "wallet")
-    movements.create_transfer(db, "wallet", "bank", 2_000)
-    movements.create_transfer(db, "bank", "wallet", 500)
+    transfers.create_transfer(db, "wallet", "bank", 2_000)
+    transfers.create_transfer(db, "bank", "wallet", 500)
 
     accounts.rename_account_id(db, "wallet", "efectivo")
 

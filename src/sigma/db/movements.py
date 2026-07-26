@@ -1,7 +1,11 @@
-"""Movements (expenses and income) and transfers between accounts.
+"""Movements — expenses and income — and the timeline that lists them.
 
-Both kinds of record update account balances as they are written, and deleting
-one reverses exactly the change it made. Amounts are whole Chilean pesos.
+Writing a movement updates its account's balance, editing one rebuilds that
+change from scratch, and deleting one reverses exactly what it did. Amounts
+are whole Chilean pesos.
+
+The activity listing lives here because it is what the interface reads: one
+timeline with movements and transfers merged and sorted by date.
 """
 
 from __future__ import annotations
@@ -10,9 +14,15 @@ from pathlib import Path
 from typing import Any
 
 from sigma.db.accounts import apply_balance_change, check_can_spend, require_account
-from sigma.db.connection import connect, now, today, transaction
+from sigma.db.connection import connect, fold, now, today, transaction
 from sigma.db.errors import NotFound, ValidationError
 from sigma.db.schema import new_id
+
+# How a transfer reads in the activity list. The note the user typed hangs off
+# this word, so searching "transferencia" finds every one of them.
+TRANSFER_LABEL = "Transferencia"
+
+MAX_DESCRIPTION = 200
 
 
 def balance_delta(kind: str, account_kind: str, amount: int) -> int:
@@ -27,6 +37,26 @@ def balance_delta(kind: str, account_kind: str, amount: int) -> int:
     return sign * amount
 
 
+# --- Validation shared with sigma.db.transfers -------------------------------
+
+
+def _check_kind(kind: str) -> None:
+    if kind not in ("expense", "income"):
+        raise ValidationError("El tipo de movimiento debe ser 'expense' o 'income'.")
+
+
+def check_amount(amount: int) -> None:
+    if amount <= 0:
+        raise ValidationError("El monto debe ser mayor que cero.")
+
+
+def clean_description(text: str, *, required: bool = True) -> str:
+    text = " ".join(text.split())
+    if required and not text:
+        raise ValidationError("La descripción no puede estar vacía.")
+    return text[:MAX_DESCRIPTION]
+
+
 # --- Movements -------------------------------------------------------------
 
 
@@ -39,13 +69,9 @@ def create_movement(
     date: str | None = None,
     pending: bool = True,
 ) -> dict[str, Any]:
-    if kind not in ("expense", "income"):
-        raise ValidationError("El tipo de movimiento debe ser 'expense' o 'income'.")
-    if amount <= 0:
-        raise ValidationError("El monto debe ser mayor que cero.")
-    description = description.strip()
-    if not description:
-        raise ValidationError("La descripción no puede estar vacía.")
+    _check_kind(kind)
+    check_amount(amount)
+    description = clean_description(description)
 
     account = require_account(db_path, account_id)
     if kind == "expense":
@@ -98,6 +124,78 @@ def set_movement_pending(db_path: Path, movement_id: str, pending: bool) -> dict
     return get_movement(db_path, movement_id)
 
 
+def update_movement(
+    db_path: Path,
+    movement_id: str,
+    kind: str | None = None,
+    amount: int | None = None,
+    description: str | None = None,
+    account_id: str | None = None,
+    date: str | None = None,
+    pending: bool | None = None,
+) -> dict[str, Any]:
+    """Correct a movement in place. Every field is optional; the rest stays put.
+
+    The balance is rebuilt rather than patched: the effect the movement had is
+    undone on the account it used to touch, and the new effect is applied to the
+    account it touches now. When both are the same account the two changes land
+    on the same row and net out, which is exactly right.
+    """
+    movement = get_movement(db_path, movement_id)
+
+    new_kind = kind or movement["kind"]
+    new_amount = movement["amount"] if amount is None else amount
+    new_date = date or movement["date"]
+    new_pending = bool(movement["pending"]) if pending is None else pending
+    new_description = (
+        movement["description"] if description is None else clean_description(description)
+    )
+
+    _check_kind(new_kind)
+    check_amount(new_amount)
+    if movement["reconciliation_id"] and new_pending:
+        raise ValidationError("Este movimiento ya fue conciliado.")
+
+    # A movement on a deleted account can still be corrected, but it cannot be
+    # moved onto one.
+    source = require_account(db_path, movement["account_id"], active=False)
+    target = (
+        source
+        if account_id in (None, source["id"])
+        else require_account(db_path, account_id)
+    )
+
+    old_delta = balance_delta(movement["kind"], source["kind"], movement["amount"])
+    new_delta = balance_delta(new_kind, target["kind"], new_amount)
+
+    if new_kind == "expense":
+        # Check against the balance the account would have without this movement,
+        # so raising an expense by a little does not need room for all of it.
+        without = dict(target)
+        if target["id"] == source["id"]:
+            without["balance"] -= old_delta
+        check_can_spend(without, new_amount)
+
+    with transaction(db_path) as conn:
+        conn.execute(
+            "UPDATE movements SET kind = ?, amount = ?, description = ?, account_id = ?,"
+            " date = ?, pending = ? WHERE id = ?",
+            (
+                new_kind,
+                new_amount,
+                new_description,
+                target["id"],
+                new_date,
+                int(new_pending),
+                movement_id,
+            ),
+        )
+        apply_balance_change(conn, source["id"], -old_delta)
+        apply_balance_change(conn, target["id"], new_delta)
+
+    return get_movement(db_path, movement_id)
+
+
 def delete_movement(db_path: Path, movement_id: str) -> None:
     """Soft-delete a movement and undo its effect on the account balance.
 
@@ -114,75 +212,6 @@ def delete_movement(db_path: Path, movement_id: str) -> None:
             conn,
             movement["account_id"],
             -balance_delta(movement["kind"], movement["account_kind"], movement["amount"]),
-        )
-
-
-# --- Transfers -------------------------------------------------------------
-
-
-def create_transfer(
-    db_path: Path,
-    from_account: str,
-    to_account: str,
-    amount: int,
-    date: str | None = None,
-) -> dict[str, Any]:
-    if amount <= 0:
-        raise ValidationError("El monto debe ser mayor que cero.")
-    if from_account == to_account:
-        raise ValidationError("El origen y el destino deben ser cuentas distintas.")
-
-    source = require_account(db_path, from_account)
-    target = require_account(db_path, to_account)
-
-    if source["kind"] == "credit":
-        raise ValidationError("No se puede transferir desde una tarjeta de crédito.")
-    check_can_spend(source, amount)
-    if target["kind"] == "credit" and target["balance"] < amount:
-        raise ValidationError(
-            f"El abono deja a '{target['name']}' con saldo a favor. "
-            f"Deuda actual: {target['balance']}, abono: {amount}."
-        )
-
-    transfer_id = new_id()
-    with transaction(db_path) as conn:
-        conn.execute(
-            "INSERT INTO transfers (id, from_account, to_account, amount, date, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (transfer_id, from_account, to_account, amount, date or today(), now()),
-        )
-        apply_balance_change(conn, from_account, -amount)
-        apply_balance_change(conn, to_account, amount if target["kind"] == "debit" else -amount)
-
-    return get_transfer(db_path, transfer_id)
-
-
-def get_transfer(db_path: Path, transfer_id: str) -> dict[str, Any]:
-    with connect(db_path) as conn:
-        row = conn.execute(
-            "SELECT t.*, f.name AS from_name, d.name AS to_name, d.kind AS to_kind"
-            " FROM transfers t"
-            " JOIN accounts f ON f.id = t.from_account"
-            " JOIN accounts d ON d.id = t.to_account"
-            " WHERE t.id = ?",
-            (transfer_id,),
-        ).fetchone()
-    if row is None or row["deleted_at"]:
-        raise NotFound("La transferencia no existe.")
-    return dict(row)
-
-
-def delete_transfer(db_path: Path, transfer_id: str) -> None:
-    transfer = get_transfer(db_path, transfer_id)
-    with transaction(db_path) as conn:
-        conn.execute(
-            "UPDATE transfers SET deleted_at = ? WHERE id = ?", (now(), transfer_id)
-        )
-        apply_balance_change(conn, transfer["from_account"], transfer["amount"])
-        apply_balance_change(
-            conn,
-            transfer["to_account"],
-            -transfer["amount"] if transfer["to_kind"] == "debit" else transfer["amount"],
         )
 
 
@@ -214,7 +243,7 @@ SELECT
     'transfer'      AS record,
     'transfer'      AS kind,
     t.amount        AS amount,
-    ''              AS description,
+    t.description   AS description,
     t.from_account  AS account_id,
     f.name          AS account_name,
     t.to_account    AS to_account_id,
@@ -232,24 +261,50 @@ ORDER BY date DESC, created_at DESC
 """
 
 
+# What a transfer reads as when it is being searched: the label the interface
+# shows, with the user's note attached, so both halves are findable.
+_TRANSFER_TEXT = (
+    f"CASE WHEN t.description = '' THEN '{TRANSFER_LABEL}'"
+    f" ELSE '{TRANSFER_LABEL}: ' || t.description END"
+)
+
+
 def list_activity(
-    db_path: Path, month: str | None = None, limit: int | None = None
+    db_path: Path,
+    month: str | None = None,
+    limit: int | None = None,
+    search: str | None = None,
 ) -> list[dict[str, Any]]:
     """Movements and transfers on one timeline, newest first.
 
-    ``month`` filters by ``YYYY-MM``; ``limit`` caps the number of rows.
+    ``month`` filters by ``YYYY-MM``, ``search`` matches the description or the
+    account names ignoring case and accents, and ``limit`` caps the rows.
     """
-    params: list[Any] = []
+    movement_params: list[Any] = []
+    transfer_params: list[Any] = []
+    movement_filter = transfer_filter = ""
+
     if month:
-        movement_filter = "AND substr(m.date, 1, 7) = ?"
-        transfer_filter = "AND substr(t.date, 1, 7) = ?"
-        params = [month, month]
-    else:
-        movement_filter = transfer_filter = ""
+        movement_filter += " AND substr(m.date, 1, 7) = ?"
+        transfer_filter += " AND substr(t.date, 1, 7) = ?"
+        movement_params.append(month)
+        transfer_params.append(month)
+
+    term = (search or "").strip()
+    if term:
+        pattern = f"%{fold(term)}%"
+        movement_filter += " AND (fold(m.description) LIKE ? OR fold(a.name) LIKE ?)"
+        transfer_filter += (
+            f" AND (fold({_TRANSFER_TEXT}) LIKE ?"
+            " OR fold(f.name) LIKE ? OR fold(d.name) LIKE ?)"
+        )
+        movement_params += [pattern, pattern]
+        transfer_params += [pattern, pattern, pattern]
 
     sql = _ACTIVITY_SQL.format(
         movement_filter=movement_filter, transfer_filter=transfer_filter
     )
+    params = movement_params + transfer_params
     if limit is not None:
         sql += " LIMIT ?"
         params.append(limit)

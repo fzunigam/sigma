@@ -361,3 +361,115 @@ def test_summary_hides_deleted_accounts(api: TestClient):
     summary = api.get("/api/summary").json()
     assert [a["id"] for a in summary["accounts"]] == ["wallet"]
     assert summary["totals"]["available"] == 100_000
+
+
+# --- Editing ---------------------------------------------------------------
+
+
+def test_movement_can_be_edited(api: TestClient):
+    created = api.post(
+        "/api/movements",
+        json={"kind": "expense", "amount": 30_000, "description": "Supermercdo"},
+    ).json()
+
+    response = api.patch(
+        f"/api/movements/{created['id']}",
+        json={"description": "Supermercado", "amount": 25_000},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["description"] == "Supermercado"
+    assert api.get("/api/summary").json()["totals"]["available"] == 75_000
+
+
+def test_editing_only_touches_the_fields_that_were_sent(api: TestClient):
+    created = api.post(
+        "/api/movements",
+        json={"kind": "expense", "amount": 30_000, "description": "Feria", "date": "2026-02-03"},
+    ).json()
+
+    edited = api.patch(f"/api/movements/{created['id']}", json={"amount": 31_000}).json()
+
+    assert edited["date"] == "2026-02-03"
+    assert edited["description"] == "Feria"
+
+
+def test_editing_beyond_the_balance_is_a_400_with_a_readable_message(api: TestClient):
+    created = api.post(
+        "/api/movements", json={"kind": "expense", "amount": 1_000, "description": "Café"}
+    ).json()
+
+    response = api.patch(f"/api/movements/{created['id']}", json={"amount": 500_000})
+
+    assert response.status_code == 400
+    assert "Saldo insuficiente" in response.json()["detail"]
+
+
+def test_editing_an_unknown_movement_is_a_404(api: TestClient):
+    assert api.patch("/api/movements/nope", json={"amount": 1}).status_code == 404
+
+
+def test_editing_with_an_invalid_payload_is_a_422(api: TestClient):
+    created = api.post(
+        "/api/movements", json={"kind": "expense", "amount": 1_000, "description": "Café"}
+    ).json()
+
+    assert api.patch(f"/api/movements/{created['id']}", json={"amount": 0}).status_code == 422
+    assert (
+        api.patch(f"/api/movements/{created['id']}", json={"kind": "otro"}).status_code == 422
+    )
+
+
+def test_transfer_carries_and_edits_its_description(api: TestClient):
+    api.post("/api/accounts", json={"id": "bank", "name": "Banco", "kind": "debit"})
+    created = api.post(
+        "/api/transfers",
+        json={
+            "from_account": "wallet",
+            "to_account": "bank",
+            "amount": 10_000,
+            "description": "Ahorro",
+        },
+    ).json()
+
+    assert created["description"] == "Ahorro"
+
+    edited = api.patch(
+        f"/api/transfers/{created['id']}", json={"description": "Ahorro del mes", "amount": 5_000}
+    ).json()
+
+    assert edited["description"] == "Ahorro del mes"
+    assert api.get("/api/summary").json()["totals"]["available"] == 100_000
+
+
+def test_editing_an_unknown_transfer_is_a_404(api: TestClient):
+    assert api.patch("/api/transfers/nope", json={"amount": 1}).status_code == 404
+
+
+# --- Searching -------------------------------------------------------------
+
+
+def test_movements_can_be_searched(api: TestClient):
+    for description, date in (("Dentista", "2025-02-11"), ("Supermercado", "2026-06-30")):
+        api.post(
+            "/api/movements",
+            json={"kind": "expense", "amount": 1_000, "description": description, "date": date},
+        )
+
+    found = api.get("/api/movements", params={"search": "dentista"}).json()
+
+    assert [item["description"] for item in found] == ["Dentista"]
+
+
+def test_search_reaches_past_the_current_month(api: TestClient):
+    api.post(
+        "/api/movements",
+        json={
+            "kind": "expense",
+            "amount": 1_000,
+            "description": "Café",
+            "date": "2024-01-02",
+        },
+    )
+
+    assert len(api.get("/api/movements", params={"search": "cafe"}).json()) == 1

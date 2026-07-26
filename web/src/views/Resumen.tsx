@@ -10,12 +10,12 @@ import type { Account, Activity, Summary } from '../lib/types';
 interface Props {
   summary: Summary;
   onChanged: () => void;
-  onDelete: (item: Activity) => void;
+  onEdit: (item: Activity) => void;
   notify: { success: (text: string) => void; error: (text: string) => void };
   onGoToAccounts: () => void;
 }
 
-export function Resumen({ summary, onChanged, onDelete, notify, onGoToAccounts }: Props) {
+export function Resumen({ summary, onChanged, onEdit, notify, onGoToAccounts }: Props) {
   const { totals, month, accounts } = summary;
   const hasCards = accounts.some((account) => account.kind === 'credit');
 
@@ -45,20 +45,10 @@ export function Resumen({ summary, onChanged, onDelete, notify, onGoToAccounts }
       <div className="grid gap-6 lg:grid-cols-[1fr_340px] items-start">
         <div className="space-y-6 min-w-0">
           <Card padded={false}>
-            <SectionHeader
-              title="Últimos movimientos"
-              className="p-5 pb-4"
-              action={
-                summary.recent.length > 0 ? (
-                  <span className="text-[11px] text-text-subtle">
-                    Pasa el cursor para eliminar
-                  </span>
-                ) : undefined
-              }
-            />
+            <SectionHeader title="Últimos movimientos" className="p-5 pb-4" />
             <ActivityList
               items={summary.recent}
-              onDelete={onDelete}
+              onEdit={onEdit}
               emptyTitle="Todavía no hay movimientos"
               emptyHint="Registra tu primer gasto o ingreso con el formulario de la derecha."
             />

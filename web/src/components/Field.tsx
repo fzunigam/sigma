@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { plainNumber } from '../lib/format';
 
 const CONTROL = `w-full h-9 px-3 bg-canvas border border-line rounded-[var(--radius-control)]
   text-sm text-text placeholder:text-text-subtle transition-colors
@@ -31,24 +32,46 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   },
 );
 
-/** A money input: right-aligned, tabular, and digits-only. */
-export const AmountInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  function AmountInput({ className = '', ...rest }, ref) {
-    return (
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-subtle">
-          $
-        </span>
-        <input
-          {...rest}
-          ref={ref}
-          inputMode="numeric"
-          className={`${CONTROL} pl-7 tnum text-right font-medium ${className}`}
-        />
-      </div>
-    );
-  },
-);
+interface AmountProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+  /** Digits only, no separators: what gets sent to the API. */
+  value: string;
+  onValueChange: (digits: string) => void;
+}
+
+/**
+ * A money input: right-aligned, tabular and digits-only. Thousands are grouped
+ * as you type, because `1250000` and `125000` are indistinguishable at a glance
+ * and getting a zero wrong is the easiest mistake to make in the whole app.
+ */
+export const AmountInput = forwardRef<HTMLInputElement, AmountProps>(function AmountInput(
+  { className = '', value, onValueChange, ...rest },
+  ref,
+) {
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-subtle">
+        $
+      </span>
+      <input
+        {...rest}
+        ref={ref}
+        value={value ? plainNumber(Number(value)) : ''}
+        onChange={(event) => onValueChange(onlyDigits(event.target.value))}
+        inputMode="numeric"
+        className={`${CONTROL} pl-7 tnum text-right font-medium ${className}`}
+      />
+    </div>
+  );
+});
+
+/** Digits, without leading zeros, capped well below the safe-integer limit. */
+function onlyDigits(raw: string): string {
+  return raw
+    .replace(/\D/g, '')
+    .replace(/^0+(?=\d)/, '')
+    .slice(0, 12);
+}
 
 export function Select({ className = '', ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...rest} className={`${CONTROL} pr-8 cursor-pointer ${className}`} />;

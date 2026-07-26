@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from sigma import database, settings
-from sigma.db import accounts, connection, movements
+from sigma.db import accounts, connection, movements, schema
 from sigma.db.errors import DatabaseFileError
 from sigma.db.schema import create_database, is_sigma_database
 
@@ -341,3 +341,71 @@ def _make_legacy_database(path: Path) -> Path:
     conn.commit()
     conn.close()
     return path
+
+
+# --- Format upgrades -------------------------------------------------------
+
+
+def make_version_1_database(path: Path) -> None:
+    """A file exactly as Sigma 1.0.0 left it: no ``transfers.description``."""
+    create_database(path)
+    with connection.transaction(path) as conn:
+        conn.execute("DROP TABLE transfers")
+        conn.execute(
+            "CREATE TABLE transfers ("
+            " id TEXT PRIMARY KEY,"
+            " from_account TEXT NOT NULL REFERENCES accounts(id),"
+            " to_account TEXT NOT NULL REFERENCES accounts(id),"
+            " amount INTEGER NOT NULL CHECK (amount > 0),"
+            " date TEXT NOT NULL, created_at TEXT NOT NULL, deleted_at TEXT)"
+        )
+        conn.execute("UPDATE meta SET value = '1' WHERE key = 'schema_version'")
+
+
+def test_opening_an_older_file_upgrades_it(drive: Path):
+    path = drive / "vieja.db"
+    make_version_1_database(path)
+
+    database.open_existing(path)
+
+    assert schema.needs_upgrade(path) is False
+
+
+def test_the_upgrade_is_backed_up_first(drive: Path):
+    path = drive / "vieja.db"
+    make_version_1_database(path)
+
+    database.open_existing(path)
+
+    assert len(connection.list_backups(path)) == 1
+
+
+def test_opening_a_file_from_a_newer_sigma_is_refused(drive: Path):
+    path = drive / "futura.db"
+    create_database(path)
+    with connection.transaction(path) as conn:
+        conn.execute("UPDATE meta SET value = '99' WHERE key = 'schema_version'")
+
+    with pytest.raises(DatabaseFileError, match="versión más nueva"):
+        database.open_existing(path)
+
+
+def test_startup_upgrades_the_remembered_file(drive: Path):
+    path = drive / "vieja.db"
+    make_version_1_database(path)
+    settings.set_database_path(path)
+
+    database.open_at_startup()
+
+    assert schema.needs_upgrade(path) is False
+
+
+def test_startup_survives_a_file_it_cannot_upgrade(drive: Path):
+    """Launching must not fail because of what the settings remember."""
+    path = drive / "futura.db"
+    create_database(path)
+    with connection.transaction(path) as conn:
+        conn.execute("UPDATE meta SET value = '99' WHERE key = 'schema_version'")
+    settings.set_database_path(path)
+
+    assert database.open_at_startup() == path

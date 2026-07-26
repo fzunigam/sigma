@@ -36,14 +36,20 @@ fecha y el resto vienen con valores por defecto.
 - *Tarjeta de crédito* — tiene un cupo. Muestra cuánto has gastado y cuánto te queda disponible.
 
 **Traspasos** mueven plata entre tus propias cuentas —sacar del banco, pagar la tarjeta— y no
-cuentan como gasto ni como ingreso.
+cuentan como gasto ni como ingreso. Puedes agregarles una descripción para distinguirlos.
 
 **Conciliar** es para cuadrar. Cada movimiento nace marcado como "por conciliar"; cuando revisas
 un grupo y ves que está correcto, presionas *Conciliar* y se guarda un resumen con la fecha y el
 resultado neto. Los movimientos dejan de estar pendientes, pero la conciliación conserva el
 vínculo, así que siempre puedes volver a ver qué incluyó.
 
-**Movimientos** muestra un mes a la vez, con sus totales de ingresos, gastos y balance.
+**Movimientos** muestra un mes a la vez, con sus totales de ingresos, gastos y balance. El
+buscador de arriba mira en todo tu historial, no solo en el mes que tienes a la vista, y no
+distingue mayúsculas ni tildes.
+
+**Corregir** lo que registraste: el lápiz al final de cada fila abre el movimiento para cambiarle
+el monto, la descripción, la cuenta o la fecha. Los saldos se ajustan solos. Eliminarlo también se
+hace desde ahí.
 
 ## Respaldos
 

@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from sigma import __version__, database, settings
-from sigma.db import accounts, movements, preferences, reconciliations
+from sigma.db import accounts, movements, preferences, reconciliations, transfers
 from sigma.db.errors import DatabaseFileError, NotFound, SigmaError, ValidationError
 
 STATIC_DIR = Path(__file__).parent / "web" / "static"
@@ -83,6 +83,17 @@ class MovementCreate(BaseModel):
     pending: bool = True
 
 
+class MovementUpdate(BaseModel):
+    """Every field optional: the interface sends only what the user changed."""
+
+    kind: str | None = Field(default=None, pattern="^(expense|income)$")
+    amount: int | None = Field(default=None, gt=0)
+    description: str | None = Field(default=None, min_length=1, max_length=200)
+    account_id: str | None = Field(default=None, min_length=1)
+    date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    pending: bool | None = None
+
+
 class MovementPending(BaseModel):
     pending: bool
 
@@ -91,6 +102,15 @@ class TransferCreate(BaseModel):
     from_account: str = Field(..., min_length=1)
     to_account: str = Field(..., min_length=1)
     amount: int = Field(..., gt=0)
+    description: str = Field(default="", max_length=200)
+    date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+class TransferUpdate(BaseModel):
+    from_account: str | None = Field(default=None, min_length=1)
+    to_account: str | None = Field(default=None, min_length=1)
+    amount: int | None = Field(default=None, gt=0)
+    description: str | None = Field(default=None, max_length=200)
     date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
@@ -210,8 +230,12 @@ def delete_account(account_id: str) -> None:
 
 
 @app.get("/api/movements")
-def list_movements(month: str | None = None, limit: int | None = None) -> list[dict[str, Any]]:
-    return movements.list_activity(database.require_current(), month=month, limit=limit)
+def list_movements(
+    month: str | None = None, limit: int | None = None, search: str | None = None
+) -> list[dict[str, Any]]:
+    return movements.list_activity(
+        database.require_current(), month=month, limit=limit, search=search
+    )
 
 
 @app.post("/api/movements", status_code=201)
@@ -229,6 +253,15 @@ def create_movement(payload: MovementCreate) -> dict[str, Any]:
     )
 
 
+@app.patch("/api/movements/{movement_id}")
+def update_movement(movement_id: str, payload: MovementUpdate) -> dict[str, Any]:
+    return movements.update_movement(
+        database.require_current(),
+        movement_id,
+        **payload.model_dump(exclude_unset=True),
+    )
+
+
 @app.put("/api/movements/{movement_id}/pending")
 def set_movement_pending(movement_id: str, payload: MovementPending) -> dict[str, Any]:
     return movements.set_movement_pending(
@@ -243,18 +276,28 @@ def delete_movement(movement_id: str) -> None:
 
 @app.post("/api/transfers", status_code=201)
 def create_transfer(payload: TransferCreate) -> dict[str, Any]:
-    return movements.create_transfer(
+    return transfers.create_transfer(
         database.require_current(),
         payload.from_account,
         payload.to_account,
         payload.amount,
         date=payload.date,
+        description=payload.description,
+    )
+
+
+@app.patch("/api/transfers/{transfer_id}")
+def update_transfer(transfer_id: str, payload: TransferUpdate) -> dict[str, Any]:
+    return transfers.update_transfer(
+        database.require_current(),
+        transfer_id,
+        **payload.model_dump(exclude_unset=True),
     )
 
 
 @app.delete("/api/transfers/{transfer_id}", **NO_CONTENT)
 def delete_transfer(transfer_id: str) -> None:
-    movements.delete_transfer(database.require_current(), transfer_id)
+    transfers.delete_transfer(database.require_current(), transfer_id)
 
 
 def _default_account(db: Path, kind: str) -> str:

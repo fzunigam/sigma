@@ -5,6 +5,20 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+### Added
+- **Editar movimientos.** Cada fila de la lista tiene un lápiz: se puede corregir el monto, la
+  descripción, el tipo, la cuenta y la fecha sin borrar y volver a escribir. Los saldos se ajustan
+  solos. Eliminar vive ahora dentro de esa misma ventana.
+- **Buscador en Movimientos.** Escribe una palabra y Sigma busca en todo el historial, no solo en
+  el mes que estás viendo. Encuentra por descripción o por nombre de cuenta, sin distinguir
+  mayúsculas ni tildes: *cafe* encuentra *Café*.
+- **Los traspasos aceptan una descripción.** Aparecen como "Transferencia: pago tarjeta" en vez de
+  solo "Transferencia", así se distingue pagar la tarjeta de sacar efectivo.
+
+### Changed
+- El campo de monto separa los miles mientras escribes: `1.250.000` en vez de `1250000`.
+- La lista de movimientos ya no esconde sus acciones hasta pasar el cursor.
+
 ## [1.0.0] - 2026-07-24
 
 Reformulación completa: Sigma deja de ser una herramienta de terminal con una interfaz encima y

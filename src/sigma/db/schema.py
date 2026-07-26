@@ -8,7 +8,7 @@ from pathlib import Path
 
 from sigma.db.connection import connect, now, transaction
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE accounts (
@@ -47,6 +47,7 @@ CREATE TABLE transfers (
     from_account TEXT NOT NULL REFERENCES accounts(id),
     to_account   TEXT NOT NULL REFERENCES accounts(id),
     amount       INTEGER NOT NULL CHECK (amount > 0),
+    description  TEXT NOT NULL DEFAULT '',
     date         TEXT NOT NULL,
     created_at   TEXT NOT NULL,
     deleted_at   TEXT
@@ -107,6 +108,58 @@ def is_legacy_database(db_path: Path) -> bool:
 def _table_names(conn: sqlite3.Connection) -> set[str]:
     rows = conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
     return {row["name"] for row in rows}
+
+
+# --- Upgrades between 1.x formats ------------------------------------------
+
+# One entry per version, holding the statements that take the file from the
+# previous version to that one. They run in order inside a single transaction.
+UPGRADES: dict[int, tuple[str, ...]] = {
+    2: ("ALTER TABLE transfers ADD COLUMN description TEXT NOT NULL DEFAULT ''",),
+}
+
+
+def schema_version(db_path: Path) -> int:
+    """The format version of an existing database. Files from 1.0.0 report 1."""
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'"
+        ).fetchone()
+    try:
+        return int(row["value"]) if row else 1
+    except (TypeError, ValueError):
+        return 1
+
+
+def needs_upgrade(db_path: Path) -> bool:
+    return schema_version(db_path) < SCHEMA_VERSION
+
+
+def upgrade_database(db_path: Path) -> int:
+    """Bring an older database up to :data:`SCHEMA_VERSION`.
+
+    Raises ``ValueError`` if the file was written by a newer Sigma: opening it
+    anyway would silently drop whatever that version added.
+    """
+    version = schema_version(db_path)
+    if version > SCHEMA_VERSION:
+        raise ValueError(
+            "Ese archivo fue creado por una versión más nueva de Sigma. "
+            "Actualiza la aplicación para abrirlo."
+        )
+    if version == SCHEMA_VERSION:
+        return version
+
+    with transaction(db_path) as conn:
+        for step in range(version + 1, SCHEMA_VERSION + 1):
+            for statement in UPGRADES[step]:
+                conn.execute(statement)
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('schema_version', ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (str(SCHEMA_VERSION),),
+        )
+    return SCHEMA_VERSION
 
 
 # --- Migration from the pre-1.0 format -------------------------------------

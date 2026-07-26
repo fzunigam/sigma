@@ -6,6 +6,7 @@ import { Resumen } from './views/Resumen';
 import { Movimientos } from './views/Movimientos';
 import { Cuentas } from './views/Cuentas';
 import { Ajustes } from './views/Ajustes';
+import { EditarMovimiento } from './views/EditarMovimiento';
 import { api, ApiError } from './lib/api';
 import type { Activity, DatabaseStatus, Summary } from './lib/types';
 
@@ -13,6 +14,7 @@ export default function App() {
   const [database, setDatabase] = useState<DatabaseStatus | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [view, setView] = useState<View>('resumen');
+  const [editing, setEditing] = useState<Activity | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [booting, setBooting] = useState(true);
   const notify = useToasts();
@@ -71,15 +73,10 @@ export default function App() {
     }
   }
 
-  async function deleteActivity(item: Activity) {
-    try {
-      if (item.record === 'transfer') await api.deleteTransfer(item.id);
-      else await api.deleteMovement(item.id);
-      notify.success('Movimiento eliminado.');
-      refresh();
-    } catch (caught) {
-      notify.error(caught instanceof ApiError ? caught.message : 'No se pudo eliminar.');
-    }
+  function afterEdit(message: string) {
+    setEditing(null);
+    notify.success(message);
+    refresh();
   }
 
   if (booting) {
@@ -112,17 +109,13 @@ export default function App() {
           <Resumen
             summary={summary}
             onChanged={refresh}
-            onDelete={deleteActivity}
+            onEdit={setEditing}
             notify={notify}
             onGoToAccounts={() => setView('cuentas')}
           />
         )}
         {view === 'movimientos' && (
-          <Movimientos
-            onDelete={deleteActivity}
-            reloadToken={reloadToken}
-            notify={notify}
-          />
+          <Movimientos onEdit={setEditing} reloadToken={reloadToken} notify={notify} />
         )}
         {view === 'cuentas' && (
           <Cuentas summary={summary} onChanged={refresh} notify={notify} />
@@ -135,6 +128,15 @@ export default function App() {
           />
         )}
       </main>
+
+      {editing && (
+        <EditarMovimiento
+          item={editing}
+          accounts={summary.accounts}
+          onClose={() => setEditing(null)}
+          onDone={afterEdit}
+        />
+      )}
 
       <Toaster toasts={notify.toasts} onDismiss={notify.dismiss} />
     </div>

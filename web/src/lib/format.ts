@@ -31,6 +31,17 @@ export function plainNumber(amount: number): string {
   return CLP.format(amount);
 }
 
+/**
+ * How a row of the timeline reads. A movement is its description; a transfer is
+ * the word "Transferencia" with the note, if there is one, hanging off it.
+ * Mirrors `TRANSFER_LABEL` in `sigma/db/movements.py`, which is what the search
+ * on the backend matches against.
+ */
+export function activityLabel(item: { record: string; description: string }): string {
+  if (item.record !== 'transfer') return item.description;
+  return item.description ? `Transferencia: ${item.description}` : 'Transferencia';
+}
+
 /** `2026-07-24` → `24 jul`, or `24 jul 2025` when it is not the current year. */
 export function shortDate(iso: string): string {
   const [year, month, day] = iso.split('-').map(Number);

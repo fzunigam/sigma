@@ -75,7 +75,8 @@ movements(
 
 transfers(
     id TEXT PK, from_account → accounts, to_account → accounts,
-    amount INT CHECK (amount > 0), date, created_at, deleted_at)
+    amount INT CHECK (amount > 0), description DEFAULT '',
+    date, created_at, deleted_at)
 
 reconciliations(
     id TEXT PK, net_amount INT, movement_count INT, date, created_at)
@@ -94,6 +95,25 @@ que es el saldo en una y el cupo restante en la otra.
 
 `date` es el día del movimiento, en formato `YYYY-MM-DD`; es lo que ordena y filtra la interfaz.
 `created_at` es cuándo se registró, y sirve solo para desempatar dentro de un mismo día.
+
+### La descripción de un traspaso
+
+`transfers.description` guarda solo la nota que escribió la persona, sin la palabra
+"Transferencia". Esa palabra la pone la interfaz al mostrar la fila, y la búsqueda la considera
+igual, así que buscar *transferencia* encuentra todos los traspasos y buscar *tarjeta* encuentra
+el que dice "pago tarjeta".
+
+## Versiones del formato
+
+La tabla `meta` guarda `schema_version`. Al abrir un archivo, Sigma aplica las actualizaciones
+pendientes que hay en `UPGRADES`, dentro de `sigma/db/schema.py`, y siempre después de respaldar.
+Un archivo escrito por una versión **más nueva** de Sigma se rechaza en vez de abrirse, porque
+abrirlo con código antiguo perdería lo que esa versión agregó.
+
+| Versión | Qué cambió |
+|---|---|
+| 1 | El formato con el que salió Sigma 1.0.0 |
+| 2 | `transfers.description` |
 
 ## Migración desde la versión anterior
 

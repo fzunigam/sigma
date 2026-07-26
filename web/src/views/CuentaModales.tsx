@@ -92,7 +92,7 @@ export function NuevaCuenta({
             <AmountInput
               id="nueva-saldo"
               value={balance}
-              onChange={(event) => setBalance(event.target.value.replace(/\D/g, ''))}
+              onValueChange={setBalance}
               placeholder="0"
             />
           </Field>
@@ -101,7 +101,7 @@ export function NuevaCuenta({
             <AmountInput
               id="nueva-cupo"
               value={limit}
-              onChange={(event) => setLimit(event.target.value.replace(/\D/g, ''))}
+              onValueChange={setLimit}
               placeholder="0"
             />
           </Field>
@@ -191,7 +191,7 @@ export function EditarCuenta({
             <AmountInput
               id="editar-cupo"
               value={limit}
-              onChange={(event) => setLimit(event.target.value.replace(/\D/g, ''))}
+              onValueChange={setLimit}
             />
           </Field>
         )}

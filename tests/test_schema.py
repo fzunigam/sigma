@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from sigma.db import accounts, movements, preferences, reconciliations
+from sigma.db import accounts, movements, preferences, reconciliations, schema, transfers
+from sigma.db.connection import transaction
 from sigma.db.schema import (
     SCHEMA_VERSION,
     create_database,
@@ -224,3 +225,73 @@ def test_migration_never_touches_the_source(legacy_db: Path, tmp_path: Path):
 def test_migration_rejects_a_database_that_is_not_legacy(db: Path, tmp_path: Path):
     with pytest.raises(ValueError, match="anterior a 1.0"):
         migrate_legacy_database(db, tmp_path / "nueva.db")
+
+
+# --- Upgrades between 1.x formats ------------------------------------------
+
+
+def make_version_1_database(path: Path) -> None:
+    """A file exactly as Sigma 1.0.0 left it: no ``transfers.description``."""
+    schema.create_database(path)
+    with transaction(path) as conn:
+        conn.execute("DROP TABLE transfers")
+        conn.execute(
+            "CREATE TABLE transfers ("
+            " id TEXT PRIMARY KEY,"
+            " from_account TEXT NOT NULL REFERENCES accounts(id),"
+            " to_account TEXT NOT NULL REFERENCES accounts(id),"
+            " amount INTEGER NOT NULL CHECK (amount > 0),"
+            " date TEXT NOT NULL, created_at TEXT NOT NULL, deleted_at TEXT)"
+        )
+        conn.execute("UPDATE meta SET value = '1' WHERE key = 'schema_version'")
+
+
+def test_a_1_0_file_reports_its_version(tmp_path: Path):
+    path = tmp_path / "vieja.db"
+    make_version_1_database(path)
+
+    assert schema.schema_version(path) == 1
+    assert schema.needs_upgrade(path) is True
+
+
+def test_upgrading_adds_the_transfer_description(tmp_path: Path):
+    path = tmp_path / "vieja.db"
+    make_version_1_database(path)
+    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=10_000)
+    accounts.create_account(path, "bank", "Banco", "debit")
+
+    assert schema.upgrade_database(path) == schema.SCHEMA_VERSION
+
+    transfer = transfers.create_transfer(path, "wallet", "bank", 1_000, description="Ahorro")
+    assert transfer["description"] == "Ahorro"
+    assert schema.needs_upgrade(path) is False
+
+
+def test_upgrading_keeps_the_rows_that_were_already_there(tmp_path: Path):
+    path = tmp_path / "vieja.db"
+    make_version_1_database(path)
+    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=10_000)
+    movements.create_movement(path, "expense", 2_000, "Café", "wallet")
+
+    schema.upgrade_database(path)
+
+    assert len(movements.list_activity(path)) == 1
+    assert accounts.get_account(path, "wallet")["balance"] == 8_000
+
+
+def test_upgrading_twice_does_nothing(tmp_path: Path):
+    path = tmp_path / "vieja.db"
+    make_version_1_database(path)
+
+    schema.upgrade_database(path)
+    assert schema.upgrade_database(path) == schema.SCHEMA_VERSION
+
+
+def test_a_file_from_a_newer_sigma_is_refused(tmp_path: Path):
+    path = tmp_path / "futura.db"
+    schema.create_database(path)
+    with transaction(path) as conn:
+        conn.execute("UPDATE meta SET value = '99' WHERE key = 'schema_version'")
+
+    with pytest.raises(ValueError, match="versión más nueva"):
+        schema.upgrade_database(path)

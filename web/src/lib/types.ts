@@ -12,12 +12,31 @@ export interface Account {
   deleted_at: string | null;
 }
 
+/** The fields an edit may change. Anything left out stays as it was. */
+export interface MovementEdit {
+  kind?: MovementKind;
+  amount?: number;
+  description?: string;
+  account_id?: string;
+  date?: string;
+  pending?: boolean;
+}
+
+export interface TransferEdit {
+  from_account?: string;
+  to_account?: string;
+  amount?: number;
+  description?: string;
+  date?: string;
+}
+
 /** A movement or a transfer, as shown on the shared activity timeline. */
 export interface Activity {
   id: string;
   record: 'movement' | 'transfer';
   kind: MovementKind | 'transfer';
   amount: number;
+  /** For a transfer this is the optional note; read it through `activityLabel`. */
   description: string;
   account_id: string;
   account_name: string;

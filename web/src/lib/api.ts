@@ -2,11 +2,13 @@ import type {
   Account,
   Activity,
   DatabaseStatus,
+  MovementEdit,
   MovementKind,
   PendingMovement,
   Preferences,
   Reconciliation,
   Summary,
+  TransferEdit,
 } from './types';
 
 /**
@@ -91,10 +93,11 @@ export const api = {
   deleteAccount: (id: string) => remove(`/api/accounts/${encodeURIComponent(id)}`),
 
   // Movements
-  movements: (params: { month?: string; limit?: number } = {}) => {
+  movements: (params: { month?: string; limit?: number; search?: string } = {}) => {
     const query = new URLSearchParams();
     if (params.month) query.set('month', params.month);
     if (params.limit) query.set('limit', String(params.limit));
+    if (params.search) query.set('search', params.search);
     const suffix = query.toString();
     return request<Activity[]>(`/api/movements${suffix ? `?${suffix}` : ''}`);
   },
@@ -106,6 +109,8 @@ export const api = {
     date?: string | null;
     pending?: boolean;
   }) => post<Activity>('/api/movements', payload),
+  updateMovement: (id: string, payload: MovementEdit) =>
+    patch<Activity>(`/api/movements/${id}`, payload),
   setMovementPending: (id: string, pending: boolean) =>
     put<Activity>(`/api/movements/${id}/pending`, { pending }),
   deleteMovement: (id: string) => remove(`/api/movements/${id}`),
@@ -115,8 +120,11 @@ export const api = {
     from_account: string;
     to_account: string;
     amount: number;
+    description?: string;
     date?: string | null;
   }) => post<Activity>('/api/transfers', payload),
+  updateTransfer: (id: string, payload: TransferEdit) =>
+    patch<Activity>(`/api/transfers/${id}`, payload),
   deleteTransfer: (id: string) => remove(`/api/transfers/${id}`),
 
   // Reconciliations
