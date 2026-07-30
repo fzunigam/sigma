@@ -5,6 +5,8 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-30
+
 ### Fixed
 - **Instrucciones de instalación que sí funcionan.** El README y las notas de cada release decían
   que para abrir Sigma la primera vez había que hacer clic derecho → *Abrir*. Apple quitó ese
