@@ -11,7 +11,12 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Pinned instead of macos-latest, because the runner's architecture decides
+    # the app's: PyInstaller bundles a thin binary for whatever it builds on.
+    # These runners are Apple Silicon, and GitHub no longer offers Intel ones,
+    # so the app is arm64-only. The asset name says so rather than letting
+    # someone on an Intel Mac download a bundle that will never open.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
@@ -30,18 +35,62 @@ jobs:
 
       - run: make app
 
+      # PyInstaller ad-hoc signs the bundle as it builds. Without a Developer
+      # ID account that is the best available, and it is enough for macOS to
+      # offer the "Abrir de todos modos" button. What it is not enough for is a
+      # broken seal: a bundle whose signature does not validate gets "está
+      # dañada y no se puede abrir", a dialog with no way forward. Fail the
+      # release here instead of publishing that.
+      - name: Verificar la firma del bundle
+        run: codesign --verify --deep --strict --verbose=2 dist/Sigma.app
+
       # ditto, not zip: an .app bundle contains symlinks and resource forks
       # that plain zip flattens, which breaks the app on the other side.
-      - run: ditto -c -k --keepParent dist/Sigma.app Sigma.app.zip
+      - run: ditto -c -k --keepParent dist/Sigma.app Sigma-AppleSilicon.app.zip
+
+      # Unpack exactly what is about to be published and check it again. The
+      # build can be fine and the trip through the archive still ruin it.
+      - name: Verificar el zip
+        run: |
+          ditto -x -k Sigma-AppleSilicon.app.zip roundtrip/
+          codesign --verify --deep --strict roundtrip/Sigma.app
+
+      # A file, not --notes: the text has backticks, quotes and a fenced code
+      # block, and quoting all of that inline is how it ends up mangled.
+      - name: Escribir las notas
+        run: |
+          cat > notes.md <<'NOTES'
+          Descarga `Sigma-AppleSilicon.app.zip`, descomprímelo y arrastra **Sigma** a tu carpeta `Aplicaciones`.
+
+          Necesitas un Mac con Apple Silicon (M1 o posterior).
+
+          ## La primera vez macOS la bloquea
+
+          Sigma no está firmada con una cuenta de desarrollador de Apple, así que el sistema avisa que no puede comprobar quién la hizo. Para abrirla igual:
+
+          1. Haz doble clic en **Sigma** y cierra el aviso que aparece.
+          2. Abre el menú Apple → **Ajustes del Sistema** → **Privacidad y seguridad**.
+          3. Baja hasta el mensaje sobre Sigma y pulsa **Abrir de todos modos**.
+
+          Solo hace falta una vez. Desde entonces se abre con doble clic como cualquier otra aplicación.
+
+          El atajo antiguo de clic derecho → *Abrir* ya no sirve: Apple lo quitó en macOS Sequoia.
+
+          ## Si dice que la app "está dañada"
+
+          Se perdió algo al descomprimir, casi siempre porque el archivo pasó por otra herramienta o se reenvió por mensajería. Descárgalo de nuevo desde esta página y descomprímelo con doble clic en Finder. Si aun así insiste, quita la marca de cuarentena desde la Terminal:
+
+          ```
+          xattr -dr com.apple.quarantine /Applications/Sigma.app
+          ```
+          NOTES
+          echo "" >> notes.md
+          echo "Los cambios de esta versión están en el [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)." >> notes.md
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" Sigma.app.zip \
+          gh release create "${{ github.ref_name }}" Sigma-AppleSilicon.app.zip \
             --title "Sigma ${{ github.ref_name }}" \
-            --notes 'Descarga `Sigma.app.zip`, descomprímelo y arrastra **Sigma** a tu carpeta `Aplicaciones`.
-
-          La primera vez macOS pedirá confirmación porque la app no está firmada: clic derecho sobre Sigma → *Abrir*.
-
-          Los cambios de esta versión están en el [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).'
+            --notes-file notes.md

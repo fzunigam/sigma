@@ -5,6 +5,19 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+### Fixed
+- **Instrucciones de instalación que sí funcionan.** El README y las notas de cada release decían
+  que para abrir Sigma la primera vez había que hacer clic derecho → *Abrir*. Apple quitó ese
+  atajo en macOS Sequoia, así que quien seguía el paso no lograba abrir la aplicación y quedaba
+  con un "no se puede abrir" sin salida. Ahora indican el camino real: Ajustes del Sistema →
+  Privacidad y seguridad → **Abrir de todos modos**, y qué hacer si macOS dice que la app está
+  dañada.
+
+### Changed
+- **El archivo de la release se llama `Sigma-AppleSilicon.app.zip`.** La aplicación solo funciona
+  en Macs con Apple Silicon; el nombre lo dice antes de descargarla en vez de después de
+  intentar abrirla.
+
 ## [1.1.0] - 2026-07-26
 
 ### Added

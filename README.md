@@ -8,10 +8,34 @@ lo guardas en tu carpeta de Google Drive, queda respaldado solo.
 
 ## Instalación
 
-1. Descarga `Sigma.app.zip` desde [Releases](https://github.com/fzunigam/sigma/releases).
-2. Descomprime y arrastra **Sigma** a tu carpeta `Aplicaciones`.
-3. Ábrela. La primera vez, macOS pedirá confirmación por ser una app sin firmar: clic derecho →
-   *Abrir*.
+Necesitas un Mac con Apple Silicon (M1 o posterior).
+
+1. Descarga `Sigma-AppleSilicon.app.zip` desde
+   [Releases](https://github.com/fzunigam/sigma/releases).
+2. Descomprime con doble clic y arrastra **Sigma** a tu carpeta `Aplicaciones`.
+3. Ábrela. La primera vez macOS la bloquea; abajo está cómo pasar ese aviso.
+
+### La primera vez macOS la bloquea
+
+Sigma no está firmada con una cuenta de desarrollador de Apple, así que el sistema avisa que no
+puede comprobar quién la hizo. Para abrirla igual:
+
+1. Haz doble clic en **Sigma** y cierra el aviso que aparece.
+2. Abre el menú Apple → **Ajustes del Sistema** → **Privacidad y seguridad**.
+3. Baja hasta el mensaje sobre Sigma y pulsa **Abrir de todos modos**.
+
+Solo hace falta una vez. Desde entonces se abre con doble clic como cualquier otra aplicación.
+
+El atajo antiguo de clic derecho → *Abrir* ya no sirve: Apple lo quitó en macOS Sequoia.
+
+Si en vez de eso dice que la app **está dañada**, se perdió algo al descomprimir —normalmente
+porque el archivo pasó por otra herramienta o se reenvió por mensajería—. Descárgalo de nuevo
+desde Releases y descomprímelo con doble clic en Finder. Si aun así insiste, quita la marca de
+cuarentena desde la Terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Sigma.app
+```
 
 ## Primer uso
 
