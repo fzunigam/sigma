@@ -5,6 +5,8 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-02
+
 ### Added
 - **Aviso de versión nueva.** Cuando se publica una versión, Sigma lo dice abajo en la barra
   lateral. Es la única vez que la aplicación usa internet; sin conexión el aviso no aparece y todo
