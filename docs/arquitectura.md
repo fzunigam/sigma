@@ -6,8 +6,10 @@ Una aplicación de escritorio para macOS, de un solo usuario, que registra gasto
 transferencias entre cuentas propias. Todos los datos viven en un archivo `.db` que el usuario
 elige y puede dejar en una carpeta de Google Drive para que quede respaldado.
 
-No hay servidor, no hay cuentas de usuario, no hay red. La aplicación nunca hace una petición
-fuera de `127.0.0.1`.
+No hay servidor propio ni cuentas de usuario. La única petición que sale de `127.0.0.1` es el
+chequeo de versión nueva contra la API pública de GitHub (`sigma/updates.py`): no manda nada, y
+si falla —sin conexión, GitHub caído— se reporta como "no hay novedad" y la aplicación sigue
+funcionando igual. Todo lo demás ocurre en la máquina.
 
 ## Las tres piezas
 
@@ -55,6 +57,10 @@ viven las reglas de seguridad para carpetas sincronizadas, en un solo lugar.
 
 **`sigma/api.py`** — Traduce HTTP a llamadas de `sigma/db/`. No tiene lógica de negocio propia,
 salvo resolver la cuenta por defecto cuando la interfaz no manda una.
+
+**`sigma/updates.py`** — Pregunta a GitHub cuál es la última versión publicada. Vive aparte y en
+su propia ruta (`GET /api/update`) para que el arranque nunca espere a la red: la interfaz lo
+pide por su cuenta, una vez, y lo ignora si falla.
 
 **`web/src/`** — `lib/` (cliente HTTP, formato, puente nativo), `components/` (piezas
 reutilizables) y `views/` (una por pantalla). El estado vive en `App.tsx` y baja por props; no

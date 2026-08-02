@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from sigma import __version__, database, settings
+from sigma import __version__, database, settings, updates
 from sigma.db import accounts, movements, preferences, reconciliations, transfers
 from sigma.db.errors import DatabaseFileError, NotFound, SigmaError, ValidationError
 
@@ -157,6 +157,17 @@ def database_restore(payload: PathPayload) -> dict[str, Any]:
 def update_theme(payload: ThemePayload) -> dict[str, Any]:
     settings.set_theme(payload.theme)
     return {"theme": payload.theme}
+
+
+# --- New versions ----------------------------------------------------------
+# Kept out of /api/database so the startup status call never waits on the
+# network: the interface asks for this one on its own, once, and ignores it if
+# it fails.
+
+
+@app.get("/api/update")
+def update_check() -> dict[str, Any]:
+    return updates.check()
 
 
 # --- Summary ---------------------------------------------------------------

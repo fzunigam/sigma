@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from sigma import database
+from sigma import database, updates
 from sigma.api import app
 from sigma.db import accounts, movements
 
@@ -92,6 +92,30 @@ def test_theme_is_persisted(client: TestClient):
     assert client.put("/api/theme", json={"theme": "light"}).json()["theme"] == "light"
     assert client.get("/api/database").json()["theme"] == "light"
     assert client.put("/api/theme", json={"theme": "neon"}).status_code == 422
+
+
+# --- New versions ----------------------------------------------------------
+
+
+def test_update_check_reports_a_newer_release(client: TestClient, monkeypatch):
+    monkeypatch.setattr(updates, "_cached", None)
+    monkeypatch.setattr(updates, "latest_version", lambda: "9.0.0")
+
+    body = client.get("/api/update").json()
+
+    assert body["available"] is True
+    assert body["latest"] == "9.0.0"
+
+
+def test_update_check_answers_normally_without_internet(client: TestClient, monkeypatch):
+    """No connection is not an error: the app must keep working offline."""
+    monkeypatch.setattr(updates, "_cached", None)
+    monkeypatch.setattr(updates, "latest_version", lambda: None)
+
+    response = client.get("/api/update")
+
+    assert response.status_code == 200
+    assert response.json()["available"] is False
 
 
 # --- Accounts --------------------------------------------------------------

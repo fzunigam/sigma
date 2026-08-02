@@ -5,6 +5,14 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+### Added
+- **Aviso de versión nueva.** Cuando se publica una versión, Sigma lo dice abajo en la barra
+  lateral y al hacer clic abre la página de descargas. Es la única vez que la aplicación usa
+  internet; sin conexión el aviso no aparece y todo lo demás funciona igual.
+- **Instrucciones para actualizar.** El README y las notas de cada release explican cómo
+  reemplazar la aplicación por una versión nueva y dejan claro que los datos y los ajustes no se
+  pierden.
+
 ## [1.1.1] - 2026-07-30
 
 ### Fixed

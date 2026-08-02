@@ -64,6 +64,12 @@ jobs:
 
           Necesitas un Mac con Apple Silicon (M1 o posterior).
 
+          ## Si ya tenías Sigma
+
+          Cierra la aplicación, arrastra la nueva a `Aplicaciones` y acepta reemplazar la anterior. Tus datos no se tocan: la base de datos vive donde tú la pusiste y los ajustes están fuera de la aplicación. Si el formato del archivo cambió, Sigma hace un respaldo y lo actualiza solo al abrirlo.
+
+          macOS puede volver a pedirte el paso de **Abrir de todos modos** que está más abajo: cada versión trae su propia marca de cuarentena.
+
           ## La primera vez macOS la bloquea
 
           Sigma no está firmada con una cuenta de desarrollador de Apple, así que el sistema avisa que no puede comprobar quién la hizo. Para abrirla igual:

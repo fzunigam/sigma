@@ -101,3 +101,10 @@ export interface DatabaseStatus {
   version: string;
   migrated?: Record<string, number>;
 }
+
+export interface UpdateStatus {
+  current: string;
+  latest: string | null;
+  available: boolean;
+  url: string;
+}

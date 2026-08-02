@@ -1,4 +1,5 @@
 import { ArrowLeftRight, LayoutGrid, Moon, Settings, Sun, Wallet } from 'lucide-react';
+import { UpdateNotice } from './UpdateNotice';
 import type { DatabaseStatus } from '../lib/types';
 
 export type View = 'resumen' | 'movimientos' | 'cuentas' | 'ajustes';
@@ -63,6 +64,7 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
       </nav>
 
       <footer className="p-3 border-t border-line">
+        <UpdateNotice />
         <div className="flex items-center justify-between gap-2 px-1.5">
           <div className="min-w-0">
             <p className="text-[11px] font-medium truncate" title={database?.path ?? ''}>

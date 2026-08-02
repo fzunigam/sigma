@@ -11,6 +11,7 @@ interface PywebviewApi {
   choose_database(): Promise<{ path: string | null }>;
   choose_new_database(): Promise<{ path: string | null }>;
   reveal(path: string): Promise<{ ok: boolean }>;
+  open_releases(): Promise<{ ok: boolean }>;
 }
 
 declare global {
@@ -56,4 +57,19 @@ export async function chooseNewDatabase(): Promise<string | null> {
 export async function revealInFinder(path: string): Promise<void> {
   const bridge = api();
   if (bridge) await bridge.reveal(path);
+}
+
+/**
+ * Show the downloads page in the browser. Inside the app window it has to be
+ * the native `open`: navigating there would replace the interface with a web
+ * page and there is no back button. `window.open` is the fallback for
+ * `npm run dev`, where there is no bridge.
+ */
+export async function openReleases(url: string): Promise<void> {
+  const bridge = api();
+  if (bridge) {
+    await bridge.open_releases();
+    return;
+  }
+  window.open(url, '_blank', 'noopener');
 }

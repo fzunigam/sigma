@@ -9,6 +9,7 @@ import type {
   Reconciliation,
   Summary,
   TransferEdit,
+  UpdateStatus,
 } from './types';
 
 /**
@@ -72,6 +73,9 @@ export const api = {
   migrateDatabase: (path: string) => post<DatabaseStatus>('/api/database/migrate', { path }),
   restoreBackup: (path: string) => post<DatabaseStatus>('/api/database/restore', { path }),
   setTheme: (theme: 'dark' | 'light') => put<{ theme: string }>('/api/theme', { theme }),
+
+  // New versions
+  updateStatus: () => request<UpdateStatus>('/api/update'),
 
   // Overview
   summary: (month?: string) =>

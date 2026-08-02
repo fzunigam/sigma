@@ -50,6 +50,20 @@ class Bridge:
         )
         return {"path": result}
 
+    def open_releases(self) -> dict[str, bool]:
+        """Open the downloads page in the default browser.
+
+        Takes no URL on purpose: JavaScript inside the window must not be able
+        to hand `open` an arbitrary target. Following the link inside the
+        window would replace the app with a web page and leave no way back.
+        """
+        import subprocess
+
+        from sigma.updates import RELEASES_PAGE
+
+        subprocess.run(["open", RELEASES_PAGE], check=False)
+        return {"ok": True}
+
     def reveal(self, path: str) -> dict[str, bool]:
         """Show a file in Finder."""
         import subprocess

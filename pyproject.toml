@@ -19,6 +19,9 @@ dependencies = [
   "fastapi>=0.110.0",
   "uvicorn>=0.28.0",
   "pywebview>=5.1",
+  # For the update check only: the CA bundle to verify github.com with,
+  # since the packed interpreter cannot count on finding one on the machine.
+  "certifi>=2024.2.2",
 ]
 
 [project.urls]
