@@ -7,11 +7,14 @@ Cambios que se notan al usar Sigma. Formato:
 
 ### Added
 - **Aviso de versión nueva.** Cuando se publica una versión, Sigma lo dice abajo en la barra
-  lateral y al hacer clic abre la página de descargas. Es la única vez que la aplicación usa
-  internet; sin conexión el aviso no aparece y todo lo demás funciona igual.
-- **Instrucciones para actualizar.** El README y las notas de cada release explican cómo
-  reemplazar la aplicación por una versión nueva y dejan claro que los datos y los ajustes no se
-  pierden.
+  lateral. Es la única vez que la aplicación usa internet; sin conexión el aviso no aparece y todo
+  lo demás funciona igual.
+- **Actualizarse sola.** Al hacer clic en el aviso, Sigma pregunta una vez y se encarga del resto:
+  descarga la versión nueva, comprueba que llegó completa, se reemplaza y se vuelve a abrir. Ya no
+  hay que descomprimir ni arrastrar nada, y tampoco vuelve a aparecer el aviso de macOS sobre
+  aplicaciones descargadas. Si algo falla, la versión anterior vuelve a su lugar y se abre igual.
+- **Instrucciones para actualizar.** El README y las notas de cada release explican cómo funciona,
+  cómo hacerlo a mano si se prefiere, y dejan claro que los datos y los ajustes no se pierden.
 
 ## [1.1.1] - 2026-07-30
 

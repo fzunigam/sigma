@@ -62,6 +62,10 @@ salvo resolver la cuenta por defecto cuando la interfaz no manda una.
 su propia ruta (`GET /api/update`) para que el arranque nunca espere a la red: la interfaz lo
 pide por su cuenta, una vez, y lo ignora si falla.
 
+**`sigma/installer.py`** — Instala esa versión sobre la que está corriendo. Descarga, verifica
+firma y versión, y deja el reemplazo en manos de un script suelto que espera a que el proceso
+termine. Ver **Actualización** más abajo.
+
 **`web/src/`** — `lib/` (cliente HTTP, formato, puente nativo), `components/` (piezas
 reutilizables) y `views/` (una por pantalla). El estado vive en `App.tsx` y baja por props; no
 hay librería de estado porque no hace falta.
@@ -89,10 +93,33 @@ enteros no acumulan error.
 5. Una conciliación conserva el neto que registró aunque después se editen sus movimientos: es
    una foto de lo que era cierto en ese momento.
 
+## Actualización
+
+Sigma se distribuye como un `.zip` en GitHub Releases, así que se encarga ella misma de
+reemplazarse:
+
+1. `updates.py` pregunta a GitHub cuál es la última versión. El resultado bueno se guarda seis
+   horas; el fallido no se guarda, para que conectarse después de abrir la aplicación se note.
+2. Si el usuario confirma, `installer.py` descarga el `.zip`, lo expande con `ditto` —no con un
+   unzip cualquiera, que aplana los symlinks del bundle— y comprueba dos cosas antes de seguir:
+   que la firma valide (`codesign --verify --deep --strict`) y que la versión del bundle sea la
+   que la release prometía.
+3. Escribe un script en la carpeta temporal y lo lanza suelto, en su propia sesión. La ventana se
+   cierra desde `bridge.quit()`.
+4. El script espera a que el proceso muera —si sigue vivo a los veinte segundos, se rinde sin
+   tocar nada—, mueve el bundle viejo dentro de la carpeta temporal, copia el nuevo en su lugar y
+   abre Sigma. Si la copia falla, devuelve el viejo a su sitio y lo abre igual.
+
+El bundle anterior se queda en la carpeta temporal hasta que macOS la limpie, no se borra. El
+razonamiento completo está en
+[decisiones/0004-actualizacion-desde-la-app.md](decisiones/0004-actualizacion-desde-la-app.md).
+
 ## Qué se sacó en la 1.0
 
 La interfaz de línea de comandos (21 comandos), el bot de Telegram, los respaldos en ZIP con
-CSVs, el actualizador automático, el symlink a `/usr/local/bin` y la publicación en PyPI. Cada una
-de esas piezas agregaba superficie que mantener sin hacer más fácil registrar un gasto.
+CSVs, el symlink a `/usr/local/bin` y la publicación en PyPI. Cada una de esas piezas agregaba
+superficie que mantener sin hacer más fácil registrar un gasto.
 
 Ver [decisiones/0001-app-de-escritorio-sin-cli.md](decisiones/0001-app-de-escritorio-sin-cli.md).
+El actualizador también se sacó ahí —era `pip install --upgrade` desde la terminal— y volvió en
+otra forma con [0004](decisiones/0004-actualizacion-desde-la-app.md).

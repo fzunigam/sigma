@@ -108,3 +108,8 @@ export interface UpdateStatus {
   available: boolean;
   url: string;
 }
+
+export interface InstalledUpdate {
+  version: string;
+  installed_at: string;
+}

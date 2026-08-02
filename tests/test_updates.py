@@ -41,9 +41,19 @@ def fake_offline(monkeypatch, calls: list | None = None):
 # --- Comparing versions ----------------------------------------------------
 
 
+def release(tag: str, asset: bool = True) -> dict:
+    """What the GitHub endpoint answers, trimmed to the parts Sigma reads."""
+    assets = (
+        [{"name": updates.ASSET_NAME, "browser_download_url": f"https://x/{tag}.zip"}]
+        if asset
+        else []
+    )
+    return {"tag_name": tag, "assets": assets}
+
+
 def test_a_newer_tag_is_offered(monkeypatch):
     monkeypatch.setattr(updates, "__version__", "1.1.1")
-    fake_github(monkeypatch, {"tag_name": "v1.2.0"})
+    fake_github(monkeypatch, release("v1.2.0"))
 
     result = updates.check()
 
@@ -55,7 +65,7 @@ def test_a_newer_tag_is_offered(monkeypatch):
 
 def test_the_same_version_is_not_an_update(monkeypatch):
     monkeypatch.setattr(updates, "__version__", "1.1.1")
-    fake_github(monkeypatch, {"tag_name": "v1.1.1"})
+    fake_github(monkeypatch, release("v1.1.1"))
 
     assert updates.check()["available"] is False
 
@@ -63,26 +73,39 @@ def test_the_same_version_is_not_an_update(monkeypatch):
 def test_an_older_tag_is_not_an_update(monkeypatch):
     """Someone running a build newer than the last release, e.g. from source."""
     monkeypatch.setattr(updates, "__version__", "1.2.0")
-    fake_github(monkeypatch, {"tag_name": "v1.1.1"})
+    fake_github(monkeypatch, release("v1.1.1"))
 
     assert updates.check()["available"] is False
 
 
 def test_versions_compare_by_number_not_by_text(monkeypatch):
     monkeypatch.setattr(updates, "__version__", "1.9.0")
-    fake_github(monkeypatch, {"tag_name": "v1.10.0"})
+    fake_github(monkeypatch, release("v1.10.0"))
 
     assert updates.check()["available"] is True
 
 
 def test_a_tag_that_does_not_parse_is_ignored(monkeypatch):
     monkeypatch.setattr(updates, "__version__", "1.1.1")
-    fake_github(monkeypatch, {"tag_name": "v2.0.0-beta1"})
+    fake_github(monkeypatch, release("v2.0.0-beta1"))
 
     result = updates.check()
 
     assert result["available"] is False
     assert result["latest"] == "2.0.0-beta1"
+
+
+def test_the_download_link_comes_from_the_published_asset(monkeypatch):
+    fake_github(monkeypatch, release("v1.2.0"))
+
+    assert updates.latest_release()["download_url"] == "https://x/v1.2.0.zip"
+
+
+def test_a_release_without_the_app_attached_has_no_download_link(monkeypatch):
+    """Then the interface can still offer the page, but not install anything."""
+    fake_github(monkeypatch, release("v1.2.0", asset=False))
+
+    assert updates.latest_release()["download_url"] is None
 
 
 def test_a_response_without_a_tag_is_ignored(monkeypatch):
@@ -114,7 +137,7 @@ def test_a_failed_check_is_not_cached(monkeypatch):
     updates.check()
 
     monkeypatch.setattr(updates, "__version__", "1.1.1")
-    fake_github(monkeypatch, {"tag_name": "v1.2.0"}, calls)
+    fake_github(monkeypatch, release("v1.2.0"), calls)
 
     assert updates.check()["available"] is True
     assert len(calls) == 2
@@ -122,7 +145,7 @@ def test_a_failed_check_is_not_cached(monkeypatch):
 
 def test_a_successful_check_is_cached(monkeypatch):
     calls: list[str] = []
-    fake_github(monkeypatch, {"tag_name": "v1.2.0"}, calls)
+    fake_github(monkeypatch, release("v1.2.0"), calls)
 
     updates.check()
     updates.check()

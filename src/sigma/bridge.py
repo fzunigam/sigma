@@ -64,6 +64,19 @@ class Bridge:
         subprocess.run(["open", RELEASES_PAGE], check=False)
         return {"ok": True}
 
+    def quit(self) -> dict[str, bool]:
+        """Close the window, which ends the process.
+
+        Used after staging an update: the script that swaps the bundle is
+        already waiting for this process to go away. Closing happens on its own
+        thread so the call from JavaScript can return first.
+        """
+        import threading
+
+        if self._window is not None:
+            threading.Timer(0.1, self._window.destroy).start()
+        return {"ok": True}
+
     def reveal(self, path: str) -> dict[str, bool]:
         """Show a file in Finder."""
         import subprocess

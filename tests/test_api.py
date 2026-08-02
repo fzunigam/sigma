@@ -99,7 +99,9 @@ def test_theme_is_persisted(client: TestClient):
 
 def test_update_check_reports_a_newer_release(client: TestClient, monkeypatch):
     monkeypatch.setattr(updates, "_cached", None)
-    monkeypatch.setattr(updates, "latest_version", lambda: "9.0.0")
+    monkeypatch.setattr(
+        updates, "latest_release", lambda: {"version": "9.0.0", "download_url": "https://x"}
+    )
 
     body = client.get("/api/update").json()
 
@@ -110,12 +112,20 @@ def test_update_check_reports_a_newer_release(client: TestClient, monkeypatch):
 def test_update_check_answers_normally_without_internet(client: TestClient, monkeypatch):
     """No connection is not an error: the app must keep working offline."""
     monkeypatch.setattr(updates, "_cached", None)
-    monkeypatch.setattr(updates, "latest_version", lambda: None)
+    monkeypatch.setattr(updates, "latest_release", lambda: None)
 
     response = client.get("/api/update")
 
     assert response.status_code == 200
     assert response.json()["available"] is False
+
+
+def test_installing_from_source_is_refused_in_spanish(client: TestClient):
+    """Running from a checkout there is no bundle to replace."""
+    response = client.post("/api/update/install")
+
+    assert response.status_code == 400
+    assert "código fuente" in response.json()["detail"]
 
 
 # --- Accounts --------------------------------------------------------------

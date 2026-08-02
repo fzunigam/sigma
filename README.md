@@ -40,21 +40,28 @@ xattr -dr com.apple.quarantine /Applications/Sigma.app
 ## Actualizar
 
 Cuando hay una versión nueva, Sigma lo dice abajo en la barra lateral: *"Versión 1.2.0
-disponible"*. Al hacer clic se abre la página de descargas. Es la única vez que Sigma usa
-internet, y si no hay conexión simplemente no aparece el aviso —la aplicación funciona igual.
+disponible"*. Haz clic ahí y confirma: Sigma la descarga, la instala y se abre sola en la versión
+nueva. No hay que descomprimir ni arrastrar nada, y tampoco vuelve a aparecer el aviso de macOS
+—ese permiso solo lo pide lo que se descarga con el navegador—.
 
-Actualizar es lo mismo que instalar:
-
-1. Cierra Sigma.
-2. Descarga `Sigma-AppleSilicon.app.zip` de la nueva versión y descomprímelo.
-3. Arrástralo a `Aplicaciones` y acepta reemplazar la versión anterior.
-4. Ábrela. macOS puede volver a pedir el paso de **Abrir de todos modos**: cada versión trae su
-   propia marca de cuarentena y el permiso no se hereda.
+Es la única vez que Sigma usa internet. Sin conexión el aviso no aparece y todo lo demás funciona
+igual.
 
 **Tus datos no se tocan.** La base de datos vive donde tú la pusiste y los ajustes (qué archivo
 abrir, el tema) están fuera de la aplicación, así que reemplazarla no los borra. Si la versión
 nueva necesita cambiar el formato del archivo, Sigma hace un respaldo antes de hacerlo y lo
 actualiza solo al abrirlo.
+
+### Si prefieres hacerlo a mano
+
+También sirve el camino de siempre, y es el que hay que usar si Sigma avisa que no tiene permiso
+para reemplazarse —pasa cuando la aplicación se instaló con `sudo` y pertenece a otro usuario—:
+
+1. Cierra Sigma.
+2. Descarga `Sigma-AppleSilicon.app.zip` de la nueva versión y descomprímelo.
+3. Arrástralo a `Aplicaciones` y acepta reemplazar la versión anterior.
+4. Ábrela. macOS puede volver a pedir el paso de **Abrir de todos modos**: lo que se descarga con
+   el navegador trae su propia marca de cuarentena y el permiso no se hereda.
 
 ## Primer uso
 

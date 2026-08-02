@@ -2,6 +2,7 @@ import type {
   Account,
   Activity,
   DatabaseStatus,
+  InstalledUpdate,
   MovementEdit,
   MovementKind,
   PendingMovement,
@@ -76,6 +77,7 @@ export const api = {
 
   // New versions
   updateStatus: () => request<UpdateStatus>('/api/update'),
+  installUpdate: () => post<InstalledUpdate>('/api/update/install'),
 
   // Overview
   summary: (month?: string) =>

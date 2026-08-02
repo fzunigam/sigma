@@ -12,6 +12,7 @@ interface PywebviewApi {
   choose_new_database(): Promise<{ path: string | null }>;
   reveal(path: string): Promise<{ ok: boolean }>;
   open_releases(): Promise<{ ok: boolean }>;
+  quit(): Promise<{ ok: boolean }>;
 }
 
 declare global {
@@ -57,6 +58,15 @@ export async function chooseNewDatabase(): Promise<string | null> {
 export async function revealInFinder(path: string): Promise<void> {
   const bridge = api();
   if (bridge) await bridge.reveal(path);
+}
+
+/**
+ * Close the app. Used after an update is staged: the script that replaces the
+ * bundle is waiting for this process to exit, and reopens Sigma afterwards.
+ */
+export async function quit(): Promise<void> {
+  const bridge = api();
+  if (bridge) await bridge.quit();
 }
 
 /**

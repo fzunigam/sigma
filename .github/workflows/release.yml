@@ -66,9 +66,11 @@ jobs:
 
           ## Si ya tenías Sigma
 
-          Cierra la aplicación, arrastra la nueva a `Aplicaciones` y acepta reemplazar la anterior. Tus datos no se tocan: la base de datos vive donde tú la pusiste y los ajustes están fuera de la aplicación. Si el formato del archivo cambió, Sigma hace un respaldo y lo actualiza solo al abrirlo.
+          No hace falta descargar nada: abre Sigma y en la barra lateral, abajo, aparece **"Versión nueva disponible"**. Haz clic, confirma, y la aplicación se actualiza y se vuelve a abrir sola.
 
-          macOS puede volver a pedirte el paso de **Abrir de todos modos** que está más abajo: cada versión trae su propia marca de cuarentena.
+          Si prefieres hacerlo a mano, cierra la aplicación, arrastra la nueva a `Aplicaciones` y acepta reemplazar la anterior. En ese caso macOS puede volver a pedirte el paso de **Abrir de todos modos** que está más abajo.
+
+          En los dos casos tus datos no se tocan: la base de datos vive donde tú la pusiste y los ajustes están fuera de la aplicación. Si el formato del archivo cambió, Sigma hace un respaldo y lo actualiza solo al abrirlo.
 
           ## La primera vez macOS la bloquea
 

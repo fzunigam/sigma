@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from sigma import __version__, database, settings, updates
+from sigma import __version__, database, installer, settings, updates
 from sigma.db import accounts, movements, preferences, reconciliations, transfers
 from sigma.db.errors import DatabaseFileError, NotFound, SigmaError, ValidationError
 
@@ -168,6 +168,12 @@ def update_theme(payload: ThemePayload) -> dict[str, Any]:
 @app.get("/api/update")
 def update_check() -> dict[str, Any]:
     return updates.check()
+
+
+@app.post("/api/update/install")
+def update_install() -> dict[str, Any]:
+    """Leave the new version staged and ready. The window closes right after."""
+    return installer.install()
 
 
 # --- Summary ---------------------------------------------------------------
