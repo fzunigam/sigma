@@ -5,6 +5,14 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-08-02
+
+### Fixed
+- **Fecha en blanco al registrar un movimiento.** El campo Fecha del formulario para ingresar un
+  gasto, ingreso o traspaso partía vacío en vez de con el día de hoy, así que no se veía ningún
+  texto — daba la impresión de que las letras eran del mismo color que el fondo. Ahora aparece
+  con la fecha de hoy, con el color de contraste correspondiente al tema claro u oscuro.
+
 ## [1.2.1] - 2026-08-02
 
 ### Fixed

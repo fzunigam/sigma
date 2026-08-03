@@ -32,7 +32,7 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
   const [description, setDescription] = useState('');
   const [account, setAccount] = useState('');
   const [target, setTarget] = useState('');
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(todayIso());
   const [include, setInclude] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -97,7 +97,7 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
       }
       setAmount('');
       setDescription('');
-      setDate('');
+      setDate(todayIso());
       amountField.current?.focus();
       onChanged();
     } catch (caught) {
