@@ -62,7 +62,7 @@ y se ignora, para que un cierre brusco no deje una advertencia permanente.
 
 ```sql
 accounts(
-    id TEXT PK, name, kind CHECK (kind IN ('debit','credit')),
+    id TEXT PK, name, kind CHECK (kind IN ('debit','credit','investment')),
     balance INT, credit_limit INT, created_at, deleted_at)
 
 movements(
@@ -82,6 +82,27 @@ reconciliations(
     id TEXT PK, net_amount INT, movement_count INT, date, created_at)
 
 meta(key TEXT PK, value TEXT)
+
+-- Inversiones: ver la sección propia más abajo.
+investment_cash_usd(account_id → accounts PK, balance INT)
+
+investment_holdings(
+    account_id → accounts, ticker,
+    quantity REAL, avg_cost REAL, currency,
+    PK (account_id, ticker))
+
+investment_transactions(
+    id TEXT PK, account_id → accounts,
+    kind CHECK (kind IN ('buy','sell','dividend','fx_exchange')),
+    ticker NULL, quantity REAL NULL, price REAL NULL, fees INT DEFAULT 0,
+    currency NULL, clp_amount INT NULL, usd_amount INT NULL, realized_gain INT NULL,
+    date, created_at, deleted_at)
+
+security_prices(ticker TEXT PK, name, currency, price REAL, fetched_at)
+
+fx_rates(pair TEXT PK, rate REAL, fetched_at)
+
+investment_value_history(account_id → accounts, date, value_clp INT, PK (account_id, date))
 ```
 
 ### Cómo se leen los saldos
@@ -103,6 +124,33 @@ que es el saldo en una y el cupo restante en la otra.
 igual, así que buscar *transferencia* encuentra todos los traspasos y buscar *tarjeta* encuentra
 el que dice "pago tarjeta".
 
+## Inversiones
+
+Una cuenta `kind = 'investment'` es una fila más en `accounts`: su `balance` es su cash en pesos,
+movido por traspasos normales, igual que una cuenta de saldo. Todo lo demás vive en tablas propias,
+enlazadas por `account_id`:
+
+- **`investment_cash_usd`** — el cash en dólares, en centavos enteros (mismo criterio de "sin
+  decimales que acumulen error" que el resto de la aplicación, adaptado a que el dólar sí los
+  tiene).
+- **`investment_holdings`** — cuánto se tiene de cada ticker y a qué costo promedio, en la moneda
+  nativa del ticker. Es un valor **derivado**: `sigma.db.investments.recompute_holding` lo
+  reconstruye desde `investment_transactions` cada vez que una compra o venta de ese ticker se crea,
+  edita o borra, porque el costo promedio depende del orden de las transacciones y no se puede
+  parchar con un delta como el saldo de una cuenta. Ver
+  [decisiones/0005-inversiones.md](decisiones/0005-inversiones.md).
+- **`investment_transactions`** — la fuente de verdad: compra, venta, dividendo o cambio de
+  moneda. `realized_gain` se recalcula junto con la tenencia, así que una corrección en una compra
+  antigua actualiza la ganancia de las ventas posteriores de ese ticker.
+- **`security_prices`** / **`fx_rates`** — el caché de precios y del tipo de cambio USD/CLP, la
+  única escritura que hace `sigma/prices.py` (Yahoo Finance, sin la librería `yfinance`). El valor
+  de una cuenta de inversión y el patrimonio total en Resumen se calculan siempre desde este caché,
+  nunca desde una llamada de red en el camino — Resumen sigue siendo instantáneo y funciona sin
+  conexión, como el resto de Sigma. El caché se refresca solo al abrir la sección Inversiones.
+- **`investment_value_history`** — una foto del valor total de la cuenta por día, para el gráfico
+  de evolución. Solo existe desde que la cuenta empieza a usarse; no hay forma de reconstruir el
+  pasado.
+
 ## Versiones del formato
 
 La tabla `meta` guarda `schema_version`. Al abrir un archivo, Sigma aplica las actualizaciones
@@ -114,6 +162,7 @@ abrirlo con código antiguo perdería lo que esa versión agregó.
 |---|---|
 | 1 | El formato con el que salió Sigma 1.0.0 |
 | 2 | `transfers.description` |
+| 3 | Cuentas de inversión: `kind = 'investment'`, tenencias, transacciones, caché de precios/tipo de cambio e historial de valor |
 
 ## Migración desde la versión anterior
 

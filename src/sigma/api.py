@@ -18,12 +18,21 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from sigma import __version__, database, installer, settings, updates
-from sigma.db import accounts, movements, preferences, reconciliations, transfers
+from sigma.api_investments import router as investments_router
+from sigma.db import (
+    accounts,
+    investment_metrics,
+    movements,
+    preferences,
+    reconciliations,
+    transfers,
+)
 from sigma.db.errors import DatabaseFileError, NotFound, SigmaError, ValidationError
 
 STATIC_DIR = Path(__file__).parent / "web" / "static"
 
 app = FastAPI(title="Sigma", version=__version__, docs_url=None, redoc_url=None)
+app.include_router(investments_router)
 
 
 # --- Error handling --------------------------------------------------------
@@ -60,7 +69,7 @@ class ThemePayload(BaseModel):
 class AccountCreate(BaseModel):
     id: str = Field(..., min_length=1, max_length=40)
     name: str = Field(..., min_length=1, max_length=80)
-    kind: str = Field(..., pattern="^(debit|credit)$")
+    kind: str = Field(..., pattern="^(debit|credit|investment)$")
     balance: int = 0
     credit_limit: int = 0
 
@@ -183,7 +192,7 @@ def update_install() -> dict[str, Any]:
 def summary(month: str | None = None) -> dict[str, Any]:
     db = database.require_current()
     month = month or date.today().strftime("%Y-%m")
-    account_list = accounts.list_accounts(db)
+    account_list = [_with_investment_value(db, a) for a in accounts.list_accounts(db)]
 
     return {
         "accounts": account_list,
@@ -196,11 +205,32 @@ def summary(month: str | None = None) -> dict[str, Any]:
     }
 
 
+def _with_investment_value(db: Path, account: dict[str, Any]) -> dict[str, Any]:
+    """An investment account's ``balance`` is only its CLP cash — showing that
+    alone next to a debit/credit balance would read as "no money here" even
+    with a full portfolio in USD and stocks. ``total_value_clp`` is the number
+    the interface actually displays for it."""
+    if account["kind"] != "investment":
+        return account
+    value = investment_metrics.account_metrics(db, account["id"])["total_value_clp"]
+    return {**account, "total_value_clp": value}
+
+
 def _totals(account_list: list[dict[str, Any]]) -> dict[str, int]:
-    """Cash on hand, card debt, and what is actually yours once debt is paid."""
+    """Cash on hand, card debt, investments at their last cached value, and
+    what is actually yours once debt is paid. Uses the price/FX cache only —
+    never a network call, so Resumen stays instant and works offline."""
     available = sum(a["balance"] for a in account_list if a["kind"] == "debit")
     debt = sum(a["balance"] for a in account_list if a["kind"] == "credit")
-    return {"available": available, "debt": debt, "net": available - debt}
+    investment_total = sum(
+        a["total_value_clp"] for a in account_list if a["kind"] == "investment"
+    )
+    return {
+        "available": available,
+        "debt": debt,
+        "investments": investment_total,
+        "net": available - debt + investment_total,
+    }
 
 
 # --- Accounts --------------------------------------------------------------

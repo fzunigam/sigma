@@ -83,11 +83,11 @@ def _check_transfer_accounts(
 def _transfer_deltas(to_kind: str, amount: int) -> tuple[int, int]:
     """How a transfer of ``amount`` moves each side's balance.
 
-    The source is always a debit account, so it simply loses the money. The
-    destination gains it, unless it is a card, where receiving money means owing
-    less.
+    The source is always a debit or investment account, so it simply loses
+    the money. The destination gains it too, unless it is a card, where
+    receiving money means owing less.
     """
-    return -amount, (amount if to_kind == "debit" else -amount)
+    return -amount, (-amount if to_kind == "credit" else amount)
 
 
 def update_transfer(

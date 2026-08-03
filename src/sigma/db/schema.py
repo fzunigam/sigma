@@ -8,13 +8,13 @@ from pathlib import Path
 
 from sigma.db.connection import connect, now, transaction
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE accounts (
     id           TEXT PRIMARY KEY,
     name         TEXT NOT NULL,
-    kind         TEXT NOT NULL CHECK (kind IN ('debit', 'credit')),
+    kind         TEXT NOT NULL CHECK (kind IN ('debit', 'credit', 'investment')),
     balance      INTEGER NOT NULL DEFAULT 0,
     credit_limit INTEGER NOT NULL DEFAULT 0,
     created_at   TEXT NOT NULL,
@@ -58,9 +58,62 @@ CREATE TABLE meta (
     value TEXT NOT NULL
 );
 
+CREATE TABLE investment_cash_usd (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id),
+    balance    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE investment_holdings (
+    account_id TEXT NOT NULL REFERENCES accounts(id),
+    ticker     TEXT NOT NULL,
+    quantity   REAL NOT NULL DEFAULT 0,
+    avg_cost   REAL NOT NULL DEFAULT 0,
+    currency   TEXT NOT NULL,
+    PRIMARY KEY (account_id, ticker)
+);
+
+CREATE TABLE investment_transactions (
+    id            TEXT PRIMARY KEY,
+    account_id    TEXT NOT NULL REFERENCES accounts(id),
+    kind          TEXT NOT NULL CHECK (kind IN ('buy', 'sell', 'dividend', 'fx_exchange')),
+    ticker        TEXT,
+    quantity      REAL,
+    price         REAL,
+    fees          INTEGER NOT NULL DEFAULT 0,
+    currency      TEXT,
+    clp_amount    INTEGER,
+    usd_amount    INTEGER,
+    realized_gain INTEGER,
+    date          TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    deleted_at    TEXT
+);
+
+CREATE TABLE security_prices (
+    ticker     TEXT PRIMARY KEY,
+    name       TEXT,
+    currency   TEXT NOT NULL,
+    price      REAL NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE fx_rates (
+    pair       TEXT PRIMARY KEY,
+    rate       REAL NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE investment_value_history (
+    account_id TEXT NOT NULL REFERENCES accounts(id),
+    date       TEXT NOT NULL,
+    value_clp  INTEGER NOT NULL,
+    PRIMARY KEY (account_id, date)
+);
+
 CREATE INDEX idx_movements_date ON movements(date);
 CREATE INDEX idx_movements_pending ON movements(pending) WHERE deleted_at IS NULL;
 CREATE INDEX idx_transfers_date ON transfers(date);
+CREATE INDEX idx_investment_transactions_account ON investment_transactions(account_id, date);
 """
 
 
@@ -116,6 +169,90 @@ def _table_names(conn: sqlite3.Connection) -> set[str]:
 # previous version to that one. They run in order inside a single transaction.
 UPGRADES: dict[int, tuple[str, ...]] = {
     2: ("ALTER TABLE transfers ADD COLUMN description TEXT NOT NULL DEFAULT ''",),
+    # Adds the 'investment' account kind (SQLite cannot ALTER a CHECK constraint,
+    # so the table is rebuilt) plus the tables an investment account needs:
+    # USD cash, holdings, their transactions, a price/FX cache, and a daily
+    # value snapshot for the portfolio chart. Same PRAGMA foreign_keys bracket
+    # already used by accounts.rename_account_id.
+    3: (
+        "PRAGMA foreign_keys = OFF",
+        """
+        CREATE TABLE accounts_new (
+            id           TEXT PRIMARY KEY,
+            name         TEXT NOT NULL,
+            kind         TEXT NOT NULL CHECK (kind IN ('debit', 'credit', 'investment')),
+            balance      INTEGER NOT NULL DEFAULT 0,
+            credit_limit INTEGER NOT NULL DEFAULT 0,
+            created_at   TEXT NOT NULL,
+            deleted_at   TEXT
+        )
+        """,
+        "INSERT INTO accounts_new SELECT"
+        " id, name, kind, balance, credit_limit, created_at, deleted_at FROM accounts",
+        "DROP TABLE accounts",
+        "ALTER TABLE accounts_new RENAME TO accounts",
+        "PRAGMA foreign_keys = ON",
+        """
+        CREATE TABLE investment_cash_usd (
+            account_id TEXT PRIMARY KEY REFERENCES accounts(id),
+            balance    INTEGER NOT NULL DEFAULT 0
+        )
+        """,
+        """
+        CREATE TABLE investment_holdings (
+            account_id TEXT NOT NULL REFERENCES accounts(id),
+            ticker     TEXT NOT NULL,
+            quantity   REAL NOT NULL DEFAULT 0,
+            avg_cost   REAL NOT NULL DEFAULT 0,
+            currency   TEXT NOT NULL,
+            PRIMARY KEY (account_id, ticker)
+        )
+        """,
+        """
+        CREATE TABLE investment_transactions (
+            id            TEXT PRIMARY KEY,
+            account_id    TEXT NOT NULL REFERENCES accounts(id),
+            kind          TEXT NOT NULL CHECK (kind IN ('buy', 'sell', 'dividend', 'fx_exchange')),
+            ticker        TEXT,
+            quantity      REAL,
+            price         REAL,
+            fees          INTEGER NOT NULL DEFAULT 0,
+            currency      TEXT,
+            clp_amount    INTEGER,
+            usd_amount    INTEGER,
+            realized_gain INTEGER,
+            date          TEXT NOT NULL,
+            created_at    TEXT NOT NULL,
+            deleted_at    TEXT
+        )
+        """,
+        "CREATE INDEX idx_investment_transactions_account"
+        " ON investment_transactions(account_id, date)",
+        """
+        CREATE TABLE security_prices (
+            ticker     TEXT PRIMARY KEY,
+            name       TEXT,
+            currency   TEXT NOT NULL,
+            price      REAL NOT NULL,
+            fetched_at TEXT NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE fx_rates (
+            pair       TEXT PRIMARY KEY,
+            rate       REAL NOT NULL,
+            fetched_at TEXT NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE investment_value_history (
+            account_id TEXT NOT NULL REFERENCES accounts(id),
+            date       TEXT NOT NULL,
+            value_clp  INTEGER NOT NULL,
+            PRIMARY KEY (account_id, date)
+        )
+        """,
+    ),
 }
 
 

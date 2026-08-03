@@ -350,6 +350,27 @@ def make_version_1_database(path: Path) -> None:
     """A file exactly as Sigma 1.0.0 left it: no ``transfers.description``."""
     create_database(path)
     with connection.transaction(path) as conn:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("DROP TABLE investment_value_history")
+        conn.execute("DROP TABLE fx_rates")
+        conn.execute("DROP TABLE security_prices")
+        conn.execute("DROP TABLE investment_transactions")
+        conn.execute("DROP TABLE investment_holdings")
+        conn.execute("DROP TABLE investment_cash_usd")
+        conn.execute(
+            "CREATE TABLE accounts_old ("
+            " id TEXT PRIMARY KEY, name TEXT NOT NULL,"
+            " kind TEXT NOT NULL CHECK (kind IN ('debit', 'credit')),"
+            " balance INTEGER NOT NULL DEFAULT 0, credit_limit INTEGER NOT NULL DEFAULT 0,"
+            " created_at TEXT NOT NULL, deleted_at TEXT)"
+        )
+        conn.execute(
+            "INSERT INTO accounts_old SELECT"
+            " id, name, kind, balance, credit_limit, created_at, deleted_at FROM accounts"
+        )
+        conn.execute("DROP TABLE accounts")
+        conn.execute("ALTER TABLE accounts_old RENAME TO accounts")
+        conn.execute("PRAGMA foreign_keys = ON")
         conn.execute("DROP TABLE transfers")
         conn.execute(
             "CREATE TABLE transfers ("

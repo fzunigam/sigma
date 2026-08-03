@@ -88,8 +88,13 @@ xattr -w com.apple.quarantine "0081;00000000;Safari;" /Applications/Sigma.app
 | `test_database_file.py` | Abrir, crear, respaldar, restaurar y bloquear el archivo |
 | `test_preferences.py` | Preferencias guardadas dentro del `.db` |
 | `test_api.py` | Todas las rutas HTTP, con `TestClient` |
+| `test_investments.py` | Compra, venta, dividendo, cambio de moneda, costo promedio y su caché de precios |
+| `test_investment_metrics.py` | Ganancia, XIRR, asignación e historial de valor de una cuenta de inversión |
+| `test_prices.py` | `sigma/prices.py`, con Yahoo Finance siempre simulado |
+| `test_api_investments.py` | Las rutas HTTP de Inversiones, con `TestClient` |
 
-Las fixtures compartidas (`db`, `wallet`, `card`) están en `tests/conftest.py`.
+Las fixtures compartidas (`db`, `wallet`, `card`, `fintual`, `client`, `api`) están en
+`tests/conftest.py`.
 
 ## Publicar una versión
 

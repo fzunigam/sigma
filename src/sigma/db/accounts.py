@@ -1,10 +1,13 @@
 """Accounts: creation, editing, soft deletion and balance helpers.
 
-Two kinds of account exist:
+Three kinds of account exist:
 
 * ``debit`` — ``balance`` is money available. Spending lowers it.
 * ``credit`` — ``balance`` is money *owed*. Spending raises it, up to
   ``credit_limit``; paying the card lowers it.
+* ``investment`` — same rules as ``debit``: ``balance`` is CLP cash available,
+  moved by ordinary transfers. USD cash and security holdings live in
+  ``sigma.db.investments``, keyed by this account's id.
 """
 
 from __future__ import annotations
@@ -56,13 +59,13 @@ def create_account(
         raise ValidationError("El identificador de la cuenta no puede estar vacío.")
     if not name:
         raise ValidationError("El nombre de la cuenta no puede estar vacío.")
-    if kind not in ("debit", "credit"):
-        raise ValidationError("El tipo de cuenta debe ser 'debit' o 'credit'.")
-    if kind == "debit" and balance < 0:
+    if kind not in ("debit", "credit", "investment"):
+        raise ValidationError("El tipo de cuenta debe ser 'debit', 'credit' o 'investment'.")
+    if kind in ("debit", "investment") and balance < 0:
         raise ValidationError("El saldo inicial no puede ser negativo.")
     if kind == "credit" and credit_limit < 0:
         raise ValidationError("El cupo no puede ser negativo.")
-    if kind == "debit":
+    if kind in ("debit", "investment"):
         credit_limit = 0
 
     with transaction(db_path) as conn:
@@ -169,19 +172,23 @@ def apply_balance_change(conn, account_id: str, delta: int) -> None:
 
 
 def check_can_spend(account: dict[str, Any], amount: int) -> None:
-    """Raise if ``amount`` cannot be spent from ``account``."""
-    if account["kind"] == "debit":
-        if account["balance"] < amount:
-            raise ValidationError(
-                f"Saldo insuficiente en '{account['name']}'. "
-                f"Disponible: {account['balance']}, necesario: {amount}."
-            )
-    else:
+    """Raise if ``amount`` cannot be spent from ``account``.
+
+    ``debit`` and ``investment`` share the same rule: a balance that cannot go
+    negative. Only ``credit`` spends against a limit instead.
+    """
+    if account["kind"] == "credit":
         available = account["credit_limit"] - account["balance"]
         if amount > available:
             raise ValidationError(
                 f"Cupo insuficiente en '{account['name']}'. "
                 f"Disponible: {available}, necesario: {amount}."
+            )
+    else:
+        if account["balance"] < amount:
+            raise ValidationError(
+                f"Saldo insuficiente en '{account['name']}'. "
+                f"Disponible: {account['balance']}, necesario: {amount}."
             )
 
 

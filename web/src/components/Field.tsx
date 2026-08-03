@@ -102,6 +102,40 @@ function onlyDigits(raw: string): string {
     .slice(0, 12);
 }
 
+interface DecimalProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+/**
+ * A plain decimal input: share quantities and per-share prices. Unlike
+ * `AmountInput` these are not whole Chilean pesos — they can have a fractional
+ * part and no thousands grouping applies to them.
+ */
+export const DecimalInput = forwardRef<HTMLInputElement, DecimalProps>(function DecimalInput(
+  { className = '', value, onValueChange, ...rest },
+  ref,
+) {
+  return (
+    <input
+      {...rest}
+      ref={ref}
+      value={value}
+      onChange={(event) => onValueChange(onlyDecimal(event.target.value))}
+      inputMode="decimal"
+      className={`${CONTROL} tnum text-right ${className}`}
+    />
+  );
+});
+
+/** Digits and a single decimal point, up to 8 places after it. */
+function onlyDecimal(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, '');
+  const [head, ...rest] = cleaned.split('.');
+  return rest.length ? `${head}.${rest.join('').slice(0, 8)}` : head;
+}
+
 export function Select({ className = '', ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...rest} className={`${CONTROL} pr-8 cursor-pointer ${className}`} />;
 }

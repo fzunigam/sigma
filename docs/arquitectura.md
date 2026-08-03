@@ -47,20 +47,28 @@ sistema en cada arranque, así que dos ventanas nunca chocan.
 ## Capas
 
 **`sigma/db/`** — Todo el acceso a datos, un módulo por tema: `accounts`, `movements`,
-`transfers`, `reconciliations`, `preferences`. Cada función recibe la ruta del archivo de forma
-explícita y abre su propia conexión corta a través de `connection.py`. No hay conexión global ni
-ORM. La lista combinada de movimientos y traspasos —la que lee la interfaz— vive en `movements`,
-porque es una sola consulta que une ambas tablas.
+`transfers`, `reconciliations`, `preferences`, `investments`, `investment_transactions`,
+`investment_metrics`. Cada función recibe la ruta del archivo de forma explícita y abre su propia
+conexión corta a través de `connection.py`. No hay conexión global ni ORM. La lista combinada de
+movimientos y traspasos —la que lee la interfaz— vive en `movements`, porque es una sola consulta
+que une ambas tablas.
 
 **`sigma/database.py`** — El ciclo de vida del *archivo*: crear, abrir, migrar, restaurar. Aquí
 viven las reglas de seguridad para carpetas sincronizadas, en un solo lugar.
 
 **`sigma/api.py`** — Traduce HTTP a llamadas de `sigma/db/`. No tiene lógica de negocio propia,
-salvo resolver la cuenta por defecto cuando la interfaz no manda una.
+salvo resolver la cuenta por defecto cuando la interfaz no manda una. Las rutas de Inversiones
+viven aparte, en `sigma/api_investments.py`, montadas con `app.include_router` para que este
+archivo no crezca sin límite.
 
 **`sigma/updates.py`** — Pregunta a GitHub cuál es la última versión publicada. Vive aparte y en
 su propia ruta (`GET /api/update`) para que el arranque nunca espere a la red: la interfaz lo
 pide por su cuenta, una vez, y lo ignora si falla.
+
+**`sigma/prices.py`** — La misma idea que `updates.py`, pero para Yahoo Finance: precios de
+tickers y el tipo de cambio USD/CLP. Ninguna falla se propaga como error; el último precio en
+`security_prices`/`fx_rates` se queda donde estaba. Se pide solo al abrir Inversiones, nunca desde
+Resumen. Ver [decisiones/0005-inversiones.md](decisiones/0005-inversiones.md).
 
 **`sigma/installer.py`** — Instala esa versión sobre la que está corriendo. Descarga, verifica
 firma y versión, y deja el reemplazo en manos de un script suelto que espera a que el proceso
@@ -72,17 +80,21 @@ hay librería de estado porque no hace falta.
 
 ## Modelo de datos
 
-Cuatro tablas y un diccionario de configuración. El detalle está en
-[base-de-datos.md](base-de-datos.md).
+El detalle está en [base-de-datos.md](base-de-datos.md).
 
-- **accounts** — de saldo (`debit`) o tarjeta de crédito (`credit`, con cupo).
+- **accounts** — de saldo (`debit`), tarjeta de crédito (`credit`, con cupo) o de inversión
+  (`investment`, cash en pesos — dólares y tenencias viven aparte).
 - **movements** — gastos e ingresos. Nacen "pendientes de conciliar".
 - **transfers** — plata que se mueve entre cuentas propias; no es gasto ni ingreso.
 - **reconciliations** — el cierre de un grupo de movimientos, con el vínculo a cuáles cerró.
 - **meta** — versión del esquema y cuentas por defecto.
+- **investment_cash_usd, investment_holdings, investment_transactions, security_prices, fx_rates,
+  investment_value_history** — todo lo que necesita una cuenta de inversión, descrito en su propia
+  sección de [base-de-datos.md](base-de-datos.md#inversiones).
 
 Los montos son enteros en pesos chilenos. No hay decimales porque el peso no los usa, y los
-enteros no acumulan error.
+enteros no acumulan error. Dentro de una cuenta de inversión el dólar es la única excepción —tiene
+centavos—, acotada a ese módulo y explicada en la decisión 0005.
 
 ## Invariantes
 

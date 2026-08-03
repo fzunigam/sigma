@@ -16,8 +16,13 @@ un valor por defecto razonable.
 decoración. Un número verde siempre significa que entra plata; uno rojo, que sale. Para llamar la
 atención está el acento; para advertir, `--caution`.
 
-**Todo monto pasa por `<Money>`.** Ese componente es el único que decide formato y color. Nunca
-formatees un peso a mano en un componente.
+**Todo monto pasa por `<Money>`.** Ese componente es el único que decide formato y color, y da por
+hecho que el monto está en pesos chilenos. Nunca formatees un peso a mano en un componente.
+
+En Inversiones, donde un monto puede estar genuinamente en dólares (el precio de un ticker, un
+dividendo pagado en USD), se usa `<CurrencyMoney amount currency>` en su lugar — mismo criterio de
+color, formato distinto según la moneda. Todo lo que ya está convertido a pesos por el backend
+(valor de mercado, ganancia, patrimonio total) sigue pasando por `<Money>` normal.
 
 **Densidad pareja.** Las filas de listas miden lo mismo en todas las pantallas. Las cifras van
 alineadas a la derecha y con `tnum` para que las columnas cuadren.

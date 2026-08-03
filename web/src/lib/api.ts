@@ -1,16 +1,23 @@
 import type {
   Account,
+  AccountMetrics,
   Activity,
+  Currency,
   DatabaseStatus,
+  Holding,
   InstalledUpdate,
+  InvestmentTransaction,
+  InvestmentTransactionEdit,
   MovementEdit,
   MovementKind,
   PendingMovement,
   Preferences,
   Reconciliation,
   Summary,
+  TickerQuote,
   TransferEdit,
   UpdateStatus,
+  ValuePoint,
 } from './types';
 
 /**
@@ -145,4 +152,56 @@ export const api = {
 
   // Preferences
   savePreferences: (payload: Preferences) => put<Preferences>('/api/preferences', payload),
+
+  // Investments
+  investments: {
+    accounts: () => request<Account[]>('/api/investments/accounts'),
+    holdings: (accountId: string) =>
+      request<Holding[]>(`/api/investments/accounts/${encodeURIComponent(accountId)}/holdings`),
+    activity: (accountId: string) =>
+      request<InvestmentTransaction[]>(
+        `/api/investments/accounts/${encodeURIComponent(accountId)}/activity`,
+      ),
+    metrics: (accountId: string) =>
+      request<AccountMetrics>(`/api/investments/accounts/${encodeURIComponent(accountId)}/metrics`),
+    history: (accountId: string) =>
+      request<ValuePoint[]>(`/api/investments/accounts/${encodeURIComponent(accountId)}/history`),
+    buy: (payload: {
+      account_id: string;
+      ticker: string;
+      quantity: number;
+      price: number;
+      currency: Currency;
+      date?: string | null;
+      fees?: number;
+    }) => post<InvestmentTransaction>('/api/investments/buy', payload),
+    sell: (payload: {
+      account_id: string;
+      ticker: string;
+      quantity: number;
+      price: number;
+      date?: string | null;
+      fees?: number;
+    }) => post<InvestmentTransaction>('/api/investments/sell', payload),
+    dividend: (payload: {
+      account_id: string;
+      ticker: string;
+      amount: number;
+      currency: Currency;
+      date?: string | null;
+    }) => post<InvestmentTransaction>('/api/investments/dividend', payload),
+    fxExchange: (payload: {
+      account_id: string;
+      clp_amount: number;
+      usd_amount: number;
+      date?: string | null;
+    }) => post<InvestmentTransaction>('/api/investments/fx-exchange', payload),
+    updateTransaction: (id: string, payload: InvestmentTransactionEdit) =>
+      patch<InvestmentTransaction>(`/api/investments/transactions/${id}`, payload),
+    deleteTransaction: (id: string) => remove(`/api/investments/transactions/${id}`),
+    refresh: (tickers: string[] = []) =>
+      post<{ prices: Record<string, boolean> }>('/api/investments/refresh', { tickers }),
+    lookup: (ticker: string) =>
+      request<TickerQuote>(`/api/investments/lookup/${encodeURIComponent(ticker)}`),
+  },
 };

@@ -1,13 +1,22 @@
-import { ArrowLeftRight, LayoutGrid, Moon, Settings, Sun, Wallet } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  LayoutGrid,
+  Moon,
+  Settings,
+  Sun,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 import { UpdateNotice } from './UpdateNotice';
 import type { DatabaseStatus } from '../lib/types';
 
-export type View = 'resumen' | 'movimientos' | 'cuentas' | 'ajustes';
+export type View = 'resumen' | 'movimientos' | 'cuentas' | 'inversiones' | 'ajustes';
 
 const NAV: { id: View; label: string; icon: typeof LayoutGrid }[] = [
   { id: 'resumen', label: 'Resumen', icon: LayoutGrid },
   { id: 'movimientos', label: 'Movimientos', icon: ArrowLeftRight },
   { id: 'cuentas', label: 'Cuentas', icon: Wallet },
+  { id: 'inversiones', label: 'Inversiones', icon: TrendingUp },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 

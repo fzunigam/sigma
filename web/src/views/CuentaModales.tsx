@@ -40,7 +40,7 @@ export function NuevaCuenta({
         id: slug(name),
         name: name.trim(),
         kind,
-        balance: kind === 'debit' ? Number(balance || 0) : 0,
+        balance: kind !== 'credit' ? Number(balance || 0) : 0,
         credit_limit: kind === 'credit' ? Number(limit || 0) : 0,
       });
       notify.success('Cuenta creada.');
@@ -83,25 +83,34 @@ export function NuevaCuenta({
             options={[
               { value: 'debit', label: 'Saldo' },
               { value: 'credit', label: 'Tarjeta de crédito' },
+              { value: 'investment', label: 'Inversión' },
             ]}
           />
         </Field>
 
-        {kind === 'debit' ? (
-          <Field label="Saldo actual" htmlFor="nueva-saldo" hint="Cuánto tienes hoy.">
-            <AmountInput
-              id="nueva-saldo"
-              value={balance}
-              onValueChange={setBalance}
-              placeholder="0"
-            />
-          </Field>
-        ) : (
+        {kind === 'credit' ? (
           <Field label="Cupo total" htmlFor="nueva-cupo" hint="El máximo que puedes gastar.">
             <AmountInput
               id="nueva-cupo"
               value={limit}
               onValueChange={setLimit}
+              placeholder="0"
+            />
+          </Field>
+        ) : (
+          <Field
+            label="Saldo actual"
+            htmlFor="nueva-saldo"
+            hint={
+              kind === 'investment'
+                ? 'El efectivo en pesos que ya tienes ahí, si tienes.'
+                : 'Cuánto tienes hoy.'
+            }
+          >
+            <AmountInput
+              id="nueva-saldo"
+              value={balance}
+              onValueChange={setBalance}
               placeholder="0"
             />
           </Field>

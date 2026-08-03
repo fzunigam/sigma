@@ -31,6 +31,21 @@ export function plainNumber(amount: number): string {
   return CLP.format(amount);
 }
 
+const USD = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * Money in whichever currency Inversiones is showing. Everywhere else in
+ * Sigma an amount is CLP and goes through `money()`/`<Money>`; this is the one
+ * place a raw USD number (a per-share price, a dividend paid in dollars)
+ * needs its own formatting instead of being converted or mislabeled as pesos.
+ */
+export function formatCurrency(amount: number, currency: 'CLP' | 'USD', signed = false): string {
+  if (currency === 'CLP') return signed ? signedMoney(amount) : money(amount);
+  if (amount === 0) return 'US$0';
+  const sign = amount < 0 ? '−' : signed ? '+' : '';
+  return `${sign}US$${USD.format(Math.abs(amount))}`;
+}
+
 /**
  * How a row of the timeline reads. A movement is its description; a transfer is
  * the word "Transferencia" with the note, if there is one, hanging off it.

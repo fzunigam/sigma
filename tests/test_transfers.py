@@ -34,6 +34,20 @@ def test_transfer_from_a_credit_card_is_rejected(db: Path, wallet, card):
         transfers.create_transfer(db, "card", "wallet", 1_000)
 
 
+def test_transfer_to_an_investment_account_adds_to_its_cash(db: Path, wallet, fintual):
+    """An investment account behaves like a debit account for transfers: it
+    gains what it receives, unlike a credit card, which owes less instead."""
+    transfers.create_transfer(db, "wallet", "fintual", 40_000)
+    assert balance(db, "wallet") == 60_000
+    assert balance(db, "fintual") == 1_000_000 + 40_000
+
+
+def test_transfer_from_an_investment_account_reduces_its_cash(db: Path, wallet, fintual):
+    transfers.create_transfer(db, "fintual", "wallet", 40_000)
+    assert balance(db, "fintual") == 1_000_000 - 40_000
+    assert balance(db, "wallet") == 140_000
+
+
 def test_overpaying_a_credit_card_is_rejected(db: Path, wallet, card):
     movements.create_movement(db, "expense", 10_000, "Compra", "card")
     with pytest.raises(ValidationError, match="saldo a favor"):

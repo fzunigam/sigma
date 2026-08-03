@@ -2,34 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from sigma import database, updates
-from sigma.api import app
 from sigma.db import accounts, movements
-
-
-@pytest.fixture(autouse=True)
-def isolated_settings(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("SIGMA_SETTINGS_DIR", str(tmp_path / "config"))
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
-
-
-@pytest.fixture
-def api(client: TestClient, tmp_path: Path) -> TestClient:
-    """A client with a database open and one debit account ready."""
-    client.post("/api/database/create", json={"path": str(tmp_path / "finanzas.db")})
-    client.post(
-        "/api/accounts",
-        json={"id": "wallet", "name": "Efectivo", "kind": "debit", "balance": 100_000},
-    )
-    return client
-
 
 # --- Database file ---------------------------------------------------------
 
@@ -384,7 +360,7 @@ def test_totals_separate_cash_from_card_debt(api: TestClient):
     movements.create_movement(db, "expense", 80_000, "Notebook", "card")
 
     totals = api.get("/api/summary").json()["totals"]
-    assert totals == {"available": 100_000, "debt": 80_000, "net": 20_000}
+    assert totals == {"available": 100_000, "debt": 80_000, "investments": 0, "net": 20_000}
 
 
 def test_summary_hides_deleted_accounts(api: TestClient):

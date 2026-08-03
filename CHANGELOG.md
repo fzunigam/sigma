@@ -5,6 +5,24 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-03
+
+### Added
+- **Inversiones.** Nueva sección para llevar acciones y ETFs: crea una cuenta de inversión desde
+  Cuentas, transfiérele plata desde tu cuenta corriente como a cualquier otra cuenta, y conviértela
+  a dólares cuando quieras comprar en esa moneda. Cada cuenta puede tener cash en pesos y en
+  dólares a la vez, más las posiciones que compres.
+- **Precios en vivo.** Al abrir Inversiones, Sigma consulta el precio actual de cada ticker y el
+  tipo de cambio del dólar. Es la única otra pantalla, además del aviso de versión nueva, que usa
+  internet — y si no hay conexión, se queda con el último precio conocido sin romper nada.
+- **Métricas de cartera.** Ganancia y pérdida por posición (no realizada y realizada), dividendos
+  recibidos, rentabilidad anualizada (comparando contra lo que has transferido a la cuenta) y de
+  qué está compuesta tu cartera.
+- **Gráfico de evolución.** El valor total de cada cuenta de inversión se guarda día a día para
+  poder verlo crecer en el tiempo. Empieza a acumularse desde que usas la sección por primera vez.
+- El patrimonio total de Resumen ahora suma el valor de las cuentas de inversión, en su propia
+  categoría, separado de lo disponible en efectivo.
+
 ## [1.2.2] - 2026-08-02
 
 ### Fixed
