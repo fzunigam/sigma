@@ -26,3 +26,6 @@ web/node_modules/
 
 # Editor
 .vscode/
+
+# Propuestas
+/docs/propuestas/
