@@ -5,6 +5,13 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-02
+
+### Fixed
+- **Fechas en formato chileno.** Los campos de fecha al registrar y editar un movimiento mostraban
+  el día en formato estadounidense (mes/día/año). Ahora se ven como día/mes/año, como corresponde
+  en Chile.
+
 ## [1.2.0] - 2026-08-02
 
 ### Added

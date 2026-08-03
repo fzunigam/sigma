@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { AmountInput, Checkbox, Field, Input, Segmented, Select } from '../components/Field';
+import { AmountInput, Checkbox, DateInput, Field, Input, Segmented, Select } from '../components/Field';
 import { api, ApiError } from '../lib/api';
 import { todayIso } from '../lib/format';
 import type { Account, Activity, MovementKind } from '../lib/types';
@@ -178,9 +178,8 @@ export function EditarMovimiento({ item, accounts, onClose, onDone }: Props) {
         )}
 
         <Field label="Fecha" htmlFor="editar-fecha">
-          <Input
+          <DateInput
             id="editar-fecha"
-            type="date"
             value={date}
             onChange={(event) => setDate(event.target.value)}
             max={todayIso()}

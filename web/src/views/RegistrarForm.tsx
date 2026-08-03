@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AlertCircle, ArrowRight, Minus, Plus } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { AmountInput, Checkbox, Field, Input, Segmented, Select } from '../components/Field';
+import { AmountInput, Checkbox, DateInput, Field, Input, Segmented, Select } from '../components/Field';
 import { api, ApiError } from '../lib/api';
 import { todayIso } from '../lib/format';
 import type { Summary } from '../lib/types';
@@ -188,9 +188,8 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
         )}
 
         <Field label="Fecha" htmlFor="fecha">
-          <Input
+          <DateInput
             id="fecha"
-            type="date"
             value={date}
             onChange={(event) => setDate(event.target.value)}
             max={todayIso()}

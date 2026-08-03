@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
-import { plainNumber } from '../lib/format';
+import { dateInputLabel, plainNumber } from '../lib/format';
 
 const CONTROL = `w-full h-9 px-3 bg-canvas border border-line rounded-[var(--radius-control)]
   text-sm text-text placeholder:text-text-subtle transition-colors
@@ -29,6 +29,35 @@ export function Field({ label, htmlFor, hint, children }: LabelProps) {
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className = '', ...rest }, ref) {
     return <input {...rest} ref={ref} className={`${CONTROL} ${className}`} />;
+  },
+);
+
+/**
+ * A date field shown as DD/MM/AAAA. The native picker renders its text in
+ * whatever order the OS locale dictates (often MM/DD), so that text is made
+ * invisible and a Chilean-order label is drawn on top; the calendar icon and
+ * picker underneath are untouched.
+ */
+export const DateInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function DateInput({ className = '', value = '', disabled, ...rest }, ref) {
+    return (
+      <div className="relative">
+        <input
+          {...rest}
+          ref={ref}
+          type="date"
+          value={value}
+          disabled={disabled}
+          className={`${CONTROL} ${className} text-transparent caret-transparent`}
+        />
+        <span
+          className={`pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm tnum
+            ${disabled ? 'text-text-subtle opacity-50' : 'text-text'}`}
+        >
+          {dateInputLabel(String(value))}
+        </span>
+      </div>
+    );
   },
 );
 

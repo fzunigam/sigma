@@ -66,6 +66,13 @@ export function currentPeriod(): string {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** `2026-07-24` → `24/07/2026`, the DD/MM/AAAA order used in Chile. */
+export function dateInputLabel(iso: string): string {
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
 export function todayIso(): string {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, '0');
