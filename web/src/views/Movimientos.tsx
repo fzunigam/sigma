@@ -109,11 +109,11 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
 
       <Card padded={false}>
         {loading ? (
-          <div className="py-14 text-center text-xs text-text-subtle">Cargando…</div>
+          <RowsSkeleton />
         ) : (
           <>
             {searching && items.length > 0 && (
-              <p className="px-5 pt-4 text-[11px] text-text-subtle">
+              <p className="px-6 pt-4 text-label text-text-subtle">
                 {items.length} {items.length === 1 ? 'resultado' : 'resultados'} para “{query}”
               </p>
             )}
@@ -162,7 +162,7 @@ function MonthPicker({
       >
         <ChevronLeft size={16} />
       </button>
-      <span className="min-w-36 text-center text-[13px] font-medium capitalize">
+      <span className="min-w-36 text-center text-body font-medium capitalize">
         {monthLabel(period)}
       </span>
       <button
@@ -189,10 +189,10 @@ function Total({
 }) {
   return (
     <Card>
-      <p className="text-[11px] font-medium text-text-subtle uppercase tracking-wide">
+      <p className="text-label font-medium text-text-subtle uppercase tracking-wide">
         {label}
       </p>
-      <Money amount={amount} tone={tone} className="block text-lg font-semibold mt-2" />
+      <Money amount={amount} tone={tone} animate className="block text-xl font-semibold tracking-tight mt-2" />
     </Card>
   );
 }
@@ -201,4 +201,22 @@ function shiftMonth(period: string, delta: number): string {
   const [year, month] = period.split('-').map(Number);
   const shifted = new Date(year, month - 1 + delta, 1);
   return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Placeholder rows shaped like ActivityList, so the card doesn't jump on load. */
+function RowsSkeleton() {
+  return (
+    <ul className="divide-y divide-line" aria-label="Cargando">
+      {[0, 1, 2, 3, 4].map((row) => (
+        <li key={row} className="flex items-center gap-3 px-6 py-3.5 animate-shimmer">
+          <span className="size-7 rounded-full bg-surface-hover shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-40 rounded bg-surface-hover" />
+            <div className="h-2.5 w-24 rounded bg-surface-hover" />
+          </div>
+          <div className="h-3 w-16 rounded bg-surface-hover" />
+        </li>
+      ))}
+    </ul>
+  );
 }

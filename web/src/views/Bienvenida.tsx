@@ -132,8 +132,8 @@ export function Bienvenida({ status, onReady }: Props) {
                   className="flex items-baseline gap-2 w-full text-left px-3 py-2 rounded-[8px]
                     hover:bg-surface-hover transition-colors disabled:opacity-50"
                 >
-                  <span className="text-[13px]">{item.name}</span>
-                  <span className="text-[11px] text-text-subtle truncate">
+                  <span className="text-body">{item.name}</span>
+                  <span className="text-label text-text-subtle truncate">
                     {shortPath(item.path, 2)}
                   </span>
                 </button>
@@ -153,7 +153,7 @@ export function Bienvenida({ status, onReady }: Props) {
               onChange={(event) => setManualPath(event.target.value)}
               placeholder="/Users/tu-usuario/Drive/finanzas.db"
             />
-            <p className="flex items-start gap-1.5 text-[11px] text-text-subtle">
+            <p className="flex items-start gap-1.5 text-label text-text-subtle">
               <Info size={12} className="mt-0.5 shrink-0" />
               Los diálogos del sistema solo están disponibles dentro de la aplicación.
             </p>
@@ -206,7 +206,7 @@ function Option({ icon, title, hint, onClick, loading, disabled, highlighted }: 
         )}
       </span>
       <span className="min-w-0">
-        <span className="block text-[13px] font-medium">{title}</span>
+        <span className="block text-body font-medium">{title}</span>
         <span className="block text-xs text-text-subtle mt-0.5 leading-relaxed">{hint}</span>
       </span>
     </button>

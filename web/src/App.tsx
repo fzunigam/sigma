@@ -104,7 +104,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto px-10 py-10">
         {view === 'resumen' && (
           <Resumen
             summary={summary}

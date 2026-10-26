@@ -43,11 +43,11 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
               type="button"
               onClick={() => onNavigate(id)}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-2.5 w-full h-8 px-2.5 rounded-[7px]
-                text-[13px] transition-colors duration-150
+              className={`flex items-center gap-2.5 w-full h-8 px-2.5 rounded-[8px]
+                text-body transition-all duration-150
                 ${
                   active
-                    ? 'bg-surface-hover text-text font-medium'
+                    ? 'bg-surface text-text font-medium shadow-[var(--shadow-card)] ring-1 ring-line'
                     : 'text-text-muted hover:text-text hover:bg-surface-hover/60'
                 }`}
             >
@@ -62,10 +62,10 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
         <UpdateNotice />
         <div className="flex items-center justify-between gap-2 px-1.5">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium truncate" title={database?.path ?? ''}>
+            <p className="text-label font-medium truncate" title={database?.path ?? ''}>
               {database?.name ?? 'Sin base de datos'}
             </p>
-            <p className="text-[10px] text-text-subtle">v{database?.version ?? '—'}</p>
+            <p className="text-label text-text-subtle">v{database?.version ?? '—'}</p>
           </div>
           <button
             type="button"

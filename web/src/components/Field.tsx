@@ -2,9 +2,9 @@ import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
 import { dateInputLabel, plainNumber } from '../lib/format';
 
-const CONTROL = `w-full h-9 px-3 bg-canvas border border-line rounded-[var(--radius-control)]
+const CONTROL = `w-full h-10 px-3 bg-canvas border border-line rounded-[var(--radius-control)]
   text-sm text-text placeholder:text-text-subtle transition-colors
-  hover:border-line-strong focus:border-accent focus:outline-none
+  hover:border-line-strong focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent-soft
   disabled:opacity-50`;
 
 interface LabelProps {
@@ -21,7 +21,7 @@ export function Field({ label, htmlFor, hint, children }: LabelProps) {
         {label}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-text-subtle">{hint}</p>}
+      {hint && <p className="text-label text-text-subtle">{hint}</p>}
     </div>
   );
 }
@@ -131,7 +131,7 @@ export function Checkbox({ id, label, checked, onChange, hint }: CheckboxProps) 
         <span className="block text-xs text-text-muted group-hover:text-text transition-colors">
           {label}
         </span>
-        {hint && <span className="block text-[11px] text-text-subtle mt-0.5">{hint}</span>}
+        {hint && <span className="block text-label text-text-subtle mt-0.5">{hint}</span>}
       </span>
     </label>
   );

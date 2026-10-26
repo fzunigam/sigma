@@ -57,7 +57,7 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
         ) : (
           <ul className="divide-y divide-line">
             {accounts.map((account) => (
-              <li key={account.id} className="flex items-center gap-3 px-5 py-3">
+              <li key={account.id} className="flex items-center gap-3 px-6 py-3.5">
                 <span
                   className="grid place-items-center size-7 rounded-full shrink-0
                     bg-surface-hover text-text-subtle"
@@ -66,8 +66,8 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium truncate">{account.name}</p>
-                  <p className="text-[11px] text-text-subtle">
+                  <p className="text-body font-medium truncate">{account.name}</p>
+                  <p className="text-label text-text-subtle">
                     {account.kind === 'credit'
                       ? account.credit_limit > 0
                         ? `Cupo total ${money(account.credit_limit)}`
@@ -77,8 +77,8 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
                 </div>
 
                 <div className="text-right shrink-0 mr-1">
-                  <Money amount={account.balance} className="block text-[13px] font-medium" />
-                  <p className="text-[11px] text-text-subtle mt-0.5">
+                  <Money amount={account.balance} className="block text-body font-medium" />
+                  <p className="text-label text-text-subtle mt-0.5">
                     {account.kind === 'credit' ? 'gastado' : 'disponible'}
                   </p>
                 </div>

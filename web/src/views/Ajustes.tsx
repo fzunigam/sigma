@@ -55,7 +55,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
         >
           <TriangleAlert size={16} className="text-caution mt-0.5 shrink-0" />
           <div>
-            <p className="text-[13px] font-medium">Este archivo está abierto en otro equipo</p>
+            <p className="text-body font-medium">Este archivo está abierto en otro equipo</p>
             <p className="text-xs text-text-muted mt-1 leading-relaxed">
               Sigma lo detectó abierto en <span className="text-text">{database.locked_by}</span>
               . Si escribes desde los dos lados a la vez, la sincronización puede perder cambios.
@@ -81,7 +81,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
         />
 
         <div className="mt-4 p-4 rounded-[var(--radius-control)] bg-canvas border border-line">
-          <p className="text-[13px] font-medium">{database.name}</p>
+          <p className="text-body font-medium">{database.name}</p>
           <p className="text-xs text-text-subtle mt-1 break-all" data-selectable>
             {database.path}
           </p>
@@ -98,7 +98,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
 
         {database.recent.length > 1 && (
           <div className="mt-4">
-            <p className="text-[11px] font-medium text-text-subtle uppercase tracking-wide mb-1.5">
+            <p className="text-label font-medium text-text-subtle uppercase tracking-wide mb-1.5">
               Otras bases recientes
             </p>
             <div className="space-y-0.5">
@@ -113,7 +113,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
                       rounded-[6px] hover:bg-surface-hover transition-colors"
                   >
                     <span className="text-xs">{item.name}</span>
-                    <span className="text-[11px] text-text-subtle truncate">
+                    <span className="text-label text-text-subtle truncate">
                       {shortPath(item.path, 2)}
                     </span>
                   </button>
@@ -139,7 +139,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
               <li key={backup.path} className="flex items-center gap-3 py-2.5">
                 <History size={13} className="text-text-subtle shrink-0" />
                 <span className="text-xs flex-1">{backupLabel(backup.name)}</span>
-                <span className="text-[11px] text-text-subtle tnum">
+                <span className="text-label text-text-subtle tnum">
                   {fileSize(backup.size)}
                 </span>
                 <Button size="sm" variant="ghost" onClick={() => setRestoring(backup)}>
@@ -150,14 +150,14 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
           </ul>
         )}
 
-        <p className="flex items-start gap-2 text-[11px] text-text-subtle mt-4">
+        <p className="flex items-start gap-2 text-label text-text-subtle mt-4">
           <ShieldCheck size={13} className="mt-px shrink-0" />
           Si guardas el archivo en Google Drive o Dropbox, además tendrás el historial de
           versiones de ese servicio.
         </p>
       </Card>
 
-      <p className="text-center text-[11px] text-text-subtle">Sigma {database.version}</p>
+      <p className="text-center text-label text-text-subtle">Sigma {database.version}</p>
 
       {restoring && (
         <RestaurarModal

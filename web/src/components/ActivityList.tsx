@@ -26,16 +26,16 @@ export function ActivityList({ items, onEdit, emptyTitle, emptyHint }: Props) {
       {items.map((item) => (
         <li
           key={item.id}
-          className="group flex items-center gap-3 px-5 py-3 hover:bg-surface-hover
+          className="group flex items-center gap-3 px-6 py-3.5 hover:bg-surface-hover
             transition-colors"
         >
           <Glyph kind={item.kind} />
 
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-medium truncate" data-selectable>
+            <p className="text-body font-medium truncate" data-selectable>
               {activityLabel(item)}
             </p>
-            <p className="flex items-center gap-1.5 text-[11px] text-text-subtle mt-0.5">
+            <p className="flex items-center gap-1.5 text-label text-text-subtle mt-0.5">
               <span className="truncate">{item.account_name}</span>
               {item.to_account_name && (
                 <>
@@ -58,7 +58,7 @@ export function ActivityList({ items, onEdit, emptyTitle, emptyHint }: Props) {
             amount={signedAmount(item)}
             tone={item.record === 'transfer' ? 'neutral' : 'auto'}
             signed={item.record !== 'transfer'}
-            className="text-[13px] font-medium shrink-0"
+            className="text-body font-medium shrink-0"
           />
 
           {onEdit && (

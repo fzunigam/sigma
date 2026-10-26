@@ -16,7 +16,15 @@
   --font-sans: ui-sans-serif, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
 
-  --radius-card: 12px;
+  --text-label: 11px;
+  --text-label--line-height: 1.45;
+  --text-body: 13px;
+  --text-body--line-height: 1.5;
+  --text-display: 30px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.02em;
+
+  --radius-card: 14px;
   --radius-control: 8px;
 
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
@@ -34,7 +42,7 @@
   --canvas: oklch(0.17 0.014 268);
   --surface: oklch(0.21 0.017 268);
   --surface-hover: oklch(0.25 0.02 268);
-  --line: oklch(1 0 0 / 9%);
+  --line: oklch(1 0 0 / 7%);
   --line-strong: oklch(1 0 0 / 16%);
 
   --text: oklch(0.97 0.004 265);
@@ -49,7 +57,10 @@
   --negative: oklch(0.68 0.17 22);
   --caution: oklch(0.79 0.13 78);
 
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 30%);
+  /* Inset top highlight reads as a lit edge on dark surfaces. */
+  --shadow-card: inset 0 1px 0 oklch(1 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 25%),
+    0 8px 24px -12px oklch(0 0 0 / 40%);
+  --surface-raised: oklch(0.235 0.019 268);
   --shadow-float: 0 16px 48px oklch(0 0 0 / 45%);
   color-scheme: dark;
 }
@@ -58,7 +69,7 @@
   --canvas: oklch(0.982 0.004 265);
   --surface: oklch(1 0 0);
   --surface-hover: oklch(0.962 0.007 265);
-  --line: oklch(0.21 0.018 270 / 10%);
+  --line: oklch(0.21 0.018 270 / 8%);
   --line-strong: oklch(0.21 0.018 270 / 18%);
 
   --text: oklch(0.22 0.018 268);
@@ -73,7 +84,8 @@
   --negative: oklch(0.55 0.18 22);
   --caution: oklch(0.62 0.13 78);
 
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 6%);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 4%), 0 8px 24px -12px oklch(0.21 0.018 270 / 12%);
+  --surface-raised: oklch(0.99 0.003 265);
   --shadow-float: 0 16px 48px oklch(0 0 0 / 14%);
   color-scheme: light;
 }
@@ -82,6 +94,7 @@
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-text: var(--text);
@@ -168,6 +181,15 @@ textarea,
   }
 }
 
+@keyframes shimmer {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fade {
   from {
     opacity: 0;
@@ -190,6 +212,9 @@ textarea,
 
 .animate-rise {
   animation: rise 0.28s var(--ease-out) both;
+}
+.animate-shimmer {
+  animation: shimmer 0.9s ease-in-out infinite alternate;
 }
 .animate-fade {
   animation: fade 0.18s var(--ease-out) both;

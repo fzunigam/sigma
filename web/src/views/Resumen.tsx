@@ -44,10 +44,10 @@ export function Resumen({ summary, onChanged, onEdit, notify, onGoToAccounts }: 
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px] items-start">
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px] items-start">
         <div className="space-y-6 min-w-0">
           <Card padded={false}>
-            <SectionHeader title="Últimos movimientos" className="p-5 pb-4" />
+            <SectionHeader title="Últimos movimientos" className="p-6 pb-4" />
             <ActivityList
               items={summary.recent}
               onEdit={onEdit}
@@ -57,9 +57,9 @@ export function Resumen({ summary, onChanged, onEdit, notify, onGoToAccounts }: 
           </Card>
 
           <Card padded={false}>
-            <SectionHeader title="Cuentas" className="p-5 pb-4" />
+            <SectionHeader title="Cuentas" className="p-6 pb-4" />
             {accounts.length === 0 ? (
-              <p className="px-5 pb-5 text-xs text-text-subtle">
+              <p className="px-6 pb-6 text-xs text-text-subtle">
                 Aún no tienes cuentas.{' '}
                 <button
                   type="button"
@@ -103,12 +103,17 @@ function Stat({
   emphasis?: boolean;
 }) {
   return (
-    <Card className={emphasis ? 'ring-1 ring-accent/20' : ''}>
-      <p className="text-[11px] font-medium text-text-subtle uppercase tracking-wide">
+    <Card className={emphasis ? 'bg-gradient-to-b from-surface-raised to-surface' : ''}>
+      <p className="text-label font-medium text-text-subtle uppercase tracking-wide">
         {label}
       </p>
-      <Money amount={amount} tone={tone} className="block text-2xl font-semibold mt-2" />
-      {hint && <p className="text-[11px] text-text-subtle mt-1.5">{hint}</p>}
+      <Money
+        amount={amount}
+        tone={tone}
+        animate
+        className="block text-display font-semibold mt-3"
+      />
+      {hint && <p className="text-label text-text-subtle mt-2">{hint}</p>}
     </Card>
   );
 }
@@ -121,7 +126,7 @@ function AccountRow({ account }: { account: Account }) {
       : null;
 
   return (
-    <li className="flex items-center gap-3 px-5 py-3">
+    <li className="flex items-center gap-3 px-6 py-3.5">
       <span
         className="grid place-items-center size-7 rounded-full shrink-0
           bg-surface-hover text-text-subtle"
@@ -130,8 +135,8 @@ function AccountRow({ account }: { account: Account }) {
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium truncate">{account.name}</p>
-        <p className="text-[11px] text-text-subtle">
+        <p className="text-body font-medium truncate">{account.name}</p>
+        <p className="text-label text-text-subtle">
           {isCard
             ? usage === null
               ? 'Sin cupo definido'
@@ -141,10 +146,10 @@ function AccountRow({ account }: { account: Account }) {
       </div>
 
       <div className="text-right shrink-0">
-        <Money amount={account.balance} className="block text-[13px] font-medium" />
+        <Money amount={account.balance} className="block text-body font-medium" />
         {isCard && account.credit_limit > 0 && (
-          <p className="text-[11px] text-text-subtle mt-0.5">
-            Disponible <Money amount={account.available} className="text-[11px]" />
+          <p className="text-label text-text-subtle mt-0.5">
+            Disponible <Money amount={account.available} className="text-label" />
           </p>
         )}
       </div>

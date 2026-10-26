@@ -70,7 +70,7 @@ export function ConciliarCard({ summary, onChanged, notify }: Props) {
 
         {reconciliations.length > 0 && (
           <div className="mt-5 pt-4 border-t border-line">
-            <p className="text-[11px] font-medium text-text-subtle uppercase tracking-wide mb-2">
+            <p className="text-label font-medium text-text-subtle uppercase tracking-wide mb-2">
               Últimas conciliaciones
             </p>
             <ul className="space-y-1.5">

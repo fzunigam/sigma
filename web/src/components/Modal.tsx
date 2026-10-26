@@ -40,7 +40,7 @@ export function Modal({ title, hint, onClose, children, footer, width = 'sm' }: 
           border border-line-strong rounded-[var(--radius-card)]
           shadow-[var(--shadow-float)] animate-pop`}
       >
-        <header className="flex items-start justify-between gap-4 p-5 pb-0">
+        <header className="flex items-start justify-between gap-4 p-6 pb-0">
           <div>
             <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
             {hint && <p className="text-xs text-text-subtle mt-1">{hint}</p>}
@@ -55,10 +55,10 @@ export function Modal({ title, hint, onClose, children, footer, width = 'sm' }: 
           </button>
         </header>
 
-        <div className="p-5">{children}</div>
+        <div className="p-6">{children}</div>
 
         {footer && (
-          <footer className="flex justify-end gap-2 px-5 py-4 border-t border-line">
+          <footer className="flex justify-end gap-2 px-6 py-4 border-t border-line">
             {footer}
           </footer>
         )}

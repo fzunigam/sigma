@@ -14,6 +14,10 @@ Cambios que se notan al usar Sigma. Formato:
   el mismo ancho y el mismo espaciado entre bloques, así el contenido ya no salta al cambiar de
   pestaña. Resumen ahora tiene título como las demás, y las filas de cuentas se ven igual en
   Resumen y en Cuentas.
+- **Aspecto más cuidado.** Montos principales más grandes y que se deslizan al cambiar, más aire
+  entre bloques, tarjetas con bordes más suaves y algo de profundidad, la pestaña activa como una
+  pastilla elevada, campos más altos con un halo al enfocarlos, filas de carga en vez de
+  "Cargando…" y un ícono en los estados vacíos.
 
 ## [1.5.0] - 2026-10-26
 

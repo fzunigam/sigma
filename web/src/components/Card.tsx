@@ -10,7 +10,7 @@ export function Card({ children, className = '', padded = true }: CardProps) {
   return (
     <section
       className={`bg-surface border border-line rounded-[var(--radius-card)]
-        shadow-[var(--shadow-card)] ${padded ? 'p-5' : ''} ${className}`}
+        shadow-[var(--shadow-card)] ${padded ? 'p-6' : ''} ${className}`}
     >
       {children}
     </section>
@@ -28,7 +28,7 @@ export function SectionHeader({ title, hint, action, className = '' }: SectionHe
   return (
     <header className={`flex items-start justify-between gap-4 ${className}`}>
       <div className="min-w-0">
-        <h2 className="text-[13px] font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-body font-semibold tracking-tight">{title}</h2>
         {hint && <p className="text-xs text-text-subtle mt-0.5">{hint}</p>}
       </div>
       {action}
@@ -38,7 +38,7 @@ export function SectionHeader({ title, hint, action, className = '' }: SectionHe
 
 /** Shared frame for every view, so width and vertical rhythm match across tabs. */
 export function Page({ children }: { children: ReactNode }) {
-  return <div className="max-w-5xl mx-auto space-y-6 animate-rise">{children}</div>;
+  return <div className="max-w-5xl mx-auto space-y-8 animate-rise">{children}</div>;
 }
 
 interface PageHeaderProps {
@@ -51,7 +51,7 @@ export function PageHeader({ title, hint, action }: PageHeaderProps) {
   return (
     <header className="flex items-end justify-between gap-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {hint && <p className="text-sm text-text-muted mt-1">{hint}</p>}
       </div>
       {action}

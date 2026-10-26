@@ -188,7 +188,7 @@ export function EditarMovimiento({ item, accounts, onClose, onDone }: Props) {
 
         {!isTransfer &&
           (reconciled ? (
-            <p className="text-[11px] text-text-subtle">
+            <p className="text-label text-text-subtle">
               Ya fue conciliado, así que no vuelve a quedar pendiente.
             </p>
           ) : (

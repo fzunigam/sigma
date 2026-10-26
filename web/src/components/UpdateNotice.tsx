@@ -38,7 +38,7 @@ export function UpdateNotice() {
       <button
         type="button"
         onClick={() => setAsking(true)}
-        className="flex items-center gap-1.5 w-full px-1.5 pb-2 text-[11px]
+        className="flex items-center gap-1.5 w-full px-1.5 pb-2 text-label
           text-accent hover:underline transition-colors duration-150"
       >
         <ArrowDownToLine size={12} className="shrink-0" />
