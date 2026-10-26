@@ -5,6 +5,12 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+### Changed
+- **La ventana es una sola superficie.** La barra de título gris desaparece: la barra lateral y el
+  contenido llegan hasta el borde superior, con los botones de cerrar, minimizar y maximizar sobre
+  ellos. La franja superior sigue sirviendo para mover la ventana y, con doble clic, para
+  maximizarla.
+
 ## [1.5.0] - 2026-10-26
 
 ### Changed

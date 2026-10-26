@@ -52,6 +52,59 @@ def set_dock_icon() -> None:
         pass
 
 
+def blend_titlebar(window) -> None:
+    """Let the page run under a transparent title bar, keeping the traffic lights.
+
+    The sidebar already leaves room for the buttons, so the window reads as one
+    surface instead of a grey strip on top of the app.
+    """
+    try:
+        import AppKit
+        from PyObjCTools import AppHelper
+    except ImportError:
+        return
+
+    class TitlebarDragArea(AppKit.NSView):
+        """Invisible strip that gives back what the web view swallows: drag and zoom."""
+
+        def mouseDown_(self, event):
+            if event.clickCount() == 2:
+                self.window().performZoom_(None)
+            else:
+                self.window().performWindowDragWithEvent_(event)
+
+    def style() -> None:
+        native = window.native
+        native.setStyleMask_(native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
+        native.setTitlebarAppearsTransparent_(True)
+        native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
+        # pywebview paints the title bar with the window color; undo it so the page shows.
+        for view in native.contentView().superview().subviews():
+            if type(view).__name__ == "NSTitlebarContainerView":
+                view.setBackgroundColor_(AppKit.NSColor.clearColor())
+
+    def add_drag_area() -> None:
+        # pywebview makes the web view the content view only once the page loads.
+        # From then on it covers the title bar and would eat every click there, so
+        # the strip sits just above it in the window frame.
+        native = window.native
+        content = native.contentView()
+        frame_view = content.superview()
+        if any(isinstance(view, TitlebarDragArea) for view in frame_view.subviews()):
+            return
+        frame = content.frame()
+        height = frame.size.height - native.contentLayoutRect().size.height
+        strip = TitlebarDragArea.alloc().initWithFrame_(
+            AppKit.NSMakeRect(0, frame.size.height - height, frame.size.width, height)
+        )
+        strip.setAutoresizingMask_(AppKit.NSViewWidthSizable | AppKit.NSViewMinYMargin)
+        frame_view.addSubview_positioned_relativeTo_(strip, AppKit.NSWindowAbove, content)
+
+    # AppKit objects may only be touched from the main thread.
+    window.events.before_show += lambda: AppHelper.callAfter(style)
+    window.events.loaded += lambda: AppHelper.callAfter(add_drag_area)
+
+
 def main() -> int:
     try:
         import webview
@@ -80,6 +133,7 @@ def main() -> int:
         min_size=MIN_WINDOW_SIZE,
     )
     bridge.attach(window)
+    blend_titlebar(window)
 
     try:
         webview.start()

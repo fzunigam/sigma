@@ -35,6 +35,11 @@ entradas, reorganizar (agrupar, archivar lo viejo).
   `dist/Sigma.app/Contents/MacOS/Sigma` con `SIGMA_SETTINGS_DIR` en el scratchpad, crear una
   base demo por la API y capturar con Chrome headless (`--screenshot`) contra el puerto que
   muestra `lsof`. `screencapture` falla: la terminal no tiene permiso de grabar pantalla.
+- 2026-10-26 — **Verificar cambios de la ventana nativa (AppKit) sin capturas:** un script en el
+  scratchpad que envuelve `webview.start`, espera unos segundos y, vía `AppHelper.callAfter`,
+  inspecciona `window.native` (styleMask, `hitTest_` sobre el marco) y luego hace `destroy()`.
+  Ojo: pywebview pone el WKWebView como content view recién al terminar la primera carga
+  (evento `loaded`), así que lo que se agregue antes queda tapado.
 
 ## Decisions
 <!-- Decisiones tomadas + el porqué, con fecha -->
