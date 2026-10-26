@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowUpFromLine, FilePlus2, FolderOpen, Info } from 'lucide-react';
 import { Input } from '../components/Field';
+import { Logo } from '../components/Logo';
 import { api, ApiError } from '../lib/api';
 import * as bridge from '../lib/bridge';
 import { shortPath } from '../lib/format';
@@ -67,13 +68,9 @@ export function Bienvenida({ status, onReady }: Props) {
     <div className="h-full overflow-y-auto grid place-items-center p-8">
       <div className="w-full max-w-md animate-rise">
         <header className="text-center mb-8">
-          <span
-            aria-hidden
-            className="inline-grid place-items-center size-12 rounded-[14px]
-              bg-accent-soft text-accent text-xl font-semibold mb-4"
-          >
-            Σ
-          </span>
+          <div className="flex justify-center mb-4">
+            <Logo size={48} />
+          </div>
           <h1 className="text-lg font-semibold tracking-tight">
             {status.missing ? 'No encontramos tu base de datos' : 'Bienvenido a Sigma'}
           </h1>

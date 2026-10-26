@@ -27,6 +27,9 @@ alineadas a la derecha y con `tnum` para que las columnas cuadren.
 Definidos en `web/src/styles.css`. Se usan a través de las utilidades de Tailwind
 (`bg-surface`, `text-text-muted`, `border-line`…), nunca con valores literales.
 
+Los neutros son **grafito**: un gris con un leve tono azul tinta (tono 268 en OKLCH), el mismo
+del ícono de la app. No uses grises puros ni otro tono para fondos, bordes o texto.
+
 | Token | Para qué |
 |---|---|
 | `--canvas` | Fondo de la ventana |
@@ -36,6 +39,7 @@ Definidos en `web/src/styles.css`. Se usan a través de las utilidades de Tailwi
 | `--accent` / `--accent-soft` | La única acción destacada por pantalla |
 | `--positive` / `--negative` | Exclusivamente el signo del dinero |
 | `--caution` | Advertencias (bloqueo del archivo, pendiente de conciliar) |
+| `--brand-ink-top` / `--brand-ink-bottom` / `--brand-mark` | Solo el logo; iguales en los dos temas |
 
 Hay tema oscuro y claro; el oscuro es el que viene por defecto. El tema se aplica con
 `data-theme` en `<html>` y se guarda en los ajustes de la aplicación.
@@ -49,11 +53,38 @@ cifras tabulares, que es lo único que la app necesita de una tipografía.
 Tamaños: 20px para el título de una pantalla, 14px para el cuerpo, 13px para filas de datos, 11px
 para etiquetas y notas al pie. No hay más.
 
+## Identidad visual
+
+**El logo** es una Σ dibujada con contraste (diagonales gruesas, barras finas y remates cortos a
+la derecha), en color `--brand-mark` sobre un cuadrado redondeado en degradado grafito
+(`--brand-ink-top` → `--brand-ink-bottom`). El original es `assets/logo.svg`; de ahí salen
+`web/public/logo.png` (`make logo`) y el `.icns` (`make app`). Dentro de la app se dibuja con el
+componente `Logo`, nunca con una imagen ni con la letra Σ de una fuente.
+
+| Color | Valor | Uso |
+|---|---|---|
+| Tinta | `#2D3344` → `#151821` | Fondo del ícono |
+| Marca | `#EEF1F6` | La Σ |
+| Acento | `--accent` | Interfaz, nunca el logo |
+
+**El nombre** se escribe "Sigma", con la fuente del sistema en seminegrita y espaciado levemente
+cerrado (`tracking-tight`). No hay lema, otra fuente ni versión del nombre en mayúsculas.
+
+**Reglas:**
+
+- El logo aparece en cuatro lugares: el ícono de la app, la barra lateral (28 px), la pantalla
+  de bienvenida (48 px) y el README. No se agrega como decoración en otras pantallas.
+- Siempre sobre su cuadrado grafito, igual en tema claro y oscuro. Sin contornos, sombras extra,
+  rotaciones ni otros colores; jamás verde, rojo ni ámbar, que tienen significado en la interfaz.
+- Alrededor del logo junto al nombre queda libre al menos la mitad de su alto.
+- Si cambia el dibujo, se cambia en `assets/logo.svg` y en `Logo.tsx` a la vez: son el mismo
+  trazo.
+
 ## Componentes
 
 `web/src/components/` — `Button`, `Card` + `SectionHeader` + `PageHeader`, `Field` (con `Input`,
 `AmountInput`, `Select`, `Checkbox`, `Segmented`), `Modal`, `Money`, `ActivityList`, `EmptyState`,
-`Sidebar`, `Toaster`.
+`Logo`, `Sidebar`, `Toaster`.
 
 Antes de escribir una pieza nueva, revisa si alguna de esas ya sirve. `ActivityList` en
 particular es el único lugar donde se dibuja un movimiento, y lo usan tanto Resumen como

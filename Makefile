@@ -1,4 +1,4 @@
-.PHONY: help install web dev api test lint check app clean
+.PHONY: help install web dev api test lint check app logo clean
 
 help:
 	@echo "make install   Instalar dependencias de Python y de la interfaz"
@@ -9,6 +9,7 @@ help:
 	@echo "make lint      Revisar el estilo del código"
 	@echo "make check     lint + test"
 	@echo "make app       Construir dist/Sigma.app"
+	@echo "make logo      Regenerar web/public/logo.png desde assets/logo.svg"
 	@echo "make clean     Borrar artefactos de compilación"
 
 install:
@@ -36,6 +37,10 @@ check: lint test
 
 app:
 	bash scripts/build_macos_app.sh
+
+# Needs rsvg-convert (brew install librsvg). The PNG is committed, so `make app` does not.
+logo:
+	rsvg-convert -w 1024 -h 1024 assets/logo.svg -o web/public/logo.png
 
 clean:
 	rm -rf build dist src/sigma/web/static .pytest_cache .ruff_cache

@@ -46,6 +46,9 @@ make app         # → dist/Sigma.app
 El script compila la interfaz, genera el icono `.icns` desde `web/public/logo.png` y llama a
 PyInstaller con `Sigma.spec`.
 
+El dibujo original del ícono es `assets/logo.svg`. Si lo cambias, regenera el PNG con
+`make logo` (necesita `rsvg-convert`: `brew install librsvg`) y commitea los dos archivos.
+
 **Constrúyelo en un entorno virtual limpio.** PyInstaller recorre todo lo que sea importable, así
 que si tu entorno tiene numpy, Jupyter o similares, se van al bundle. `Sigma.spec` los excluye
 explícitamente por eso mismo; si aparece una dependencia pesada nueva, agrégala a `EXCLUDES`.

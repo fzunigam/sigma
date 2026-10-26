@@ -67,6 +67,13 @@ y no debe eludirse abriendo `sqlite3.connect` por fuera.
 del dinero, nunca decoración ni estados; todos los montos pasan por el componente `Money`; ningún
 archivo debería superar ~300 líneas.
 
+**Identidad visual.** Los neutros son grafito (tono 268): nada de grises puros ni colores
+literales, solo los tokens de `web/src/styles.css`. El logo es la Σ tipográfica sobre cuadrado
+grafito; dentro de la app se dibuja solo con el componente `Logo`, nunca con la letra Σ ni con una
+imagen, y nunca en verde, rojo, ámbar o el acento. El original es `assets/logo.svg`; si cambia,
+cambia también `Logo.tsx` y se corre `make logo`. Reglas completas en `docs/interfaz.md`
+("Identidad visual") y el porqué en `docs/decisiones/0007-identidad-visual.md`.
+
 **Tests.** Cada cambio de comportamiento en `sigma/db/` o en `sigma/api.py` necesita un test. La
 suite corre en menos de dos segundos; no hay excusa para no ejecutarla.
 

@@ -5,6 +5,14 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-26
+
+### Changed
+- **Nueva identidad visual.** Ícono nuevo: una Σ dibujada sobre un cuadrado grafito, con la forma
+  que macOS espera en el Dock. El mismo logo aparece en la barra lateral y en la bienvenida, y los
+  fondos, bordes y textos de la app pasan a un gris grafito con un leve tono azul, en tema oscuro
+  y claro.
+
 ## [1.4.0] - 2026-10-26
 
 ### Removed

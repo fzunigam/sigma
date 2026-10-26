@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Master artwork for the Sigma icon. web/public/logo.png and the .icns are rendered from
+       this file with `make logo`; see docs/interfaz.md, "Identidad visual". -->
+  <defs>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2d3344"/>
+      <stop offset="1" stop-color="#151821"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#ink)" filter="url(#shadow)"/>
+  <rect x="102" y="102" width="820" height="820" rx="183" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="4"/>
+  <path fill="#eef1f6" d="M325 280 L695 280 L695 385 L671 385 L659 324 L423 324 L570 512 L407 700 L663 700 L675 640 L699 640 L699 744 L325 744 L325 724 L500 512 L325 300 Z"/>
+</svg>

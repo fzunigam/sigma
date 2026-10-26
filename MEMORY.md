@@ -12,6 +12,11 @@ entradas, reorganizar (agrupar, archivar lo viejo).
 
 ## Preferences
 <!-- Cómo le gusta trabajar al usuario: formato, tono, herramientas -->
+- 2026-10-26 — **Cambios visuales: mostrar antes de commitear.** Antes de hacer commit/tag de una
+  versión con cambios de interfaz, el usuario quiere ver capturas y aprobar. Preparar todo
+  (código, docs, changelog), mostrar, y recién con su visto bueno subir versión y commitear.
+- 2026-10-26 — **Para decisiones de diseño, prefiere ver opciones dibujadas** (lienzo con
+  variantes lado a lado) antes que descripciones.
 
 ## Corrections
 <!-- Errores que ya me corrigieron. No repetirlos. -->
@@ -25,6 +30,11 @@ entradas, reorganizar (agrupar, archivar lo viejo).
   **copia** de la base real (en el scratchpad), nunca contra el original.
 - 2026-10-26 — **`rtk find` no acepta `-exec`, `-not` ni predicados compuestos.** Usar
   `/usr/bin/find` directo para eso.
+- 2026-10-26 — **`CLAUDE.md` es un symlink a `AGENTS.md`**: las ediciones van a `AGENTS.md`.
+- 2026-10-26 — **Capturas de la app sin tocar la base real:** lanzar
+  `dist/Sigma.app/Contents/MacOS/Sigma` con `SIGMA_SETTINGS_DIR` en el scratchpad, crear una
+  base demo por la API y capturar con Chrome headless (`--screenshot`) contra el puerto que
+  muestra `lsof`. `screencapture` falla: la terminal no tiene permiso de grabar pantalla.
 
 ## Decisions
 <!-- Decisiones tomadas + el porqué, con fecha -->

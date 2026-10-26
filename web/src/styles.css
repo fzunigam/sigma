@@ -3,9 +3,10 @@
 /* ---------------------------------------------------------------------------
    Design tokens.
 
-   One neutral scale, one accent, and two money colours. Green and red are
-   reserved exclusively for the sign of an amount — never for buttons, states or
-   decoration — so a glance at a number always means the same thing.
+   One graphite neutral scale (hue 268, the same ink as the app icon), one
+   accent, and two money colours. Green and red are reserved exclusively for the
+   sign of an amount — never for buttons, states or decoration — so a glance at
+   a number always means the same thing.
 
    Fonts are system fonts on purpose: the app runs offline inside its own
    window, so a webfont request would only ever be a delay or a failure.
@@ -21,17 +22,24 @@
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* Brand colours: the icon and the in-app logo. The same in both themes. */
+:root {
+  --brand-ink-top: oklch(0.323 0.031 269);
+  --brand-ink-bottom: oklch(0.21 0.018 270);
+  --brand-mark: oklch(0.957 0.007 261);
+}
+
 :root,
 :root[data-theme='dark'] {
-  --canvas: oklch(0.16 0.004 285);
-  --surface: oklch(0.2 0.005 285);
-  --surface-hover: oklch(0.24 0.006 285);
+  --canvas: oklch(0.17 0.014 268);
+  --surface: oklch(0.21 0.017 268);
+  --surface-hover: oklch(0.25 0.02 268);
   --line: oklch(1 0 0 / 9%);
   --line-strong: oklch(1 0 0 / 16%);
 
-  --text: oklch(0.97 0.002 285);
-  --text-muted: oklch(0.72 0.008 285);
-  --text-subtle: oklch(0.55 0.008 285);
+  --text: oklch(0.97 0.004 265);
+  --text-muted: oklch(0.74 0.016 265);
+  --text-subtle: oklch(0.58 0.018 265);
 
   --accent: oklch(0.72 0.13 250);
   --accent-contrast: oklch(0.17 0.01 250);
@@ -47,15 +55,15 @@
 }
 
 :root[data-theme='light'] {
-  --canvas: oklch(0.985 0.002 285);
+  --canvas: oklch(0.982 0.004 265);
   --surface: oklch(1 0 0);
-  --surface-hover: oklch(0.965 0.003 285);
-  --line: oklch(0 0 0 / 9%);
-  --line-strong: oklch(0 0 0 / 16%);
+  --surface-hover: oklch(0.962 0.007 265);
+  --line: oklch(0.21 0.018 270 / 10%);
+  --line-strong: oklch(0.21 0.018 270 / 18%);
 
-  --text: oklch(0.22 0.006 285);
-  --text-muted: oklch(0.48 0.008 285);
-  --text-subtle: oklch(0.62 0.008 285);
+  --text: oklch(0.22 0.018 268);
+  --text-muted: oklch(0.48 0.016 265);
+  --text-subtle: oklch(0.6 0.014 265);
 
   --accent: oklch(0.55 0.15 250);
   --accent-contrast: oklch(1 0 0);

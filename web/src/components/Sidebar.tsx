@@ -1,4 +1,5 @@
 import { ArrowLeftRight, LayoutGrid, Moon, Settings, Sun, Wallet } from 'lucide-react';
+import { Logo } from './Logo';
 import { UpdateNotice } from './UpdateNotice';
 import type { DatabaseStatus } from '../lib/types';
 
@@ -28,13 +29,7 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
     >
       <div className="px-4 pt-2 pb-5">
         <div className="flex items-center gap-2.5 px-2">
-          <span
-            aria-hidden
-            className="grid place-items-center size-7 rounded-[7px] bg-accent-soft
-              text-accent font-semibold text-sm"
-          >
-            Σ
-          </span>
+          <Logo size={28} />
           <span className="text-sm font-semibold tracking-tight">Sigma</span>
         </div>
       </div>
