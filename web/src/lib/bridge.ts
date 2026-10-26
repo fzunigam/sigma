@@ -13,6 +13,7 @@ interface PywebviewApi {
   reveal(path: string): Promise<{ ok: boolean }>;
   open_releases(): Promise<{ ok: boolean }>;
   quit(): Promise<{ ok: boolean }>;
+  set_appearance(theme: 'dark' | 'light'): Promise<{ ok: boolean }>;
 }
 
 declare global {
@@ -82,4 +83,10 @@ export async function openReleases(url: string): Promise<void> {
     return;
   }
   window.open(url, '_blank', 'noopener');
+}
+
+/** Keep the native chrome (sidebar material, menus) on the same theme as the page. */
+export async function setAppearance(theme: 'dark' | 'light'): Promise<void> {
+  const bridge = await waitForBridge();
+  if (bridge) await bridge.set_appearance(theme);
 }

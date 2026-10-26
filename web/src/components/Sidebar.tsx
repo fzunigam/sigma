@@ -5,11 +5,12 @@ import type { DatabaseStatus } from '../lib/types';
 
 export type View = 'resumen' | 'movimientos' | 'cuentas' | 'ajustes';
 
-const NAV: { id: View; label: string; icon: typeof LayoutGrid }[] = [
-  { id: 'resumen', label: 'Resumen', icon: LayoutGrid },
-  { id: 'movimientos', label: 'Movimientos', icon: ArrowLeftRight },
-  { id: 'cuentas', label: 'Cuentas', icon: Wallet },
-  { id: 'ajustes', label: 'Ajustes', icon: Settings },
+// Shortcuts mirror the native menu (`sigma/native.py`).
+const NAV: { id: View; label: string; icon: typeof LayoutGrid; key: string }[] = [
+  { id: 'resumen', label: 'Resumen', icon: LayoutGrid, key: '1' },
+  { id: 'movimientos', label: 'Movimientos', icon: ArrowLeftRight, key: '2' },
+  { id: 'cuentas', label: 'Cuentas', icon: Wallet, key: '3' },
+  { id: 'ajustes', label: 'Ajustes', icon: Settings, key: ',' },
 ];
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
 export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Props) {
   return (
     <aside
+      data-sidebar
       className="w-56 shrink-0 flex flex-col border-r border-line bg-surface/40"
       // Leaves room for the traffic-light buttons of the native window.
       style={{ paddingTop: 'var(--titlebar-height, 28px)' }}
@@ -35,7 +37,7 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">
-        {NAV.map(({ id, label, icon: Icon }) => {
+        {NAV.map(({ id, label, icon: Icon, key }) => {
           const active = view === id;
           return (
             <button
@@ -43,7 +45,9 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
               type="button"
               onClick={() => onNavigate(id)}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-2.5 w-full h-8 px-2.5 rounded-[8px]
+              title={`${label} (⌘${key})`}
+              className={`group flex items-center gap-2.5 w-full h-8 px-2.5 rounded-[8px]
+                active:scale-[0.98]
                 text-body transition-all duration-150
                 ${
                   active
@@ -52,7 +56,13 @@ export function Sidebar({ view, onNavigate, database, theme, onToggleTheme }: Pr
                 }`}
             >
               <Icon size={15} className={active ? 'text-accent' : ''} />
-              {label}
+              <span className="flex-1 text-left">{label}</span>
+              <kbd
+                className="font-sans text-label text-text-subtle opacity-0 transition-opacity
+                  group-hover:opacity-100"
+              >
+                ⌘{key}
+              </kbd>
             </button>
           );
         })}

@@ -1,5 +1,15 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+
+// Where the last click landed, so a dialog can grow out of the control that opened it.
+let lastPointer: { x: number; y: number } | null = null;
+document.addEventListener(
+  'pointerdown',
+  (event) => {
+    lastPointer = { x: event.clientX, y: event.clientY };
+  },
+  true,
+);
 
 interface Props {
   title: string;
@@ -12,6 +22,13 @@ interface Props {
 
 export function Modal({ title, hint, onClose, children, footer, width = 'sm' }: Props) {
   const panel = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const element = panel.current;
+    if (!element || !lastPointer) return;
+    const box = element.getBoundingClientRect();
+    element.style.transformOrigin = `${lastPointer.x - box.left}px ${lastPointer.y - box.top}px`;
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

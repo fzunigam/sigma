@@ -104,14 +104,15 @@ function Stat({
 }) {
   return (
     <Card className={emphasis ? 'bg-gradient-to-b from-surface-raised to-surface' : ''}>
-      <p className="text-label font-medium text-text-subtle uppercase tracking-wide">
+      <p className="eyebrow">
         {label}
       </p>
       <Money
         amount={amount}
         tone={tone}
         animate
-        className="block text-display font-semibold mt-3"
+        figure
+        className="block text-display font-display mt-3"
       />
       {hint && <p className="text-label text-text-subtle mt-2">{hint}</p>}
     </Card>

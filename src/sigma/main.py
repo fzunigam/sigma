@@ -12,7 +12,7 @@ import sys
 import threading
 from pathlib import Path
 
-from sigma import __version__, database
+from sigma import __version__, database, native
 from sigma.bridge import Bridge
 
 HOST = "127.0.0.1"
@@ -134,9 +134,10 @@ def main() -> int:
     )
     bridge.attach(window)
     blend_titlebar(window)
+    native.setup(window)
 
     try:
-        webview.start()
+        webview.start(localization=native.LOCALIZATION)
     finally:
         # Drop the advisory lock so the file does not look busy on the next open.
         database.close()

@@ -5,7 +5,24 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-26
+
+### Added
+- **Atajos de teclado y menú en español.** ⌘1, ⌘2 y ⌘3 cambian de pestaña, ⌘, abre Ajustes, ⌘N
+  lleva al monto para registrar un gasto y ⌘F a la búsqueda. Todos aparecen en los menús Archivo e
+  Ir, y la barra lateral los muestra al pasar el cursor. En las listas de movimientos, las flechas
+  recorren las filas y Enter abre la que está seleccionada. Edición suma Deshacer y Rehacer.
+
 ### Changed
+- **Barra lateral translúcida**, con el material de las apps de macOS teñido de grafito, y una
+  ventana que sigue el tema claro u oscuro elegido en Sigma.
+- **Montos con más presencia.** Las cifras grandes usan la tipografía de títulos de macOS, con un
+  `$` más chico y discreto. Las etiquetas en mayúsculas tienen más aire.
+- **Movimiento con intención.** Las secciones aparecen una tras otra, las ventanas se abren desde
+  el botón que las llamó, un movimiento recién registrado se ilumina un instante en la lista, y
+  los botones responden al pulsarlos.
+- **Detalles más finos.** Bordes de medio punto en pantallas Retina, íconos con un trazo más
+  delgado y parejo, y mejor contraste en los textos secundarios.
 - **La ventana es una sola superficie.** La barra de título gris desaparece: la barra lateral y el
   contenido llegan hasta el borde superior, con los botones de cerrar, minimizar y maximizar sobre
   ellos. La franja superior sigue sirviendo para mover la ventana y, con doble clic, para

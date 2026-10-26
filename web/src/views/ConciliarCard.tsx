@@ -54,7 +54,8 @@ export function ConciliarCard({ summary, onChanged, notify }: Props) {
           amount={pending.net}
           tone="auto"
           signed={pending.net !== 0}
-          className="block text-2xl font-semibold mt-3"
+          figure
+          className="block text-[26px] font-display tracking-[-0.02em] mt-3"
         />
 
         <Button
@@ -70,7 +71,7 @@ export function ConciliarCard({ summary, onChanged, notify }: Props) {
 
         {reconciliations.length > 0 && (
           <div className="mt-5 pt-4 border-t border-line">
-            <p className="text-label font-medium text-text-subtle uppercase tracking-wide mb-2">
+            <p className="eyebrow mb-2">
               Últimas conciliaciones
             </p>
             <ul className="space-y-1.5">
@@ -113,7 +114,8 @@ export function ConciliarCard({ summary, onChanged, notify }: Props) {
               amount={pending.net}
               tone="auto"
               signed
-              className="block text-xl font-semibold mt-1"
+              figure
+              className="block text-xl font-display tracking-[-0.015em] mt-1"
             />
           </div>
           <p className="text-xs text-text-subtle mt-3">

@@ -38,7 +38,7 @@ export function SectionHeader({ title, hint, action, className = '' }: SectionHe
 
 /** Shared frame for every view, so width and vertical rhythm match across tabs. */
 export function Page({ children }: { children: ReactNode }) {
-  return <div className="max-w-5xl mx-auto space-y-8 animate-rise">{children}</div>;
+  return <div className="max-w-5xl mx-auto space-y-8 stagger">{children}</div>;
 }
 
 interface PageHeaderProps {
@@ -51,7 +51,7 @@ export function PageHeader({ title, hint, action }: PageHeaderProps) {
   return (
     <header className="flex items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-title font-display">{title}</h1>
         {hint && <p className="text-sm text-text-muted mt-1">{hint}</p>}
       </div>
       {action}

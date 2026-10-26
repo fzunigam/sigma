@@ -87,6 +87,15 @@ class Bridge:
         subprocess.run(["open", "-R", str(target)], check=False)
         return {"ok": True}
 
+    def set_appearance(self, theme: str) -> dict[str, bool]:
+        """Match the native window chrome to the in-app theme."""
+        if self._window is None or theme not in ("dark", "light"):
+            return {"ok": False}
+        from sigma import native
+
+        native.set_appearance(self._window, theme)
+        return {"ok": True}
+
     # -- Internals ----------------------------------------------------------
 
     def _dialog(self, dialog_type: int, **kwargs: Any) -> str | None:

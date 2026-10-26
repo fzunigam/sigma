@@ -10,6 +10,8 @@ interface Props {
   /** Always show a leading + or −. */
   signed?: boolean;
   className?: string;
+  /** Headline style: a smaller, quieter `$` so the digits carry the number. */
+  figure?: boolean;
   /** Glide to a new value instead of jumping; for headline figures only. */
   animate?: boolean;
 }
@@ -25,6 +27,7 @@ export function Money({
   signed = false,
   className = '',
   animate = false,
+  figure = false,
 }: Props) {
   const shown = useGlide(amount, animate);
   const resolved =
@@ -37,9 +40,11 @@ export function Money({
         ? 'text-negative'
         : 'text-text';
 
+  const text = signed ? signedMoney(shown) : money(shown);
+
   return (
     <span data-selectable className={`tnum ${colour} ${className}`}>
-      {signed ? signedMoney(shown) : money(shown)}
+      {figure ? <Figure text={text} /> : text}
     </span>
   );
 }
@@ -74,4 +79,16 @@ function useGlide(target: number, enabled: boolean): number {
   }, [target, enabled]);
 
   return enabled ? value : target;
+}
+
+/** Splits `−$1.240.500` into sign, symbol and digits so the symbol can recede. */
+function Figure({ text }: { text: string }) {
+  const at = text.indexOf('$');
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="text-[0.58em] align-[0.42em] font-medium opacity-55 mr-[0.06em]">$</span>
+      {text.slice(at + 1)}
+    </>
+  );
 }

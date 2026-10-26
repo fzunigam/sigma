@@ -98,7 +98,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
 
         {database.recent.length > 1 && (
           <div className="mt-4">
-            <p className="text-label font-medium text-text-subtle uppercase tracking-wide mb-1.5">
+            <p className="eyebrow mb-1.5">
               Otras bases recientes
             </p>
             <div className="space-y-0.5">

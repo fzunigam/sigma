@@ -130,6 +130,7 @@ export function RegistrarForm({ summary, onChanged, notify }: Props) {
           <AmountInput
             id="monto"
             ref={amountField}
+            data-command-target="new"
             value={amount}
             onValueChange={setAmount}
             placeholder="0"

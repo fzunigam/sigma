@@ -8,6 +8,8 @@ import { Cuentas } from './views/Cuentas';
 import { Ajustes } from './views/Ajustes';
 import { EditarMovimiento } from './views/EditarMovimiento';
 import { api, ApiError } from './lib/api';
+import * as bridge from './lib/bridge';
+import { focusTarget, useCommands, type Command } from './lib/commands';
 import type { Activity, DatabaseStatus, Summary } from './lib/types';
 
 export default function App() {
@@ -48,6 +50,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useCommands((command: Command) => {
+    if (command.startsWith('go:')) {
+      setView(command.slice(3) as View);
+    } else if (command === 'new') {
+      setView('resumen');
+      focusTarget('new');
+    } else if (command === 'find') {
+      setView('movimientos');
+      focusTarget('find');
+    }
+  }, Boolean(summary));
+
   /** Anything that writes calls this: reload the numbers and the month view. */
   const refresh = useCallback(() => {
     void loadSummary();
@@ -80,7 +94,7 @@ export default function App() {
   }
 
   if (booting) {
-    return <div className="h-full grid place-items-center text-xs text-text-subtle">…</div>;
+    return <div className="h-full grid place-items-center text-xs text-text-subtle bg-canvas">…</div>;
   }
 
   if (!database || !database.is_open || !summary) {
@@ -104,7 +118,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="flex-1 overflow-y-auto px-10 py-10">
+      <main className="flex-1 overflow-y-auto px-10 py-10 bg-canvas">
         {view === 'resumen' && (
           <Resumen
             summary={summary}
@@ -145,4 +159,5 @@ export default function App() {
 
 function applyTheme(theme: 'dark' | 'light') {
   document.documentElement.dataset.theme = theme;
+  void bridge.setAppearance(theme);
 }

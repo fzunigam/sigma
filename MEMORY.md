@@ -35,6 +35,11 @@ entradas, reorganizar (agrupar, archivar lo viejo).
   `dist/Sigma.app/Contents/MacOS/Sigma` con `SIGMA_SETTINGS_DIR` en el scratchpad, crear una
   base demo por la API y capturar con Chrome headless (`--screenshot`) contra el puerto que
   muestra `lsof`. `screencapture` falla: la terminal no tiene permiso de grabar pantalla.
+- 2026-10-26 — **Capturas de la ventana real (con vibrancy y todas las pestañas):** script en el
+  scratchpad que envuelve `webview.start`, navega con el evento `sigma:command` vía
+  `evaluate_js` y captura la propia ventana con `Quartz.CGWindowListCreateImage(...,
+  windowNumber)` desde el hilo principal. No pide permiso de grabación (es la ventana propia) y
+  muestra lo que Chrome headless no puede: el material nativo.
 - 2026-10-26 — **Verificar cambios de la ventana nativa (AppKit) sin capturas:** un script en el
   scratchpad que envuelve `webview.start`, espera unos segundos y, vía `AppHelper.callAfter`,
   inspecciona `window.native` (styleMask, `hitTest_` sobre el marco) y luego hace `destroy()`.

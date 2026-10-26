@@ -85,6 +85,7 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar por descripción o cuenta"
           aria-label="Buscar movimientos"
+          data-command-target="find"
           className="pl-9 pr-9"
         />
         {search && (
@@ -189,10 +190,16 @@ function Total({
 }) {
   return (
     <Card>
-      <p className="text-label font-medium text-text-subtle uppercase tracking-wide">
+      <p className="eyebrow">
         {label}
       </p>
-      <Money amount={amount} tone={tone} animate className="block text-xl font-semibold tracking-tight mt-2" />
+      <Money
+        amount={amount}
+        tone={tone}
+        animate
+        figure
+        className="block text-[22px] font-display tracking-[-0.018em] mt-2"
+      />
     </Card>
   );
 }

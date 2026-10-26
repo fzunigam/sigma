@@ -1,3 +1,4 @@
+import { useRef, type KeyboardEvent } from 'react';
 import { ArrowRight, Minus, Pencil, Plus } from 'lucide-react';
 import type { Activity } from '../lib/types';
 import { activityLabel, shortDate } from '../lib/format';
@@ -17,17 +18,37 @@ interface Props {
  * pinned right so a column of figures can be scanned vertically.
  */
 export function ActivityList({ items, onEdit, emptyTitle, emptyHint }: Props) {
+  const fresh = useFreshIds(items);
+
   if (items.length === 0) {
     return <EmptyState title={emptyTitle} hint={emptyHint} />;
   }
 
+  // ↑ ↓ move between rows, Enter opens the one in focus.
+  function onKeyDown(event: KeyboardEvent<HTMLUListElement>) {
+    const row = (event.target as HTMLElement).closest('li');
+    if (!row || event.target !== row) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const next = event.key === 'ArrowDown' ? row.nextElementSibling : row.previousElementSibling;
+      (next as HTMLElement | null)?.focus();
+    } else if (event.key === 'Enter' && onEdit) {
+      const item = items.find((candidate) => candidate.id === row.dataset.id);
+      if (item) onEdit(item);
+    }
+  }
+
   return (
-    <ul className="divide-y divide-line">
-      {items.map((item) => (
+    <ul className="divide-y divide-line" onKeyDown={onKeyDown}>
+      {items.map((item, index) => (
         <li
           key={item.id}
-          className="group flex items-center gap-3 px-6 py-3.5 hover:bg-surface-hover
-            transition-colors"
+          data-id={item.id}
+          tabIndex={index === 0 ? 0 : -1}
+          className={`group flex items-center gap-3 px-6 py-3.5 hover:bg-surface-hover
+            focus-visible:bg-surface-hover focus-visible:outline-none
+            focus-visible:shadow-[inset_2px_0_0_var(--accent)] transition-colors
+            ${fresh.has(item.id) ? 'animate-row-in' : ''}`}
         >
           <Glyph kind={item.kind} />
 
@@ -101,4 +122,24 @@ function Glyph({ kind }: { kind: Activity['kind'] }) {
       {icon}
     </span>
   );
+}
+
+/**
+ * Ids that just appeared, so a movement just logged can be pointed out. Only a
+ * small addition to a list that is otherwise the same counts: arriving at a
+ * list, or paging to another month, is not news.
+ */
+function useFreshIds(items: Activity[]): Set<string> {
+  const last = useRef<{ items: Activity[]; ids: Set<string>; fresh: Set<string> } | null>(null);
+
+  if (last.current?.items !== items) {
+    const ids = new Set(items.map((item) => item.id));
+    const before = last.current?.ids;
+    const added = before ? [...ids].filter((id) => !before.has(id)) : [];
+    const kept = ids.size - added.length;
+    const fresh = added.length <= 2 && kept > 0 ? new Set(added) : new Set<string>();
+    last.current = { items, ids, fresh };
+  }
+
+  return last.current.fresh;
 }

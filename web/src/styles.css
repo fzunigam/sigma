@@ -14,6 +14,8 @@
 
 @theme {
   --font-sans: ui-sans-serif, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  /* Same system face; at display sizes WebKit switches to SF Pro Display. */
+  --font-display: -apple-system, 'SF Pro Display', ui-sans-serif, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
 
   --text-label: 11px;
@@ -22,7 +24,10 @@
   --text-body--line-height: 1.5;
   --text-display: 30px;
   --text-display--line-height: 1.1;
-  --text-display--letter-spacing: -0.02em;
+  --text-display--letter-spacing: -0.025em;
+  --text-title: 22px;
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.018em;
 
   --radius-card: 14px;
   --radius-control: 8px;
@@ -47,7 +52,7 @@
 
   --text: oklch(0.97 0.004 265);
   --text-muted: oklch(0.74 0.016 265);
-  --text-subtle: oklch(0.58 0.018 265);
+  --text-subtle: oklch(0.62 0.018 265);
 
   --accent: oklch(0.72 0.13 250);
   --accent-contrast: oklch(0.17 0.01 250);
@@ -74,7 +79,7 @@
 
   --text: oklch(0.22 0.018 268);
   --text-muted: oklch(0.48 0.016 265);
-  --text-subtle: oklch(0.6 0.014 265);
+  --text-subtle: oklch(0.55 0.016 265);
 
   --accent: oklch(0.55 0.15 250);
   --accent-contrast: oklch(1 0 0);
@@ -130,6 +135,37 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* --- Native window ------------------------------------------------------ */
+
+/* Inside the app the sidebar shows the macOS sidebar material through the page
+   (see `sigma/native.py`); the content area stays opaque. In a browser, or
+   before the material is in place, everything is painted as usual. */
+html[data-native] body {
+  background: transparent;
+}
+/* Enough graphite tint that the material reads as Sigma's neutral, not a
+   pure system grey; enough translucency that the desktop still glows through. */
+html[data-native] [data-sidebar] {
+  background: color-mix(in oklch, var(--canvas) 62%, transparent);
+}
+
+/* --- Type ---------------------------------------------------------------- */
+
+/* Small caps-style labels above figures. Uppercase needs air to stay legible. */
+@utility eyebrow {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-subtle);
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
 /* Every figure is tabular so columns of money line up on the decimal. */
 .tnum {
   font-variant-numeric: tabular-nums;
@@ -146,6 +182,31 @@ input,
 textarea,
 [data-selectable] {
   user-select: text;
+}
+
+/* One stroke weight for every icon; lucide's default 2px is heavy at 13–15px. */
+svg.lucide {
+  stroke-width: 1.75;
+}
+
+/* On Retina, hairlines are half a point, as in native macOS chrome. Form
+   controls keep a full pixel so their edge stays easy to find. */
+@media (min-resolution: 2dppx) {
+  .border:not(input, select, textarea, [role='radiogroup']) {
+    border-width: 0.5px;
+  }
+  .border-t {
+    border-top-width: 0.5px;
+  }
+  .border-r {
+    border-right-width: 0.5px;
+  }
+  .border-b {
+    border-bottom-width: 0.5px;
+  }
+  .divide-y > :not(:last-child) {
+    border-bottom-width: 0.5px;
+  }
 }
 
 :focus-visible {
@@ -181,6 +242,22 @@ textarea,
   }
 }
 
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+    background: var(--accent-soft);
+  }
+  60% {
+    opacity: 1;
+    transform: none;
+    background: var(--accent-soft);
+  }
+  to {
+    background: transparent;
+  }
+}
+
 @keyframes shimmer {
   from {
     opacity: 0.5;
@@ -202,7 +279,7 @@ textarea,
 @keyframes pop {
   from {
     opacity: 0;
-    transform: scale(0.97) translateY(4px);
+    transform: scale(0.94);
   }
   to {
     opacity: 1;
@@ -213,6 +290,25 @@ textarea,
 .animate-rise {
   animation: rise 0.28s var(--ease-out) both;
 }
+/* A view's blocks arrive one after another, a few frames apart. */
+.stagger > * {
+  animation: rise 0.32s var(--ease-out) both;
+}
+.stagger > :nth-child(2) {
+  animation-delay: 30ms;
+}
+.stagger > :nth-child(3) {
+  animation-delay: 60ms;
+}
+.stagger > :nth-child(n + 4) {
+  animation-delay: 90ms;
+}
+
+/* A row that just appeared: slides in and glows briefly so the eye finds it. */
+.animate-row-in {
+  animation: row-in 1.2s var(--ease-out) both;
+}
+
 .animate-shimmer {
   animation: shimmer 0.9s ease-in-out infinite alternate;
 }
@@ -220,7 +316,7 @@ textarea,
   animation: fade 0.18s var(--ease-out) both;
 }
 .animate-pop {
-  animation: pop 0.22s var(--ease-out) both;
+  animation: pop 0.26s var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

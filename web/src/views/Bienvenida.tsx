@@ -65,7 +65,7 @@ export function Bienvenida({ status, onReady }: Props) {
   };
 
   return (
-    <div className="h-full overflow-y-auto grid place-items-center p-8">
+    <div className="h-full overflow-y-auto grid place-items-center p-8 bg-canvas">
       <div className="w-full max-w-md animate-rise">
         <header className="text-center mb-8">
           <div className="flex justify-center mb-4">
