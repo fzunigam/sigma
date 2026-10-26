@@ -5,7 +5,6 @@ import { Bienvenida } from './views/Bienvenida';
 import { Resumen } from './views/Resumen';
 import { Movimientos } from './views/Movimientos';
 import { Cuentas } from './views/Cuentas';
-import { Inversiones } from './views/Inversiones';
 import { Ajustes } from './views/Ajustes';
 import { EditarMovimiento } from './views/EditarMovimiento';
 import { api, ApiError } from './lib/api';
@@ -120,9 +119,6 @@ export default function App() {
         )}
         {view === 'cuentas' && (
           <Cuentas summary={summary} onChanged={refresh} notify={notify} />
-        )}
-        {view === 'inversiones' && (
-          <Inversiones summary={summary} onChanged={refresh} notify={notify} />
         )}
         {view === 'ajustes' && (
           <Ajustes

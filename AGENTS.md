@@ -82,10 +82,18 @@ elegida ni el tema — no hay que hacer nada especial para conservarlos.
 
 ## Fuera de alcance
 
-Categorías, presupuestos, sincronización propia, otras plataformas y volver a publicar en PyPI. Si
-algo de esto parece necesario, discútelo antes de escribir código.
+Categorías, multi-moneda, presupuestos, sincronización propia, otras plataformas y volver a
+publicar en PyPI. Si algo de esto parece necesario, discútelo antes de escribir código.
 
-Multi-moneda es fuera de alcance **salvo** en las cuentas de inversión (`kind = 'investment'`),
-donde es necesario y está acotado a propósito — ver
-[decisiones/0005-inversiones.md](docs/decisiones/0005-inversiones.md). El resto de la aplicación
-sigue siendo enteros en pesos chilenos, sin excepción.
+## Memoria
+
+`MEMORY.md`, en la raíz, guarda lo que no vive en otro documento: preferencias, correcciones,
+patrones de trabajo y decisiones del tipo "no volver a proponer".
+
+- Al iniciar sesión, léela. Los hooks globales de `~/.claude/hooks/` (`memory-load.sh` en
+  SessionStart, `memory-update-prompt.sh` en Stop) la cargan y piden revisarla al cerrar; los
+  detectan porque buscan un `MEMORY.md` subiendo desde el directorio de trabajo.
+- Registra apenas aparezca una corrección, una decisión con su porqué, una preferencia explícita o
+  un patrón, en su sección y con fecha absoluta.
+- Lo que ya está en este archivo, en `docs/`, en el changelog o en git no se duplica allí.
+- El repo es público: nada de saldos, cuentas reales ni rutas personales.

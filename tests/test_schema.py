@@ -230,37 +230,10 @@ def test_migration_rejects_a_database_that_is_not_legacy(db: Path, tmp_path: Pat
 # --- Upgrades between 1.x formats ------------------------------------------
 
 
-def _drop_investment_tables(conn: sqlite3.Connection) -> None:
-    """Strip everything added in schema version 3, including the wider
-    ``accounts.kind`` CHECK, so a fixture can stand in for an older file."""
-    conn.execute("PRAGMA foreign_keys = OFF")
-    conn.execute("DROP TABLE investment_value_history")
-    conn.execute("DROP TABLE fx_rates")
-    conn.execute("DROP TABLE security_prices")
-    conn.execute("DROP TABLE investment_transactions")
-    conn.execute("DROP TABLE investment_holdings")
-    conn.execute("DROP TABLE investment_cash_usd")
-    conn.execute(
-        "CREATE TABLE accounts_old ("
-        " id TEXT PRIMARY KEY, name TEXT NOT NULL,"
-        " kind TEXT NOT NULL CHECK (kind IN ('debit', 'credit')),"
-        " balance INTEGER NOT NULL DEFAULT 0, credit_limit INTEGER NOT NULL DEFAULT 0,"
-        " created_at TEXT NOT NULL, deleted_at TEXT)"
-    )
-    conn.execute(
-        "INSERT INTO accounts_old SELECT"
-        " id, name, kind, balance, credit_limit, created_at, deleted_at FROM accounts"
-    )
-    conn.execute("DROP TABLE accounts")
-    conn.execute("ALTER TABLE accounts_old RENAME TO accounts")
-    conn.execute("PRAGMA foreign_keys = ON")
-
-
 def make_version_1_database(path: Path) -> None:
     """A file exactly as Sigma 1.0.0 left it: no ``transfers.description``."""
     schema.create_database(path)
     with transaction(path) as conn:
-        _drop_investment_tables(conn)
         conn.execute("DROP TABLE transfers")
         conn.execute(
             "CREATE TABLE transfers ("
@@ -324,76 +297,100 @@ def test_a_file_from_a_newer_sigma_is_refused(tmp_path: Path):
         schema.upgrade_database(path)
 
 
-# --- Upgrade to 3: the 'investment' account kind ---------------------------
-
-
-def make_version_2_database(path: Path) -> None:
-    """A file exactly as Sigma 1.2.x left it: no investment tables, and
-    ``accounts.kind`` only accepts 'debit'/'credit'."""
+def make_version_3_database(path: Path) -> None:
+    """A file as Sigma 1.3.0 left it: the 'investment' account kind and its tables."""
     schema.create_database(path)
     with transaction(path) as conn:
-        _drop_investment_tables(conn)
-        conn.execute("UPDATE meta SET value = '2' WHERE key = 'schema_version'")
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute(
+            "CREATE TABLE accounts_new ("
+            " id TEXT PRIMARY KEY, name TEXT NOT NULL,"
+            " kind TEXT NOT NULL CHECK (kind IN ('debit', 'credit', 'investment')),"
+            " balance INTEGER NOT NULL DEFAULT 0, credit_limit INTEGER NOT NULL DEFAULT 0,"
+            " created_at TEXT NOT NULL, deleted_at TEXT)"
+        )
+        conn.execute("DROP TABLE accounts")
+        conn.execute("ALTER TABLE accounts_new RENAME TO accounts")
+        conn.execute(
+            "CREATE TABLE investment_cash_usd ("
+            " account_id TEXT PRIMARY KEY REFERENCES accounts(id), balance INTEGER)"
+        )
+        conn.execute(
+            "CREATE TABLE investment_transactions ("
+            " id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id),"
+            " kind TEXT NOT NULL, date TEXT NOT NULL)"
+        )
+        for table in ("investment_holdings", "security_prices", "fx_rates",
+                      "investment_value_history"):
+            conn.execute(f"CREATE TABLE {table} (x)")
+        conn.execute("UPDATE meta SET value = '3' WHERE key = 'schema_version'")
 
 
-def test_a_2_x_file_reports_its_version(tmp_path: Path):
-    path = tmp_path / "vieja2.db"
-    make_version_2_database(path)
+def add_investment_account(path: Path, account_id: str, balance: int) -> None:
+    with transaction(path) as conn:
+        conn.execute(
+            "INSERT INTO accounts (id, name, kind, balance, created_at)"
+            " VALUES (?, 'Fintual', 'investment', ?, '2026-08-03T18:16:25')",
+            (account_id, balance),
+        )
+        conn.execute("INSERT INTO investment_cash_usd VALUES (?, 101)", (account_id,))
+        conn.execute(
+            "INSERT INTO investment_transactions VALUES ('t1', ?, 'buy', '2026-08-04')",
+            (account_id,),
+        )
 
-    assert schema.schema_version(path) == 2
-    assert schema.needs_upgrade(path) is True
 
-
-def test_upgrading_to_3_adds_the_investment_tables(tmp_path: Path):
-    path = tmp_path / "vieja2.db"
-    make_version_2_database(path)
+def test_upgrading_a_1_3_file_drops_the_investment_tables(tmp_path: Path):
+    path = tmp_path / "con-inversiones.db"
+    make_version_3_database(path)
+    add_investment_account(path, "fintual", 0)
 
     assert schema.upgrade_database(path) == schema.SCHEMA_VERSION
-    assert schema.needs_upgrade(path) is False
 
-    conn = sqlite3.connect(path)
-    tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    conn.close()
-    assert {
-        "investment_cash_usd",
-        "investment_holdings",
-        "investment_transactions",
-        "security_prices",
-        "fx_rates",
-        "investment_value_history",
-    } <= tables
+    with transaction(path) as conn:
+        tables = schema._table_names(conn)
+        assert not {t for t in tables if "investment" in t or t in ("fx_rates", "security_prices")}
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                "INSERT INTO accounts (id, name, kind, created_at)"
+                " VALUES ('x', 'X', 'investment', '2026-01-01')"
+            )
 
 
-def test_upgrading_to_3_accepts_the_investment_kind(tmp_path: Path):
-    path = tmp_path / "vieja2.db"
-    make_version_2_database(path)
-    schema.upgrade_database(path)
-
-    account = accounts.create_account(path, "fintual", "Fintual", "investment", balance=0)
-    assert account["kind"] == "investment"
-    assert account["available"] == 0
-
-
-def test_upgrading_to_3_keeps_existing_accounts_intact(tmp_path: Path):
-    path = tmp_path / "vieja2.db"
-    make_version_2_database(path)
-    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=50_000)
-    accounts.create_account(path, "card", "Tarjeta", "credit", credit_limit=200_000)
+def test_an_empty_investment_account_is_archived_as_debit(tmp_path: Path):
+    path = tmp_path / "con-inversiones.db"
+    make_version_3_database(path)
+    add_investment_account(path, "fintual", 0)
 
     schema.upgrade_database(path)
 
-    wallet = accounts.get_account(path, "wallet")
-    assert wallet["kind"] == "debit"
-    assert wallet["balance"] == 50_000
-
-    card = accounts.get_account(path, "card")
-    assert card["kind"] == "credit"
-    assert card["available"] == 200_000
+    account = accounts.get_account(path, "fintual")
+    assert account["kind"] == "debit"
+    assert account["deleted_at"] is not None
+    assert [a["id"] for a in accounts.list_accounts(path)] == []
 
 
-def test_upgrading_to_3_twice_does_nothing(tmp_path: Path):
-    path = tmp_path / "vieja2.db"
-    make_version_2_database(path)
+def test_an_investment_account_holding_pesos_stays_visible(tmp_path: Path):
+    path = tmp_path / "con-inversiones.db"
+    make_version_3_database(path)
+    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=10_000)
+    add_investment_account(path, "fintual", 50_000)
+    movements.create_movement(path, "expense", 2_000, "Café", "wallet")
 
     schema.upgrade_database(path)
-    assert schema.upgrade_database(path) == schema.SCHEMA_VERSION
+
+    account = accounts.get_account(path, "fintual")
+    assert (account["kind"], account["balance"], account["deleted_at"]) == ("debit", 50_000, None)
+    transfers.create_transfer(path, "fintual", "wallet", 1_000)
+    assert accounts.get_account(path, "wallet")["balance"] == 9_000
+    assert len(movements.list_activity(path)) == 2
+
+
+def test_upgrading_a_1_0_file_skips_the_investment_steps(tmp_path: Path):
+    path = tmp_path / "vieja.db"
+    make_version_1_database(path)
+    accounts.create_account(path, "wallet", "Efectivo", "debit", balance=10_000)
+
+    assert schema.upgrade_database(path) == 4
+    assert accounts.get_account(path, "wallet")["deleted_at"] is None

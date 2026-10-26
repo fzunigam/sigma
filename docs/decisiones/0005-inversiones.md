@@ -1,6 +1,6 @@
 # 0005 — Inversiones: acciones y ETFs dentro de Sigma
 
-**Estado:** aceptada · 2026-08-03
+**Estado:** revertida · 2026-10-26, por [0006](0006-retirar-inversiones.md)
 
 ## Contexto
 

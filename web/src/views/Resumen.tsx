@@ -1,4 +1,4 @@
-import { CreditCard, TrendingUp, Wallet } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 import { Card, SectionHeader } from '../components/Card';
 import { ActivityList } from '../components/ActivityList';
 import { Money } from '../components/Money';
@@ -113,12 +113,10 @@ function Stat({
 
 function AccountRow({ account }: { account: Account }) {
   const isCard = account.kind === 'credit';
-  const isInvestment = account.kind === 'investment';
   const usage =
     isCard && account.credit_limit > 0
       ? Math.min(Math.round((account.balance / account.credit_limit) * 100), 100)
       : null;
-  const shown = isInvestment ? (account.total_value_clp ?? account.balance) : account.balance;
 
   return (
     <li className="flex items-center gap-3 px-5 py-3">
@@ -126,13 +124,7 @@ function AccountRow({ account }: { account: Account }) {
         className="grid place-items-center size-7 rounded-full shrink-0
           bg-surface-hover text-text-subtle"
       >
-        {isCard ? (
-          <CreditCard size={13} />
-        ) : isInvestment ? (
-          <TrendingUp size={13} />
-        ) : (
-          <Wallet size={13} />
-        )}
+        {isCard ? <CreditCard size={13} /> : <Wallet size={13} />}
       </span>
 
       <div className="min-w-0 flex-1">
@@ -142,14 +134,12 @@ function AccountRow({ account }: { account: Account }) {
             ? usage === null
               ? 'Sin cupo definido'
               : `${usage}% del cupo usado`
-            : isInvestment
-              ? 'Cuenta de inversión'
-              : 'Cuenta de saldo'}
+            : 'Cuenta de saldo'}
         </p>
       </div>
 
       <div className="text-right shrink-0">
-        <Money amount={shown} className="block text-[13px] font-medium" />
+        <Money amount={account.balance} className="block text-[13px] font-medium" />
         {isCard && account.credit_limit > 0 && (
           <p className="text-[11px] text-text-subtle mt-0.5">
             Disponible <Money amount={account.available} className="text-[11px]" />

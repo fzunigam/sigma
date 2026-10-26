@@ -5,6 +5,15 @@ Cambios que se notan al usar Sigma. Formato:
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-26
+
+### Removed
+- **Inversiones.** Se retira la sección completa: cuentas de inversión, posiciones, precios en vivo
+  y métricas de cartera. Sigma vuelve a ser solo cuentas de débito y tarjetas, en pesos. Al abrir
+  tu archivo, una cuenta de inversión sin pesos queda archivada y una con pesos pasa a ser una
+  cuenta normal. Lo que tenías registrado ahí queda en el respaldo automático que se hace antes de
+  actualizar el archivo.
+
 ## [1.3.0] - 2026-08-03
 
 ### Added
