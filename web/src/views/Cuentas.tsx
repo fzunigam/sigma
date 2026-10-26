@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CreditCard, MoreHorizontal, Plus, Wallet } from 'lucide-react';
-import { Card, PageHeader, SectionHeader } from '../components/Card';
+import { Card, Page, PageHeader, SectionHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Money } from '../components/Money';
 import { EmptyState } from '../components/EmptyState';
@@ -32,7 +32,7 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-rise">
+    <Page>
       <PageHeader
         title="Cuentas"
         hint="Dónde tienes tu dinero y cuánto puedes gastar."
@@ -57,12 +57,12 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
         ) : (
           <ul className="divide-y divide-line">
             {accounts.map((account) => (
-              <li key={account.id} className="flex items-center gap-3 px-5 py-4">
+              <li key={account.id} className="flex items-center gap-3 px-5 py-3">
                 <span
-                  className="grid place-items-center size-8 rounded-[9px] shrink-0
+                  className="grid place-items-center size-7 rounded-full shrink-0
                     bg-surface-hover text-text-subtle"
                 >
-                  {account.kind === 'credit' ? <CreditCard size={14} /> : <Wallet size={14} />}
+                  {account.kind === 'credit' ? <CreditCard size={13} /> : <Wallet size={13} />}
                 </span>
 
                 <div className="min-w-0 flex-1">
@@ -163,6 +163,6 @@ export function Cuentas({ summary, onChanged, notify }: Props) {
           notify={notify}
         />
       )}
-    </div>
+    </Page>
   );
 }

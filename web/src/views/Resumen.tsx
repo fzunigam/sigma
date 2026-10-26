@@ -1,5 +1,5 @@
 import { CreditCard, Wallet } from 'lucide-react';
-import { Card, SectionHeader } from '../components/Card';
+import { Card, Page, PageHeader, SectionHeader } from '../components/Card';
 import { ActivityList } from '../components/ActivityList';
 import { Money } from '../components/Money';
 import { RegistrarForm } from './RegistrarForm';
@@ -20,7 +20,9 @@ export function Resumen({ summary, onChanged, onEdit, notify, onGoToAccounts }: 
   const hasCards = accounts.some((account) => account.kind === 'credit');
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-rise">
+    <Page>
+      <PageHeader title="Resumen" hint="Cómo estás hoy y qué pasó este mes." />
+
       {/* The three numbers that answer "how am I doing" without any clicking. */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat
@@ -83,7 +85,7 @@ export function Resumen({ summary, onChanged, onEdit, notify, onGoToAccounts }: 
           <ConciliarCard summary={summary} onChanged={onChanged} notify={notify} />
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 

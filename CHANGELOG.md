@@ -10,6 +10,10 @@ Cambios que se notan al usar Sigma. Formato:
   contenido llegan hasta el borde superior, con los botones de cerrar, minimizar y maximizar sobre
   ellos. La franja superior sigue sirviendo para mover la ventana y, con doble clic, para
   maximizarla.
+- **Todas las pestañas comparten el mismo marco.** Resumen, Movimientos, Cuentas y Ajustes usan
+  el mismo ancho y el mismo espaciado entre bloques, así el contenido ya no salta al cambiar de
+  pestaña. Resumen ahora tiene título como las demás, y las filas de cuentas se ven igual en
+  Resumen y en Cuentas.
 
 ## [1.5.0] - 2026-10-26
 

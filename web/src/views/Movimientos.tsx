@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import { Card, PageHeader } from '../components/Card';
+import { Card, Page, PageHeader } from '../components/Card';
 import { ActivityList } from '../components/ActivityList';
 import { Money } from '../components/Money';
 import { Input } from '../components/Field';
@@ -65,7 +65,7 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
   const searching = query !== '';
 
   return (
-    <div className="max-w-4xl mx-auto animate-rise">
+    <Page>
       <PageHeader
         title="Movimientos"
         hint={
@@ -74,7 +74,7 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
         action={<MonthPicker period={period} onChange={setPeriod} disabled={searching} />}
       />
 
-      <div className="relative mb-4">
+      <div className="relative">
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle
@@ -101,7 +101,7 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3 mb-6">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Total label="Ingresos" amount={totals.income} tone="positive" />
         <Total label="Gastos" amount={totals.expense} tone="negative" />
         <Total label="Balance" amount={totals.income - totals.expense} tone="auto" />
@@ -134,7 +134,7 @@ export function Movimientos({ onEdit, reloadToken, notify }: Props) {
           </>
         )}
       </Card>
-    </div>
+    </Page>
   );
 }
 
@@ -192,7 +192,7 @@ function Total({
       <p className="text-[11px] font-medium text-text-subtle uppercase tracking-wide">
         {label}
       </p>
-      <Money amount={amount} tone={tone} className="block text-lg font-semibold mt-1.5" />
+      <Money amount={amount} tone={tone} className="block text-lg font-semibold mt-2" />
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen, History, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { Card, PageHeader, SectionHeader } from '../components/Card';
+import { Card, Page, PageHeader, SectionHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { api, ApiError } from '../lib/api';
@@ -45,7 +45,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-rise">
+    <Page>
       <PageHeader title="Ajustes" hint="Dónde viven tus datos y cómo se respaldan." />
 
       {database.locked_by && (
@@ -170,7 +170,7 @@ export function Ajustes({ database, onDatabaseChanged, notify }: Props) {
           notify={notify}
         />
       )}
-    </div>
+    </Page>
   );
 }
 
